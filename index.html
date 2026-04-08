@@ -1,0 +1,734 @@
+<!DOCTYPE html>
+<html lang="ru" data-bs-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Find&Go – Найди компанию в Бишкеке</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <style>
+        /* ====== БАЗОВЫЕ СТИЛИ (без изменений) ====== */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bs-body-bg); transition: background-color 0.3s ease; overflow-x: hidden; }
+        @keyframes fadeInUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
+        .hero { animation: fadeInUp 0.8s ease-out; }
+        .hero-content { animation: fadeInUp 0.6s ease-out 0.2s both; }
+        .info-section, .category-cards, .category-filters, .section-header, .events-grid { opacity: 0; transform: translateY(30px); transition: opacity 0.6s ease, transform 0.6s ease; }
+        .info-section.visible, .category-cards.visible, .category-filters.visible, .section-header.visible, .events-grid.visible { opacity: 1; transform: translateY(0); }
+        .category-cards .category-card { opacity: 0; transform: translateY(20px); transition: opacity 0.4s ease, transform 0.4s ease; }
+        .category-cards.visible .category-card { opacity: 1; transform: translateY(0); }
+        .category-cards.visible .category-card:nth-child(1) { transition-delay: 0.1s; }
+        .category-cards.visible .category-card:nth-child(2) { transition-delay: 0.2s; }
+        .category-cards.visible .category-card:nth-child(3) { transition-delay: 0.3s; }
+        .category-cards.visible .category-card:nth-child(4) { transition-delay: 0.4s; }
+        .category-cards.visible .category-card:nth-child(5) { transition-delay: 0.5s; }
+        .place-card { transition: transform 0.3s ease, box-shadow 0.3s ease; }
+        .place-card:hover { transform: translateY(-8px) scale(1.02); box-shadow: 0 20px 30px rgba(0,0,0,0.15); }
+        .category-card { transition: all 0.3s ease; }
+        .category-card:hover { animation: pulse 0.4s ease; transform: translateY(-5px); border-color: #667eea; }
+        .event-card { transition: transform 0.2s ease, border-color 0.2s ease; }
+        .event-card:hover { transform: translateX(5px); border-color: #667eea; }
+        .hero { transition: background-position 0.1s ease; }
+        .navbar { background: var(--bs-tertiary-bg); backdrop-filter: blur(20px); padding: 12px 0; }
+        [data-bs-theme="dark"] .navbar { background: rgba(33, 37, 41, 0.95); }
+        .navbar-brand { font-weight: 700; font-size: 1.6rem; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); -webkit-background-clip: text; background-clip: text; color: transparent; }
+        .btn-menu { background: none; border: none; font-size: 1.8rem; color: #667eea; }
+        .btn-logout { border: 1px solid var(--bs-border-color); background: var(--bs-secondary-bg); border-radius: 30px; padding: 6px 18px; transition: 0.2s; color: var(--bs-body-color); }
+        .btn-logout:hover { background: #fee2e2; border-color: #fecaca; color: #dc2626; }
+        .search-container { max-width: 400px; width: 100%; }
+        .search-wrapper { position: relative; }
+        .search-input { background: var(--bs-secondary-bg); border: none; border-radius: 50px; padding: 8px 16px 8px 40px; width: 100%; }
+        .search-input:focus { outline: none; box-shadow: 0 0 0 2px #667eea; }
+        .search-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--bs-secondary-color); }
+        .category-filters { display: flex; gap: 12px; flex-wrap: wrap; padding: 16px; justify-content: center; border-bottom: 1px solid var(--bs-border-color); margin-bottom: 20px; }
+        .filter-btn { background: var(--bs-secondary-bg); border: none; border-radius: 50px; padding: 8px 20px; font-weight: 500; transition: 0.2s; color: var(--bs-body-color); }
+        .filter-btn.active { background: linear-gradient(135deg, #667eea, #764ba2); color: white; }
+        .filter-btn:hover { transform: translateY(-2px); }
+        .hero { background: linear-gradient(135deg, #667eea, #764ba2, #f093fb); margin: 80px 16px 32px; border-radius: 32px; padding: 48px 24px; color: white; position: relative; overflow: hidden; }
+        .hero::before { content: ''; position: absolute; inset: 0; background: url('https://images.unsplash.com/photo-1582510003544-4d00b7f74220?w=1950') center/cover; opacity: 0.2; pointer-events: none; transition: transform 0.1s ease; }
+        .hero-content { position: relative; z-index: 2; text-align: center; }
+        .hero h1 { font-size: 2.8rem; font-weight: 800; margin-bottom: 16px; }
+        .hero .btn-light { background: white; color: #667eea; border-radius: 50px; padding: 12px 32px; font-weight: 600; border: none; }
+        .info-section { padding: 60px 20px; text-align: center; }
+        .step-card, .feature-card, .review-card { background: var(--bs-card-bg); border-radius: 24px; padding: 24px; height: 100%; border: 1px solid var(--bs-border-color); transition: 0.3s; }
+        .step-card:hover, .feature-card:hover, .review-card:hover { transform: translateY(-5px); border-color: #667eea; }
+        .step-icon { width: 70px; height: 70px; background: linear-gradient(135deg, #667eea, #764ba2); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px; font-size: 2rem; color: white; }
+        .feature-icon { font-size: 2.5rem; color: #667eea; margin-bottom: 16px; }
+        .review-avatar { width: 60px; height: 60px; border-radius: 50%; background: linear-gradient(135deg, #667eea, #764ba2); display: flex; align-items: center; justify-content: center; margin: 0 auto 16px; font-size: 1.5rem; color: white; }
+        .cta-section { background: linear-gradient(135deg, #667eea, #764ba2); margin: 40px 16px; border-radius: 32px; padding: 60px 24px; text-align: center; color: white; }
+        .cta-section .btn-light { border-radius: 50px; padding: 12px 32px; font-weight: 600; }
+        .category-cards { display: flex; flex-wrap: wrap; justify-content: center; gap: 20px; margin: 40px 0; }
+        .category-card { cursor: pointer; transition: all 0.3s ease; background: var(--bs-card-bg); border-radius: 1rem; border: 1px solid var(--bs-border-color); padding: 20px; text-align: center; width: 150px; }
+        .category-card i { font-size: 2.5rem; color: #667eea; }
+        .section-header { display: flex; justify-content: space-between; align-items: baseline; padding: 0 16px; margin: 32px 0 20px; }
+        .section-title { font-size: 1.8rem; font-weight: 700; color: var(--bs-heading-color); display: flex; align-items: center; gap: 10px; }
+        .places-scroll { display: flex; overflow-x: auto; gap: 18px; padding: 8px 16px 24px; scroll-behavior: smooth; }
+        .places-scroll::-webkit-scrollbar { height: 4px; }
+        .places-scroll::-webkit-scrollbar-track { background: var(--bs-secondary-bg); border-radius: 10px; }
+        .places-scroll::-webkit-scrollbar-thumb { background: #667eea; border-radius: 10px; }
+        .place-card { flex: 0 0 280px; background: var(--bs-card-bg); border-radius: 24px; overflow: hidden; cursor: pointer; box-shadow: 0 8px 20px rgba(0,0,0,0.08); border: 1px solid var(--bs-border-color); }
+        .place-card .card-body { padding: 16px; }
+        .place-card .place-tag { display: inline-block; background: var(--bs-secondary-bg); padding: 4px 12px; border-radius: 20px; font-size: 0.7rem; font-weight: 600; margin-bottom: 10px; }
+        .place-card h4 { font-size: 1.2rem; font-weight: 700; margin-bottom: 8px; }
+        .place-card p { font-size: 0.85rem; color: var(--bs-secondary-color); }
+        .events-grid { padding: 0 16px; }
+        .event-card { background: var(--bs-card-bg); border-radius: 20px; padding: 18px 20px; margin-bottom: 14px; border: 1px solid var(--bs-border-color); transition: 0.2s; }
+        .event-card:hover { border-color: #667eea; }
+        .event-title { font-weight: 700; font-size: 1.1rem; margin-bottom: 6px; }
+        .event-meta { font-size: 0.85rem; color: var(--bs-secondary-color); }
+        .btn-join { background: linear-gradient(135deg, #667eea, #764ba2); border: none; border-radius: 30px; padding: 8px 22px; color: white; }
+        .offcanvas-header { background: linear-gradient(135deg, #667eea, #764ba2); color: white; }
+        .offcanvas-body .nav-link { padding: 12px 16px; color: var(--bs-body-color); font-weight: 500; }
+        .offcanvas-body .nav-link:hover { background: var(--bs-secondary-bg); border-radius: 12px; }
+        .offcanvas-body .nav-link i { margin-right: 12px; width: 24px; }
+        .theme-switch { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; }
+        .form-check-input:checked { background-color: #667eea; border-color: #667eea; }
+        @media (max-width: 768px) { .search-container { max-width: 200px; } .hero h1 { font-size: 1.8rem; } .place-card { flex: 0 0 240px; } .filter-btn { padding: 6px 14px; font-size: 0.8rem; } .category-card { width: 120px; padding: 12px; } }
+        @media (max-width: 576px) { .search-container { display: none; } }
+        
+        /* ====== МОДАЛЬНЫЕ КАРТОЧКИ ====== */
+        .modal-two-cards {
+            display: flex;
+            gap: 24px;
+            flex-wrap: wrap;
+        }
+        .modal-card {
+            flex: 1;
+            background: var(--bs-card-bg);
+            border-radius: 28px;
+            padding: 24px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            border: 1px solid var(--bs-border-color);
+        }
+        .modal-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.12);
+        }
+        @media (max-width: 768px) {
+            .modal-two-cards { flex-direction: column; }
+        }
+        .place-detail-img {
+            width: 100%;
+            height: 180px;
+            object-fit: cover;
+            border-radius: 20px;
+            margin-bottom: 16px;
+            background: var(--bs-secondary-bg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3rem;
+            color: #667eea;
+        }
+        .user-item-compact {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 12px;
+            margin-bottom: 8px;
+            background: var(--bs-secondary-bg);
+            border-radius: 60px;
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+        .user-item-compact:hover {
+            background: var(--bs-border-color);
+            transform: translateX(4px);
+        }
+        .user-avatar-small {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            object-fit: cover;
+            margin-right: 12px;
+        }
+        .user-info-compact {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .user-name-compact {
+            font-weight: 600;
+            font-size: 0.95rem;
+            margin: 0;
+        }
+        .invite-btn-small {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border: none;
+            border-radius: 40px;
+            padding: 6px 16px;
+            color: white;
+            font-size: 0.75rem;
+            font-weight: 500;
+            transition: 0.2s;
+            white-space: nowrap;
+        }
+        .invite-btn-small:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .faq-accordion-item { background: var(--bs-card-bg); border-radius: 20px; margin-bottom: 12px; border: 1px solid var(--bs-border-color); }
+        .faq-accordion-question { padding: 18px 20px; font-weight: 600; font-size: 1rem; cursor: pointer; display: flex; justify-content: space-between; align-items: center; transition: 0.2s; border-radius: 20px; }
+        .faq-accordion-question:hover { background: var(--bs-secondary-bg); }
+        .faq-accordion-answer { padding: 0 20px 18px 20px; color: var(--bs-secondary-color); line-height: 1.5; display: none; }
+        .faq-accordion-answer.show { display: block; }
+        .faq-accordion-question i { transition: transform 0.2s; }
+        .faq-accordion-question.active i { transform: rotate(180deg); }
+        
+        .onboarding-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            z-index: 10000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+        }
+        .onboarding-card {
+            background: white;
+            border-radius: 32px;
+            padding: 28px;
+            max-width: 400px;
+            text-align: center;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+        }
+        [data-bs-theme="dark"] .onboarding-card { background: #1e1e2a; color: white; }
+        .onboarding-card h4 { margin-bottom: 16px; }
+        .onboarding-card p { margin-bottom: 24px; color: #6c757d; }
+        .onboarding-step-buttons { display: flex; justify-content: space-between; gap: 12px; }
+        .onboarding-step-buttons button { flex: 1; }
+        .modal-content {
+            background-color: var(--bs-modal-bg);
+            color: var(--bs-body-color);
+        }
+    </style>
+</head>
+<body>
+
+<!-- Боковое меню -->
+<div class="offcanvas offcanvas-start" tabindex="-1" id="sidebarMenu">
+    <div class="offcanvas-header">
+        <h5 class="offcanvas-title"><i class="bi bi-compass-fill"></i> Find&Go</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas"></button>
+    </div>
+    <div class="offcanvas-body">
+        <ul class="nav flex-column">
+            <li class="nav-item"><a class="nav-link" href="#heroSection"><i class="bi bi-house-door"></i> <span data-lang-key="home">Главная</span></a></li>
+            <li class="nav-item"><a class="nav-link" href="#howItWorksSection"><i class="bi bi-info-circle"></i> <span data-lang-key="howItWorks">Как это работает</span></a></li>
+            <li class="nav-item"><a class="nav-link" href="/create-event.html"><i class="bi bi-plus-circle"></i> <span data-lang-key="createEvent">Создать поход</span></a></li>
+            <li class="nav-item"><a class="nav-link" href="/profile.html"><i class="bi bi-person"></i> <span data-lang-key="profile">Профиль</span></a></li>
+            <li class="nav-item"><a class="nav-link" href="/faq.html"><i class="bi bi-question-circle"></i> <span data-lang-key="faq">Главные вопросы</span></a></li>
+            <li class="nav-item"><a class="nav-link" href="#" onclick="loadInvitesModal(); return false;"><i class="bi bi-envelope-paper"></i> <span data-lang-key="invites">Приглашения</span></a></li>
+            <hr>
+            <li class="nav-item"><div class="theme-switch"><span><i class="bi bi-moon-stars"></i> <span data-lang-key="darkTheme">Тёмная тема</span></span><div class="form-check form-switch"><input class="form-check-input" type="checkbox" id="darkModeSwitch"></div></div></li>
+            <li class="nav-item"><div class="d-flex justify-content-between align-items-center px-3 py-2"><span><i class="bi bi-translate"></i> <span data-lang-key="language">Язык</span></span><div><button class="btn btn-sm btn-outline-primary me-1" onclick="switchLanguage('ru')">Рус</button><button class="btn btn-sm btn-outline-primary" onclick="switchLanguage('ky')">Кыр</button></div></div></li>
+        </ul>
+    </div>
+</div>
+
+<!-- Навбар -->
+<nav class="navbar navbar-expand-lg fixed-top">
+    <div class="container">
+        <button class="btn-menu me-2" type="button" data-bs-toggle="offcanvas" data-bs-target="#sidebarMenu"><i class="bi bi-list"></i></button>
+        <a class="navbar-brand" href="/"><i class="bi bi-compass-fill"></i> Find&Go</a>
+        <div class="search-container ms-auto me-3"><div class="search-wrapper"><i class="bi bi-search search-icon"></i><input type="text" id="searchInput" class="search-input" placeholder="Поиск мест..."></div></div>
+        <div class="d-flex align-items-center gap-2">
+            <div class="position-relative">
+                <button id="notificationsBtn" class="btn btn-link position-relative" style="color: var(--bs-body-color);">
+                    <i class="bi bi-bell fs-5"></i>
+                    <span id="notificationsBadge" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="display: none;">0</span>
+                </button>
+            </div>
+            <button class="btn btn-link" onclick="loadInvitesModal(); return false;" style="color: var(--bs-body-color);">
+                <i class="bi bi-envelope-paper fs-5"></i>
+            </button>
+            <!-- Кликабельный блок: аватар + имя -->
+            <div id="userProfileLink" style="cursor: pointer; display: flex; align-items: center; gap: 8px;">
+                <img id="headerAvatar" src="https://api.dicebear.com/7.x/avataaars/svg?seed=default" width="32" height="32" class="rounded-circle" style="object-fit: cover;">
+                <span id="userName" class="fw-bold" style="color: var(--bs-body-color);"></span>
+            </div>
+            <button id="logoutBtn" class="btn btn-logout"><span data-lang-key="logout">Выйти</span></button>
+        </div>
+    </div>
+</nav>
+<!-- Hero -->
+<div class="hero" id="heroSection">
+    <div class="hero-content">
+        <h1 id="heroTitle">С кем пойти?</h1>
+        <p id="heroSubtitle">Находи компанию для квестов, кафе, прогулок и новых знакомств в Бишкеке</p>
+        <a href="/create-event.html" class="btn btn-light btn-lg"><i class="bi bi-plus-circle"></i> <span id="createBtnText">Создать компанию</span></a>
+    </div>
+</div>
+
+<!-- Секция "Как это работает" -->
+<div class="container" id="howItWorksSection">
+    <div class="info-section">
+        <h2 class="mb-5" id="howItWorksTitle">Как это работает</h2>
+        <div class="row g-4">
+            <div class="col-md-4"><div class="step-card"><div class="step-icon">1</div><h5 id="step1Title">Выбери место</h5><p id="step1Desc" class="text-muted">Листай карточки с интересными местами Бишкека или создай свой поход</p></div></div>
+            <div class="col-md-4"><div class="step-card"><div class="step-icon">2</div><h5 id="step2Title">Найди компанию</h5><p id="step2Desc" class="text-muted">Присоединись к существующему походу или собери свою команду</p></div></div>
+            <div class="col-md-4"><div class="step-card"><div class="step-icon">3</div><h5 id="step3Title">Иди и знакомься</h5><p id="step3Desc" class="text-muted">Встречайся, общайся в чате и наслаждайся новыми знакомствами</p></div></div>
+        </div>
+    </div>
+</div>
+
+<!-- Секция "Почему выбирают нас" -->
+<div class="container"><div class="info-section pt-0"><h2 class="mb-5" id="whyUsTitle">Почему выбирают нас</h2><div class="row g-4"><div class="col-md-4"><div class="feature-card"><div class="feature-icon"><i class="bi bi-lightning-charge"></i></div><h5 id="feature1Title">Быстро</h5><p id="feature1Desc" class="text-muted">Минимум кликов — максимум пользы. Найди компанию за пару минут</p></div></div><div class="col-md-4"><div class="feature-card"><div class="feature-icon"><i class="bi bi-shield-check"></i></div><h5 id="feature2Title">Безопасно</h5><p id="feature2Desc" class="text-muted">Рейтинг пользователей и отзывы помогают чувствовать себя уверенно</p></div></div><div class="col-md-4"><div class="feature-card"><div class="feature-icon"><i class="bi bi-geo-alt"></i></div><h5 id="feature3Title">Локально</h5><p id="feature3Desc" class="text-muted">Только Бишкек — лучшие места города в одном сервисе</p></div></div></div></div></div>
+
+<!-- Секция "Отзывы" -->
+<div class="container"><div class="info-section pt-0"><h2 class="mb-5" id="reviewsTitle">Что говорят пользователи</h2><div class="row g-4"><div class="col-md-4"><div class="review-card"><div class="review-avatar"><i class="bi bi-person-fill"></i></div><h6>Айжан</h6><p class="text-muted small">“Нашла компанию на квест за 10 минут! Очень удобно, теперь постоянно здесь ищу с кем пойти”</p><div class="text-warning">★★★★★</div></div></div><div class="col-md-4"><div class="review-card"><div class="review-avatar"><i class="bi bi-person-fill"></i></div><h6>Эрмек</h6><p class="text-muted small">“Переехал в Бишкек недавно, не знал с кем гулять. Find&Go реально помог найти друзей”</p><div class="text-warning">★★★★★</div></div></div><div class="col-md-4"><div class="review-card"><div class="review-avatar"><i class="bi bi-person-fill"></i></div><h6>Данияр</h6><p class="text-muted small">“Отличная идея и крутой дизайн. Особенно нравится тёмная тема и перевод на кыргызский”</p><div class="text-warning">★★★★★</div></div></div></div></div></div>
+
+<!-- Секция "Выберите категорию" -->
+<div class="container">
+    <h2 class="text-center mb-4"><i class="bi bi-grid-3x3-gap-fill"></i> <span id="categoriesTitle">Выберите категорию</span></h2>
+    <div class="category-cards" id="categoryCards">
+        <div class="category-card" data-category="квест"><i class="bi bi-robot"></i><h5 class="mt-2">Квесты</h5></div>
+        <div class="category-card" data-category="паб"><i class="bi bi-cup-straw"></i><h5 class="mt-2">Бары/Пабы</h5></div>
+        <div class="category-card" data-category="кино"><i class="bi bi-film"></i><h5 class="mt-2">Кинотеатры</h5></div>
+        <div class="category-card" data-category="кафе"><i class="bi bi-cup-hot"></i><h5 class="mt-2">Кафе</h5></div>
+        <div class="category-card" data-category="клуб"><i class="bi bi-music-note-beamed"></i><h5 class="mt-2">Клубы</h5></div>
+    </div>
+</div>
+
+<!-- Фильтры категорий для карточек мест -->
+<div class="category-filters" id="categoryFilters"><button class="filter-btn active" data-category="all">Все</button><button class="filter-btn" data-category="квест">🔐 Квесты</button><button class="filter-btn" data-category="паб">🍺 Бары/Пабы</button><button class="filter-btn" data-category="кино">🎬 Выйти в кино</button><button class="filter-btn" data-category="кафе">☕ Кафе</button><button class="filter-btn" data-category="клуб">🎉 Клубы</button></div>
+
+<div class="container-fluid px-0">
+    <div class="section-header"><div class="section-title"><i class="bi bi-compass"></i><span id="placesTitle">Куда пойти в Бишкеке</span></div><div class="scroll-hint text-muted small"><i class="bi bi-arrow-left-right"></i> листай →</div></div>
+    <div class="places-scroll" id="placesScroll"></div>
+    
+    <!-- Фильтр по дате -->
+    <div class="date-filter" style="display: flex; justify-content: center; gap: 10px; margin: 20px 0;">
+        <input type="date" id="dateFilter" class="form-control-sm" placeholder="Фильтр по дате">
+        <button class="btn btn-sm btn-outline-secondary" id="clearDateFilter">Сбросить</button>
+    </div>
+    
+    <h2 class="text-center mt-5 mb-4"><i class="bi bi-calendar-event"></i> <span id="activeEventsTitle">Активные походы</span></h2>
+    <div id="eventsList" class="events-grid"></div>
+</div>
+
+<!-- Демо-поход -->
+<div class="container mt-4" id="demoEventContainer">
+    <div class="alert alert-secondary text-center">
+        <i class="bi bi-info-circle-fill fs-3"></i>
+        <h5 class="mt-2">🎯 Пример похода (демо)</h5>
+        <p><strong>📍 Квест «Тайна старого дома»</strong><br>📅 Сегодня, 18:30 · 👥 3 участника</p>
+        <button class="btn btn-outline-primary" onclick="alert('Войдите или зарегистрируйтесь!')">🔒 Войдите, чтобы присоединиться</button>
+    </div>
+</div>
+
+<!-- FAQ на главной -->
+<div class="container mt-4">
+    <div class="text-center mb-4">
+        <button class="btn btn-outline-primary" id="toggleFaqBtn" onclick="toggleFaqSection()"><i class="bi bi-question-circle"></i> Частые вопросы</button>
+    </div>
+    <div id="faqSection" style="display: none;">
+        <div class="faq-accordion-item"><div class="faq-accordion-question" onclick="toggleFaqAnswer(this)">Как создать поход? <i class="bi bi-chevron-down"></i></div><div class="faq-accordion-answer">Нажмите на кнопку «Создать компанию» на главной странице или выберите «Создать поход» в боковом меню.</div></div>
+        <div class="faq-accordion-item"><div class="faq-accordion-question" onclick="toggleFaqAnswer(this)">Как присоединиться к походу? <i class="bi bi-chevron-down"></i></div><div class="faq-accordion-answer">На главной странице в разделе «Активные походы» нажмите кнопку «Присоединиться».</div></div>
+        <div class="faq-accordion-item"><div class="faq-accordion-question" onclick="toggleFaqAnswer(this)">Как пригласить друга? <i class="bi bi-chevron-down"></i></div><div class="faq-accordion-answer">Нажмите на карточку места → в правой колонке нажмите «Пригласить».</div></div>
+    </div>
+</div>
+
+<div class="cta-section"><h2 id="ctaTitle" class="mb-3">Готов найти компанию?</h2><p id="ctaSubtitle" class="mb-4">Присоединяйся к сообществу прямо сейчас</p><a href="/create-event.html" class="btn btn-light btn-lg"><i class="bi bi-plus-circle"></i> <span id="ctaBtnText">Создать поход</span></a></div>
+
+<!-- Модальные окна -->
+<div class="modal fade" id="placeDetailTwoColumnsModal" tabindex="-1"><div class="modal-dialog modal-xl modal-dialog-scrollable"><div class="modal-content"><div class="modal-header"><h5 class="modal-title" id="modalPlaceTitle">Информация о месте</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body"><div class="modal-two-cards" id="modalTwoCardsContainer"><div class="modal-card" id="modalLeftCard"></div><div class="modal-card" id="modalRightCard"></div></div></div></div></div></div>
+<div class="modal fade" id="userProfileModal" tabindex="-1"><div class="modal-dialog modal-dialog-centered"><div class="modal-content"><div class="modal-header bg-primary text-white"><h5 class="modal-title"><i class="bi bi-person-circle"></i> Профиль пользователя</h5><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div><div class="modal-body text-center" id="userProfileModalBody"></div></div></div></div>
+<div class="modal fade" id="notificationsModal" tabindex="-1"><div class="modal-dialog modal-dialog-scrollable"><div class="modal-content"><div class="modal-header bg-primary text-white"><h5 class="modal-title"><i class="bi bi-bell-fill"></i> Уведомления</h5><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div><div class="modal-body p-0" id="notificationsModalBody"></div></div></div></div>
+<div class="modal fade" id="invitesModal" tabindex="-1"><div class="modal-dialog modal-dialog-scrollable"><div class="modal-content"><div class="modal-header bg-primary text-white"><h5 class="modal-title"><i class="bi bi-envelope-paper-fill"></i> Приглашения</h5><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div><div class="modal-body" id="invitesModalBody"></div></div></div></div>
+
+<!-- Онбординг -->
+<div id="onboardingOverlay" class="onboarding-overlay">
+    <div class="onboarding-card" id="onboardingCard">
+        <h4>✨ Добро пожаловать!</h4>
+        <p>Давайте покажем, как пользоваться сервисом.</p>
+        <div class="onboarding-step-buttons">
+            <button class="btn btn-primary" id="onboardingNextBtn">Далее</button>
+            <button class="btn btn-secondary" id="onboardingSkipBtn">Пропустить</button>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+// ========== 1. АВТОРИЗАЦИЯ ==========
+const token = localStorage.getItem('token');
+const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
+if (!token) window.location.href = '/login.html';
+document.getElementById('userName').innerHTML = `<i class="bi bi-person-circle"></i> ${currentUser.name || 'Пользователь'}`;
+document.getElementById('logoutBtn').addEventListener('click', () => { localStorage.clear(); window.location.href = '/login.html'; });
+
+// Загрузка аватара из профиля
+const profile = JSON.parse(localStorage.getItem('profile') || '{}');
+const headerAvatar = document.getElementById('headerAvatar');
+if (headerAvatar) {
+    headerAvatar.src = profile.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${currentUser.name || 'default'}`;
+}
+// Переход в профиль по клику
+document.getElementById('userProfileLink')?.addEventListener('click', () => {
+    window.location.href = '/profile.html';
+});
+
+// ========== 2. PUSH-УВЕДОМЛЕНИЯ ==========
+if (Notification.permission !== 'granted') Notification.requestPermission();
+function sendNotification(title, body) { if (Notification.permission === 'granted') new Notification(title, { body, icon: '/favicon.ico' }); }
+function notifyUserJoined(userName, eventTitle) { sendNotification('🔔 Новый участник!', `${userName} присоединился к походу "${eventTitle}"`); }
+
+// ========== 3. ТЁМНАЯ ТЕМА ==========
+function initDarkMode() {
+    const sw = document.getElementById('darkModeSwitch');
+    const html = document.documentElement;
+    const saved = localStorage.getItem('theme');
+    if (saved === 'dark') { html.setAttribute('data-bs-theme', 'dark'); if (sw) sw.checked = true; }
+    else { html.setAttribute('data-bs-theme', 'light'); if (sw) sw.checked = false; }
+    if (sw) sw.addEventListener('change', e => { html.setAttribute('data-bs-theme', e.target.checked ? 'dark' : 'light'); localStorage.setItem('theme', e.target.checked ? 'dark' : 'light'); });
+}
+
+// ========== 4. УВЕДОМЛЕНИЯ (КОЛОКОЛЬЧИК) ==========
+let notifications = JSON.parse(localStorage.getItem('notifications') || '[]');
+function updateBadge() { const unread = notifications.filter(n => !n.read).length; const badge = document.getElementById('notificationsBadge'); if (unread) { badge.innerText = unread > 9 ? '9+' : unread; badge.style.display = 'inline-block'; } else badge.style.display = 'none'; }
+function addNotification(title, message, targetUserId) {
+    if (targetUserId && targetUserId !== currentUser.id) {
+        const n = { id: Date.now(), title, message, read: false, createdAt: new Date().toISOString(), targetUserId };
+        notifications.unshift(n); if (notifications.length > 50) notifications.pop();
+        localStorage.setItem('notifications', JSON.stringify(notifications));
+        updateBadge();
+        sendNotification(title, message);
+    } else if (!targetUserId) {
+        const n = { id: Date.now(), title, message, read: false, createdAt: new Date().toISOString() };
+        notifications.unshift(n); if (notifications.length > 50) notifications.pop();
+        localStorage.setItem('notifications', JSON.stringify(notifications));
+        updateBadge();
+        sendNotification(title, message);
+    }
+}
+function showNotifications() { const body = document.getElementById('notificationsModalBody'); if (!notifications.length) body.innerHTML = '<div class="text-center py-4"><i class="bi bi-bell-slash fs-1"></i><p>Нет уведомлений</p></div>'; else { body.innerHTML = notifications.map(n => `<div class="p-3 border-bottom ${n.read ? '' : 'bg-light'}"><div class="d-flex justify-content-between"><strong>${n.title}</strong><small>${new Date(n.createdAt).toLocaleString()}</small></div><p class="mb-0 small">${n.message}</p></div>`).join(''); notifications.forEach(n => n.read = true); localStorage.setItem('notifications', JSON.stringify(notifications)); updateBadge(); } new bootstrap.Modal(document.getElementById('notificationsModal')).show(); }
+document.getElementById('notificationsBtn').addEventListener('click', showNotifications);
+
+// ========== 5. ПРИГЛАШЕНИЯ ==========
+let invites = JSON.parse(localStorage.getItem('invites') || '[]');
+function saveInvites() { localStorage.setItem('invites', JSON.stringify(invites)); }
+
+function sendInvite(toUserId, toUserName, placeName) {
+    if (invites.some(i => i.fromUserId === currentUser.id && i.toUserId === toUserId && i.status === 'pending')) { alert('Приглашение уже отправлено!'); return; }
+    const invite = { id: Date.now(), fromUserId: currentUser.id, fromUserName: currentUser.name, toUserId, toUserName, placeName, status: 'pending', createdAt: new Date().toISOString() };
+    invites.push(invite); saveInvites();
+    addNotification('📨 Новое приглашение', `${currentUser.name} приглашает вас в поход в "${placeName}"`, toUserId);
+    alert(`Приглашение отправлено ${toUserName}!`);
+    
+    // Закрываем модальное окно места и остаёмся на главной
+    const modal = bootstrap.Modal.getInstance(document.getElementById('placeDetailTwoColumnsModal'));
+    if (modal) modal.hide();
+    // Перезагружаем события, чтобы обновить кнопки чата (если нужно)
+    loadEvents();
+    // Обновляем список пользователей (если модальное окно закроется и откроется снова)
+    if (window.currentPlaceModalId) window.currentPlaceModalId = null;
+}
+
+function acceptInvite(id) {
+    const inv = invites.find(i => i.id === id);
+    if (inv && inv.status === 'pending') {
+        inv.status = 'accepted'; saveInvites();
+        addNotification('✅ Приглашение принято', `${currentUser.name} принял приглашение в "${inv.placeName}"`, inv.fromUserId);
+        alert(`Вы приняли приглашение от ${inv.fromUserName}! Теперь вы можете общаться в чате.`);
+        loadInvitesModal();
+        loadEvents();
+    }
+}
+
+function rejectInvite(id) {
+    const inv = invites.find(i => i.id === id);
+    if (inv && inv.status === 'pending') {
+        inv.status = 'rejected'; saveInvites();
+        addNotification('❌ Приглашение отклонено', `${currentUser.name} отклонил приглашение в "${inv.placeName}"`, inv.fromUserId);
+        alert(`Вы отклонили приглашение от ${inv.fromUserName}`);
+        loadInvitesModal();
+        loadEvents();
+    }
+}
+
+function loadInvitesModal() {
+    const incoming = invites.filter(i => i.toUserId === currentUser.id && i.status === 'pending');
+    const outgoing = invites.filter(i => i.fromUserId === currentUser.id);
+    document.getElementById('invitesModalBody').innerHTML = `
+        <h6><i class="bi bi-inbox"></i> Входящие</h6>
+        ${!incoming.length ? '<p class="text-muted small">Нет входящих приглашений</p>' : incoming.map(i => `<div class="border-bottom pb-2 mb-2"><div class="d-flex justify-content-between"><div><strong>${i.fromUserName}</strong><p class="small mb-0">Приглашает в "${i.placeName}"</p></div><div><button class="btn btn-sm btn-success me-1" onclick="acceptInvite(${i.id})">✅ Принять</button><button class="btn btn-sm btn-danger" onclick="rejectInvite(${i.id})">❌ Отклонить</button></div></div></div>`).join('')}
+        <h6 class="mt-3"><i class="bi bi-send"></i> Отправленные</h6>
+        ${!outgoing.length ? '<p class="text-muted small">Нет отправленных</p>' : outgoing.map(i => `<div class="border-bottom pb-2 mb-2"><div><strong>${i.toUserName}</strong><p class="small mb-0">"${i.placeName}" — <span class="${i.status === 'pending' ? 'text-warning' : i.status === 'accepted' ? 'text-success' : 'text-danger'}">${i.status === 'pending' ? '⏳ ожидает' : i.status === 'accepted' ? '✅ принято' : '❌ отклонено'}</span></p></div></div>`).join('')}
+    `;
+    new bootstrap.Modal(document.getElementById('invitesModal')).show();
+}
+
+// ========== 6. ЗАГРУЗКА ВСЕХ ПОЛЬЗОВАТЕЛЕЙ ==========
+let allUsersList = [];
+
+async function loadAllUsers() {
+    try {
+        const res = await fetch('/api/auth/interests/all', {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (res.ok) {
+            allUsersList = await res.json();
+        } else {
+            console.warn('Не удалось загрузить пользователей. Используем только ботов.');
+        }
+    } catch(e) { console.error(e); }
+}
+
+// ========== 7. ДАННЫЕ МЕСТ ==========
+const placesData = {
+    ru: [
+        { id: 1, name: "Квест «Тайна старого дома»", desc: "Интерактивный квест в центре Бишкека.", img: "https://placehold.co/600x400?text=Квест+1", tag: "🔐 Квест", category: "квест", address: "ул. Киевская, 45", phone: "+996 700 123 456", instagram: "quest_house", gisLink: "#" },
+        { id: 2, name: "Квест «Побег из тюрьмы»", desc: "Адреналиновый квест.", img: "https://placehold.co/600x400?text=Квест+2", tag: "🔐 Квест", category: "квест", address: "пр. Чуй, 120", phone: "+996 550 789 012", instagram: "escape_kg", gisLink: "#" },
+        { id: 3, name: "Паб «Beer House»", desc: "Крафтовое пиво и спорт.", img: "https://placehold.co/600x400?text=Паб", tag: "🍺 Паб", category: "паб", address: "ул. Абдрахманова, 15", phone: "+996 312 90 90 90", instagram: "beerhouse_kg", gisLink: "#" },
+        { id: 4, name: "Кинотеатр «Ала-Тоо»", desc: "Новинки кино.", img: "https://placehold.co/600x400?text=Кинотеатр", tag: "🎬 Кино", category: "кино", address: "пр. Чуй, 88", phone: "+996 312 62 62 62", instagram: "kinoteatr_alatoo", gisLink: "#" },
+        { id: 5, name: "Арт-кафе «Старый Баку»", desc: "Уютное кафе с живой музыкой.", img: "https://placehold.co/600x400?text=Кафе", tag: "☕ Кафе", category: "кафе", address: "ул. Токтогула, 100", phone: "+996 555 123 456", instagram: "baku_cafe", gisLink: "#" },
+        { id: 6, name: "Клуб «Metro»", desc: "Главный ночной клуб.", img: "https://placehold.co/600x400?text=Клуб", tag: "🎉 Клуб", category: "клуб", address: "ул. Жибек-Жолу, 50", phone: "+996 700 987 654", instagram: "metro_club_kg", gisLink: "#" }
+    ],
+    ky: [
+        { id: 1, name: "Квест «Эски үйдүн сыры»", desc: "Интерактивдүү квест.", img: "https://placehold.co/600x400?text=Квест+1", tag: "🔐 Квест", category: "квест", address: "Киевская көч., 45", phone: "+996 700 123 456", instagram: "quest_house", gisLink: "#" },
+        { id: 2, name: "Квест «Түрмөдөн качуу»", desc: "Адреналинге толгон квест.", img: "https://placehold.co/600x400?text=Квест+2", tag: "🔐 Квест", category: "квест", address: "Чүй пр., 120", phone: "+996 550 789 012", instagram: "escape_kg", gisLink: "#" },
+        { id: 3, name: "Паб «Beer House»", desc: "Крафт сырасы.", img: "https://placehold.co/600x400?text=Паб", tag: "🍺 Паб", category: "паб", address: "Абдрахманов көч., 15", phone: "+996 312 90 90 90", instagram: "beerhouse_kg", gisLink: "#" },
+        { id: 4, name: "Кинотеатр «Ала-Тоо»", desc: "Жаңы тасмалар.", img: "https://placehold.co/600x400?text=Кинотеатр", tag: "🎬 Кино", category: "кино", address: "Чүй пр., 88", phone: "+996 312 62 62 62", instagram: "kinoteatr_alatoo", gisLink: "#" },
+        { id: 5, name: "Арт-кафе «Эски Баку»", desc: "Жандуу музыка.", img: "https://placehold.co/600x400?text=Кафе", tag: "☕ Кафе", category: "кафе", address: "Токтогул көч., 100", phone: "+996 555 123 456", instagram: "baku_cafe", gisLink: "#" },
+        { id: 6, name: "Клуб «Metro»", desc: "Түнкү клуб.", img: "https://placehold.co/600x400?text=Клуб", tag: "🎉 Клуб", category: "клуб", address: "Жибек-Жолу көч., 50", phone: "+996 700 987 654", instagram: "metro_club_kg", gisLink: "#" }
+    ]
+};
+
+const botUsers = [
+    { id: 101, name: "Айжан", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=ayjan", bio: "Люблю квесты!", interests: ["квест", "кафе"] },
+    { id: 102, name: "Эрмек", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=ermek", bio: "Ищу друзей в кино!", interests: ["кино", "паб"] },
+    { id: 103, name: "Данияр", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=daniyar", bio: "Люблю вечеринки!", interests: ["клуб", "паб"] }
+];
+
+function getInterestedUsers(category) {
+    // 1. Реальные пользователи из базы (если загружены)
+    let interested = allUsersList.filter(u => u.interests && u.interests.includes(category));
+    // 2. Добавляем текущего пользователя, если его нет
+    const userInterests = JSON.parse(localStorage.getItem('userInterests') || '[]');
+    if (userInterests.includes(category) && currentUser.id && !interested.some(u => u.id === currentUser.id)) {
+        interested.push({
+            id: currentUser.id,
+            name: currentUser.name,
+            avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${currentUser.name}`,
+            bio: 'Мне это интересно!',
+            interests: userInterests
+        });
+    }
+    // 3. Добавляем ботов
+    const bots = botUsers.filter(b => b.interests.includes(category));
+    return [...interested, ...bots];
+}
+
+// ========== 8. ОТРИСОВКА КАРТОЧЕК МЕСТ ==========
+let currentLang = 'ru', currentCategory = 'all', currentSearch = '';
+
+function filterPlaces(places) { return places.filter(p => (currentCategory === 'all' || p.category === currentCategory) && (currentSearch === '' || p.name.toLowerCase().includes(currentSearch.toLowerCase()))); }
+function renderPlaces(lang) {
+    const filtered = filterPlaces(placesData[lang]);
+    const container = document.getElementById('placesScroll');
+    if (!filtered.length) { container.innerHTML = `<div class="text-center text-muted w-100 py-5">😔 ${currentLang === 'ru' ? 'Ничего не найдено' : 'Эч нерсе табылган жок'}</div>`; return; }
+    container.innerHTML = filtered.map(place => `<div class="place-card" onclick="openPlaceModal(${place.id})"><div class="card-body"><span class="place-tag">${place.tag}</span><h4>${place.name}</h4><p>${place.desc.substring(0, 80)}...</p></div></div>`).join('');
+}
+
+// ========== 9. МОДАЛЬНОЕ ОКНО МЕСТА ==========
+function openPlaceModal(placeId) {
+    window.currentPlaceModalId = placeId;
+    const place = placesData[currentLang].find(p => p.id === placeId);
+    if (!place) return;
+
+    // Левая карточка
+    const imgHtml = place.img ? `<img src="${place.img}" class="place-detail-img" alt="${place.name}">` : `<div class="place-detail-img"><i class="bi bi-building fs-1"></i></div>`;
+    const leftHtml = `
+        ${imgHtml}
+        <h4><i class="bi bi-geo-alt-fill text-primary"></i> ${place.name}</h4>
+        <p class="mt-2 text-muted">${place.desc}</p>
+        <div class="mt-3">
+            <p><i class="bi bi-geo-alt"></i> <strong>Адрес:</strong> ${place.address || 'Не указан'}</p>
+            <p><i class="bi bi-telephone"></i> <strong>Телефон:</strong> ${place.phone || 'Не указан'}</p>
+        </div>
+        <div class="mt-4 d-flex flex-wrap gap-2">
+            <a href="${place.gisLink}" target="_blank" class="btn btn-outline-primary btn-sm"><i class="bi bi-map"></i> 2ГИС</a>
+            <a href="https://instagram.com/${place.instagram}" target="_blank" class="btn btn-outline-danger btn-sm"><i class="bi bi-instagram"></i> Instagram</a>
+            <button class="btn btn-primary btn-sm" onclick="goToCreate('${place.name.replace(/'/g, "\\'")}')"><i class="bi bi-plus-circle"></i> Создать поход</button>
+        </div>
+    `;
+
+    // Правая карточка
+    const users = getInterestedUsers(place.category);
+    let rightHtml = `<h5 class="mb-3"><i class="bi bi-people-fill"></i> Кому это интересно</h5>`;
+    if (!users.length) {
+        rightHtml += `<p class="text-muted text-center py-3">Пока никто не добавил эту категорию</p>`;
+    } else {
+        rightHtml += `<div class="users-list">`;
+        users.forEach(user => {
+            const isOutgoing = invites.some(i => i.fromUserId === currentUser.id && i.toUserId === user.id && i.status === 'pending');
+            const isAccepted = invites.some(i => i.fromUserId === user.id && i.toUserId === currentUser.id && i.status === 'accepted');
+            const buttonDisabled = isOutgoing || isAccepted;
+            const buttonText = isOutgoing ? 'Приглашение отправлено' : (isAccepted ? 'Участник' : 'Пригласить');
+            rightHtml += `
+                <div class="user-item-compact" onclick="showProfile(${user.id})">
+                    <div class="user-info-compact">
+                        <img src="${user.avatar}" class="user-avatar-small" alt="${user.name}">
+                        <div>
+                            <div class="user-name-compact">${user.name}</div>
+                            <small class="text-muted">${user.bio.substring(0, 40)}</small>
+                        </div>
+                    </div>
+                    ${user.id !== currentUser.id ? `<button class="invite-btn-small" onclick="event.stopPropagation(); sendInvite(${user.id}, '${user.name}', '${place.name}')" ${buttonDisabled ? 'disabled' : ''}>${buttonText}</button>` : ''}
+                </div>
+            `;
+        });
+        rightHtml += `</div>`;
+    }
+
+    document.getElementById('modalLeftCard').innerHTML = leftHtml;
+    document.getElementById('modalRightCard').innerHTML = rightHtml;
+    document.getElementById('modalPlaceTitle').innerText = place.name;
+    new bootstrap.Modal(document.getElementById('placeDetailTwoColumnsModal')).show();
+}
+
+function showProfile(userId) { showUserProfileModal(userId); }
+function goToCreate(placeName) { const modal = bootstrap.Modal.getInstance(document.getElementById('placeDetailTwoColumnsModal')); if (modal) modal.hide(); window.location.href = `/create-event.html?place=${encodeURIComponent(placeName)}`; }
+
+// ========== 10. ПОХОДЫ ==========
+let allEvents = [];
+let currentDateFilter = '';
+
+async function loadEvents() {
+    const container = document.getElementById('eventsList');
+    if (!container) return;
+    container.innerHTML = '<div class="text-center py-4">Загрузка...</div>';
+    try {
+        const res = await fetch('/api/events', { headers: { 'Authorization': `Bearer ${token}` } });
+        allEvents = await res.json();
+        applyDateFilter();
+    } catch(e) { container.innerHTML = '<div class="text-center text-danger">⚠️ Ошибка</div>'; }
+}
+
+function applyDateFilter() {
+    const container = document.getElementById('eventsList');
+    let filtered = [...allEvents];
+    if (currentDateFilter) {
+        const filterDate = new Date(currentDateFilter).toDateString();
+        filtered = filtered.filter(ev => new Date(ev.datetime).toDateString() === filterDate);
+    }
+    if (!filtered.length) container.innerHTML = `<div class="text-center text-muted py-4">📭 ${currentLang === 'ru' ? 'Нет походов на выбранную дату' : 'Тандалган күнгө саякаттар жок'}</div>`;
+    else {
+        container.innerHTML = filtered.map(ev => {
+            const hasAcceptedInvite = invites.some(i => i.toUserId === currentUser.id && i.fromUserId === ev.creatorId && i.status === 'accepted' && i.placeName === ev.place?.name);
+            const isParticipant = ev.participants?.includes(currentUser.id);
+            const showChat = ev.creatorId === currentUser.id || isParticipant || hasAcceptedInvite;
+            return `<div class="event-card"><div class="row align-items-center"><div class="col-7"><div class="event-title fw-bold">📍 ${ev.place?.name || 'Место'}</div><div class="event-meta small">📅 ${new Date(ev.datetime).toLocaleString()} · 👥 ${ev.participantsCount || 0}/${ev.maxParticipants}</div></div><div class="col-5 text-end"><button class="btn btn-join btn-sm" onclick="joinEvent(${ev.id})">${currentLang === 'ru' ? 'Присоединиться' : 'Кошулуу'}</button>${ev.creatorId === currentUser.id ? `<button class="btn btn-sm btn-warning mt-1" onclick="editEvent(${ev.id})">✏️</button><button class="btn btn-sm btn-danger mt-1" onclick="deleteEvent(${ev.id})">🗑️</button><button class="btn btn-sm btn-info mt-1" onclick="openChat(${ev.id})">💬</button>` : ''}${showChat && ev.creatorId !== currentUser.id ? `<button class="btn btn-sm btn-info mt-1" onclick="openChat(${ev.id})">💬 Чат</button>` : ''}</div></div></div>`;
+        }).join('');
+    }
+}
+
+function editEvent(id) { const dt = prompt('Новая дата (ГГГГ-ММ-ДД ЧЧ:ММ)'); const max = prompt('Новое кол-во участников'); if (!dt || !max) return; fetch(`/api/events/${id}`, { method: 'PUT', headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ datetime: dt.replace(' ', 'T') + ':00', maxParticipants: parseInt(max) }) }).then(res => res.ok ? (alert('Обновлено'), loadEvents()) : res.json().then(err => alert(err.message))); }
+function deleteEvent(id) { if (confirm('Удалить?')) fetch(`/api/events/${id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } }).then(res => res.ok ? (alert('Удалено'), loadEvents()) : res.json().then(err => alert(err.message))); }
+function openChat(id) { window.location.href = `/chat.html?eventId=${id}`; }
+window.joinEvent = async (id) => { try { const res = await fetch(`/api/events/${id}/join`, { method: 'POST', headers: { 'Authorization': `Bearer ${token}` } }); if (res.ok) { const ev = await res.json(); alert('Вы присоединились!'); if (ev.creatorId !== currentUser.id) notifyUserJoined(currentUser.name, ev.place?.name || 'поход'); loadEvents(); } else { const err = await res.json(); alert(err.message); } } catch(e) { alert('Ошибка'); } };
+
+document.getElementById('dateFilter')?.addEventListener('change', (e) => { currentDateFilter = e.target.value; applyDateFilter(); });
+document.getElementById('clearDateFilter')?.addEventListener('click', () => { document.getElementById('dateFilter').value = ''; currentDateFilter = ''; applyDateFilter(); });
+
+// ========== 11. ФИЛЬТРЫ ==========
+function initFilters() {
+    document.querySelectorAll('.filter-btn').forEach(btn => btn.addEventListener('click', () => { document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active')); btn.classList.add('active'); currentCategory = btn.dataset.category; renderPlaces(currentLang); }));
+    document.getElementById('searchInput')?.addEventListener('input', e => { currentSearch = e.target.value; renderPlaces(currentLang); });
+}
+
+// ========== 12. АНИМАЦИЯ СКРОЛЛА ==========
+function checkVisibility() { document.querySelectorAll('.info-section, .category-cards, .category-filters, .section-header, .events-grid').forEach(el => { if (el.getBoundingClientRect().top < window.innerHeight - 100) el.classList.add('visible'); }); }
+window.addEventListener('scroll', checkVisibility);
+window.addEventListener('load', checkVisibility);
+window.addEventListener('scroll', () => { const hero = document.querySelector('.hero'); if (hero) hero.style.backgroundPosition = `center ${window.pageYOffset * 0.3}px`; });
+
+// ========== 13. ЯЗЫК ==========
+function updateLanguage(lang) {
+    currentLang = lang;
+    const t = lang === 'ru' ? {
+        heroTitle: 'С кем пойти?', heroSubtitle: 'Находи компанию для квестов, кафе, прогулок и новых знакомств в Бишкеке', createBtn: 'Создать компанию', placesTitle: 'Куда пойти в Бишкеке', activeEventsTitle: 'Активные походы', logout: 'Выйти', home: 'Главная', createEvent: 'Создать поход', profile: 'Профиль', faq: 'Главные вопросы', darkTheme: 'Тёмная тема', language: 'Язык', categoriesTitle: 'Выберите категорию', rightColumnTitle: 'Кому это интересно',
+        howItWorksTitle: 'Как это работает', step1Title: 'Выбери место', step1Desc: 'Листай карточки с интересными местами Бишкека или создай свой поход', step2Title: 'Найди компанию', step2Desc: 'Присоединись к существующему походу или собери свою команду', step3Title: 'Иди и знакомься', step3Desc: 'Встречайся, общайся в чате и наслаждайся новыми знакомствами',
+        whyUsTitle: 'Почему выбирают нас', feature1Title: 'Быстро', feature1Desc: 'Минимум кликов — максимум пользы. Найди компанию за пару минут', feature2Title: 'Безопасно', feature2Desc: 'Рейтинг пользователей и отзывы помогают чувствовать себя уверенно', feature3Title: 'Локально', feature3Desc: 'Только Бишкек — лучшие места города в одном сервисе',
+        reviewsTitle: 'Что говорят пользователи', ctaTitle: 'Готов найти компанию?', ctaSubtitle: 'Присоединяйся к сообществу прямо сейчас', ctaBtnText: 'Создать поход'
+    } : {
+        heroTitle: 'Ким менен барсам?', heroSubtitle: 'Бишкекте квесттер, кафелер, сейилдөөлөр жана жаңы таанышуулар үчүн компания тап', createBtn: 'Компания түзүү', placesTitle: 'Бишкекте кайда барууга болот', activeEventsTitle: 'Активдүү саякаттар', logout: 'Чыгуу', home: 'Башкы', createEvent: 'Саякат түзүү', profile: 'Профиль', faq: 'Негизги суроолор', darkTheme: 'Караңгы тема', language: 'Тил', categoriesTitle: 'Категорияны тандаңыз', rightColumnTitle: 'Кимге кызыктуу',
+        howItWorksTitle: 'Кантип иштейт', step1Title: 'Жерди танда', step1Desc: 'Бишкектин кызыктуу жерлерин жылдырып же өз саякатыңды түз', step2Title: 'Компания тап', step2Desc: 'Бар болгон саякатка кошул же өз тобуңду чогулт', step3Title: 'Бар жана тааныш', step3Desc: 'Жолугуш, чатта баарлаш жана жаңы таанышуулардан ырахат ал',
+        whyUsTitle: 'Эмне үчүн бизди тандашат', feature1Title: 'Тез', feature1Desc: 'Аз клик — көп пайда. Компанияны бир нече мүнөттө тап', feature2Title: 'Коопсуз', feature2Desc: 'Колдонуучулардын рейтинги жана пикирлер ишенимдүү сезүүгө жардам берет', feature3Title: 'Жергиликтүү', feature3Desc: 'Бишкек гана — шаардын мыкты жерлери бир сервисте',
+        reviewsTitle: 'Колдонуучулар эмне дейт', ctaTitle: 'Компания табууга даярсыңбы?', ctaSubtitle: 'Азыр коомдук кошулуңуз', ctaBtnText: 'Саякат түзүү'
+    };
+    for (let [id, val] of Object.entries(t)) { let el = document.getElementById(id); if (el) el.innerText = val; }
+    document.querySelectorAll('[data-lang-key]').forEach(el => { const key = el.getAttribute('data-lang-key'); if (t[key]) el.innerText = t[key]; });
+    renderPlaces(lang); loadEvents();
+}
+window.switchLanguage = (lang) => { updateLanguage(lang); localStorage.setItem('lang', lang); };
+
+// ========== 14. ПРОФИЛЬ ПОЛЬЗОВАТЕЛЯ (МОДАЛЬНОЕ ОКНО) ==========
+function showUserProfileModal(userId) {
+    const allUsers = [
+        { id: 1, name: "Нурлан", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=nurlan", bio: "Люблю квесты и кино", interests: ["квест","кино"], instagram: "nurlan_kg", telegram: "@nurlan", eventsCreated: 3, rating: 4.8 },
+        { id: 2, name: "Мээрим", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=meerim", bio: "Ищу компанию для кафе", interests: ["кафе"], instagram: "meerim_kg", telegram: "@meerim", eventsCreated: 1, rating: 5.0 },
+        { id: 101, name: "Айжан", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=ayjan", bio: "Люблю квесты и активный отдых", interests: ["квест","кафе"], instagram: "ayjan_kg", telegram: "@ayjan_kg", eventsCreated: 5, rating: 4.9 },
+        { id: 102, name: "Эрмек", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=ermek", bio: "Студент, обожаю кино и настолки", interests: ["кино","паб"], instagram: "ermek_k", telegram: "@ermek", eventsCreated: 2, rating: 4.7 },
+        { id: 103, name: "Данияр", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=daniyar", bio: "Программист, люблю вечеринки и пабы", interests: ["клуб","паб"], instagram: "daniyar_live", telegram: "@daniyar", eventsCreated: 4, rating: 4.6 }
+    ];
+    if (currentUser.id && !allUsers.some(u => u.id === currentUser.id)) {
+        const userInterests = JSON.parse(localStorage.getItem('userInterests') || '[]');
+        allUsers.push({ id: currentUser.id, name: currentUser.name, avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${currentUser.name}`, bio: 'Новый пользователь', interests: userInterests, instagram: '', telegram: '', eventsCreated: 0, rating: 0 });
+    }
+    const u = allUsers.find(u => u.id === userId);
+    if (!u) { document.getElementById('userProfileModalBody').innerHTML = `<img src="https://api.dicebear.com/7.x/avataaars/svg?seed=default" class="rounded-circle" width="120" height="120" style="border:4px solid #667eea;"><h3 class="mt-2">Пользователь</h3><p class="text-muted">Нет данных</p><button class="btn btn-primary mt-4" data-bs-dismiss="modal">Закрыть</button>`; new bootstrap.Modal(document.getElementById('userProfileModal')).show(); return; }
+    document.getElementById('userProfileModalBody').innerHTML = `<img src="${u.avatar}" class="rounded-circle" width="120" height="120" style="border:4px solid #667eea;"><h3 class="mt-2">${u.name}</h3><p class="text-muted">${u.bio}</p><div class="row g-2 mt-3"><div class="col-6"><div class="p-2 bg-secondary bg-opacity-10 rounded"><i class="bi bi-calendar-event"></i><div class="fw-bold">${u.eventsCreated}</div><small>походов создал</small></div></div><div class="col-6"><div class="p-2 bg-secondary bg-opacity-10 rounded"><i class="bi bi-star-fill text-warning"></i><div class="fw-bold">${u.rating}</div><small>рейтинг</small></div></div></div><div class="mt-3"><h6><i class="bi bi-heart-fill text-danger"></i> Интересы</h6><div>${(u.interests || []).map(i => `<span class="badge bg-primary me-1">${i}</span>`).join('') || '<span class="text-muted">не указаны</span>'}</div></div><div class="mt-3"><h6><i class="bi bi-share"></i> Соцсети</h6><div class="d-flex justify-content-center gap-2">${u.instagram ? `<a href="https://instagram.com/${u.instagram}" target="_blank" class="btn btn-sm btn-outline-secondary"><i class="bi bi-instagram"></i> Instagram</a>` : ''}${u.telegram ? `<a href="${u.telegram}" target="_blank" class="btn btn-sm btn-outline-secondary"><i class="bi bi-telegram"></i> Telegram</a>` : ''}</div></div><button class="btn btn-primary mt-4" data-bs-dismiss="modal">Закрыть</button>`;
+    new bootstrap.Modal(document.getElementById('userProfileModal')).show();
+}
+
+// ========== 15. ОНБОРДИНГ ==========
+let step = 0;
+const steps = [
+    { title: "Нажми на карточку места", text: "Чтобы посмотреть информацию о месте и пригласить друзей." },
+    { title: "Нажми «Присоединиться»", text: "Чтобы стать участником похода и попасть в чат." },
+    { title: "Приглашай друзей", text: "В карточке места есть кнопка «Пригласить»." }
+];
+function startOnboarding() { step = 0; showStep(); document.getElementById('onboardingOverlay').style.display = 'flex'; }
+function showStep() { const card = document.getElementById('onboardingCard'); card.innerHTML = `<h4>📌 ${steps[step].title}</h4><p>${steps[step].text}</p><div class="onboarding-step-buttons">${step < steps.length-1 ? '<button class="btn btn-primary" id="onbNext">Далее</button>' : '<button class="btn btn-success" id="onbFinish">Понятно</button>'}<button class="btn btn-secondary" id="onbSkip">Пропустить</button></div>`; document.getElementById('onbNext')?.addEventListener('click', () => { step++; showStep(); }); document.getElementById('onbSkip')?.addEventListener('click', finishOnboarding); document.getElementById('onbFinish')?.addEventListener('click', finishOnboarding); }
+function finishOnboarding() { document.getElementById('onboardingOverlay').style.display = 'none'; localStorage.setItem('onboardingShown', 'true'); }
+if (!localStorage.getItem('onboardingShown')) setTimeout(startOnboarding, 1000);
+
+// ========== 16. FAQ ==========
+function toggleFaqSection() { const fs = document.getElementById('faqSection'); const btn = document.getElementById('toggleFaqBtn'); if (fs.style.display === 'none') { fs.style.display = 'block'; btn.innerHTML = '<i class="bi bi-x-circle"></i> Скрыть'; } else { fs.style.display = 'none'; btn.innerHTML = '<i class="bi bi-question-circle"></i> Вопросы'; } }
+function toggleFaqAnswer(el) { el.classList.toggle('active'); el.nextElementSibling.classList.toggle('show'); }
+
+// ========== 17. ЗАПУСК ==========
+document.querySelectorAll('.category-card').forEach(card => card.addEventListener('click', () => openPlaceModal(placesData[currentLang].find(p => p.category === card.dataset.category)?.id || 1)));
+initDarkMode(); initFilters();
+const savedLang = localStorage.getItem('lang');
+if (savedLang === 'ky') updateLanguage('ky');
+else { renderPlaces('ru'); loadEvents(); }
+
+if (token) document.getElementById('demoEventContainer')?.remove();
+
+loadAllUsers();
+
+window.sendInvite = sendInvite;
+window.acceptInvite = acceptInvite;
+window.rejectInvite = rejectInvite;
+window.loadInvitesModal = loadInvitesModal;
+window.openPlaceModal = openPlaceModal;
+window.showProfile = showProfile;
+window.goToCreate = goToCreate;
+window.openChat = openChat;
+window.joinEvent = window.joinEvent;
+window.editEvent = editEvent;
+window.deleteEvent = deleteEvent;
+window.toggleFaqAnswer = toggleFaqAnswer;
+window.toggleFaqSection = toggleFaqSection;
+</script>
+</body>
+</html>
