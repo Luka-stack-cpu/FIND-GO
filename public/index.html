@@ -531,31 +531,60 @@ let currentLang = 'ru', currentCategory = 'all', currentSearch = '';
 
 function filterPlaces(places) { return places.filter(p => (currentCategory === 'all' || p.category === currentCategory) && (currentSearch === '' || p.name.toLowerCase().includes(currentSearch.toLowerCase()))); }
 function renderPlaces(lang) {
-    const filtered = filterPlaces(placesData[lang]);
+    const allPlaces = placesData[lang];
+    if (!allPlaces) {
+        console.error('Нет данных для языка:', lang);
+        return;
+    }
+    const filteredPlaces = filterPlaces(allPlaces);
     const container = document.getElementById('placesScroll');
-    if (!filtered.length) { container.innerHTML = `<div class="text-center text-muted w-100 py-5">😔 ${currentLang === 'ru' ? 'Ничего не найдено' : 'Эч нерсе табылган жок'}</div>`; return; }
-    container.innerHTML = filtered.map(place => `<div class="place-card" onclick="openPlaceModal(${place.id})"><div class="card-body"><span class="place-tag">${place.tag}</span><h4>${place.name}</h4><p>${place.desc.substring(0, 80)}...</p></div></div>`).join('');
+    if (!container) return;
+    if (!filteredPlaces.length) {
+        container.innerHTML = `<div class="text-center text-muted w-100 py-5">😔 ${currentLang === 'ru' ? 'Ничего не найдено' : 'Эч нерсе табылган жок'}</div>`;
+        return;
+    }
+    container.innerHTML = filteredPlaces.map(place => `
+        <div class="place-card" onclick="openPlaceModal(${place.id})">
+            <div class="card-body">
+                <span class="place-tag">${place.tag || ''}</span>
+                <h4>${place.name || 'Без названия'}</h4>
+                <p>${place.desc ? place.desc.substring(0, 80) : 'Описание отсутствует'}...</p>
+            </div>
+        </div>
+    `).join('');
 }
 
 // ========== 9. МОДАЛЬНОЕ ОКНО МЕСТА ==========
 function openPlaceModal(placeId) {
     window.currentPlaceModalId = placeId;
+    
+    // Проверка, что placesData[currentLang] существует
+    if (!placesData[currentLang]) {
+        console.error('Ошибка: нет данных для языка', currentLang);
+        alert('Ошибка загрузки данных. Попробуйте обновить страницу.');
+        return;
+    }
+    
     const place = placesData[currentLang].find(p => p.id === placeId);
-    if (!place) return;
+    if (!place) {
+        console.error('Место не найдено:', placeId, 'Язык:', currentLang);
+        alert('Информация о месте временно недоступна');
+        return;
+    }
 
     // Левая карточка
     const imgHtml = place.img ? `<img src="${place.img}" class="place-detail-img" alt="${place.name}">` : `<div class="place-detail-img"><i class="bi bi-building fs-1"></i></div>`;
     const leftHtml = `
         ${imgHtml}
         <h4><i class="bi bi-geo-alt-fill text-primary"></i> ${place.name}</h4>
-        <p class="mt-2 text-muted">${place.desc}</p>
+        <p class="mt-2 text-muted">${place.desc || 'Описание отсутствует'}</p>
         <div class="mt-3">
             <p><i class="bi bi-geo-alt"></i> <strong>Адрес:</strong> ${place.address || 'Не указан'}</p>
             <p><i class="bi bi-telephone"></i> <strong>Телефон:</strong> ${place.phone || 'Не указан'}</p>
         </div>
         <div class="mt-4 d-flex flex-wrap gap-2">
-            <a href="${place.gisLink}" target="_blank" class="btn btn-outline-primary btn-sm"><i class="bi bi-map"></i> 2ГИС</a>
-            <a href="https://instagram.com/${place.instagram}" target="_blank" class="btn btn-outline-danger btn-sm"><i class="bi bi-instagram"></i> Instagram</a>
+            <a href="${place.gisLink || '#'}" target="_blank" class="btn btn-outline-primary btn-sm"><i class="bi bi-map"></i> 2ГИС</a>
+            <a href="https://instagram.com/${place.instagram || ''}" target="_blank" class="btn btn-outline-danger btn-sm"><i class="bi bi-instagram"></i> Instagram</a>
             <button class="btn btn-primary btn-sm" onclick="goToCreate('${place.name.replace(/'/g, "\\'")}')"><i class="bi bi-plus-circle"></i> Создать поход</button>
         </div>
     `;
@@ -568,20 +597,22 @@ function openPlaceModal(placeId) {
     } else {
         rightHtml += `<div class="users-list">`;
         users.forEach(user => {
+            if (!user) return; // пропускаем undefined пользователей
             const isOutgoing = invites.some(i => i.fromUserId === currentUser.id && i.toUserId === user.id && i.status === 'pending');
             const isAccepted = invites.some(i => i.fromUserId === user.id && i.toUserId === currentUser.id && i.status === 'accepted');
             const buttonDisabled = isOutgoing || isAccepted;
             const buttonText = isOutgoing ? 'Приглашение отправлено' : (isAccepted ? 'Участник' : 'Пригласить');
+            const userBio = user.bio ? user.bio.substring(0, 40) : '';
             rightHtml += `
                 <div class="user-item-compact" onclick="showProfile(${user.id})">
                     <div class="user-info-compact">
-                        <img src="${user.avatar}" class="user-avatar-small" alt="${user.name}">
+                        <img src="${user.avatar || 'https://api.dicebear.com/7.x/avataaars/svg?seed=default'}" class="user-avatar-small" alt="${user.name || 'Пользователь'}">
                         <div>
-                            <div class="user-name-compact">${user.name}</div>
-                            <small class="text-muted">${user.bio.substring(0, 40)}</small>
+                            <div class="user-name-compact">${user.name || 'Пользователь'}</div>
+                            <small class="text-muted">${userBio}</small>
                         </div>
                     </div>
-                    ${user.id !== currentUser.id ? `<button class="invite-btn-small" onclick="event.stopPropagation(); sendInvite(${user.id}, '${user.name}', '${place.name}')" ${buttonDisabled ? 'disabled' : ''}>${buttonText}</button>` : ''}
+                    ${user.id !== currentUser.id ? `<button class="invite-btn-small" onclick="event.stopPropagation(); sendInvite(${user.id}, '${user.name || 'Пользователь'}', '${place.name}')" ${buttonDisabled ? 'disabled' : ''}>${buttonText}</button>` : ''}
                 </div>
             `;
         });
