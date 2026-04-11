@@ -23,6 +23,20 @@
         .avatar-option:hover { transform: scale(1.1); }
         .avatar-option.selected { border-color: #667eea; transform: scale(1.05); }
         @media (max-width: 600px) { .profile-avatar { width: 80px; height: 80px; } }
+        .spinner-border-sm {
+    width: 1rem;
+    height: 1rem;
+    border-width: 0.2em;
+}
+
+@keyframes spinner-border {
+    to { transform: rotate(360deg); }
+}
+
+.spinner-border {
+    display: inline-block;
+    animation: spinner-border 0.75s linear infinite;
+}
     </style>
 </head>
 <body>
@@ -170,41 +184,59 @@
 }
 initDarkMode();
     
-    // ========== СОХРАНЕНИЕ ПРОФИЛЯ (ИСПРАВЛЕНО) ==========
-    async function saveProfile(event) {
-        const categories = [];
-        document.querySelectorAll('.category-badge.selected').forEach(badge => {
-            categories.push(badge.getAttribute('data-category'));
-        });
-        
-        const fact1 = document.getElementById('fact1Text').innerText;
-        const fact2 = document.getElementById('fact2Text').innerText;
-        const avatar = document.getElementById('avatar').src;
-        
-        const updatedProfile = { avatar, categories, fact1, fact2 };
-        
-        localStorage.setItem('profile', JSON.stringify(updatedProfile));
-        localStorage.setItem('userInterests', JSON.stringify(categories));
-        
-        // Отправка на сервер
-        if (token) {
-            try {
-                const response = await fetch('/api/auth/interests', {
-                    method: 'PUT',
-                    headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ interests: categories })
-                });
-                if (response.ok) console.log('✅ Интересы сохранены на сервере');
-                else console.error('Ошибка сохранения интересов на сервере');
-            } catch (error) { console.error('Ошибка:', error); }
+  // ========== СОХРАНЕНИЕ ПРОФИЛЯ ==========
+async function saveProfile(event) {
+    // Собираем категории
+    const categories = [];
+    document.querySelectorAll('.category-badge.selected').forEach(badge => {
+        categories.push(badge.getAttribute('data-category'));
+    });
+    
+    // Собираем факты и аватар
+    const fact1 = document.getElementById('fact1Text').innerText;
+    const fact2 = document.getElementById('fact2Text').innerText;
+    const avatar = document.getElementById('avatar').src;
+    
+    const updatedProfile = { avatar, categories, fact1, fact2 };
+    
+    // Сохраняем локально
+    localStorage.setItem('profile', JSON.stringify(updatedProfile));
+    localStorage.setItem('userInterests', JSON.stringify(categories));
+    
+    // Показываем загрузку
+    const saveBtn = document.querySelector('.btn-save');
+    const originalText = saveBtn.innerHTML;
+    saveBtn.disabled = true;
+    saveBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Сохранение...';
+    
+    // Отправка на сервер
+    if (token) {
+        try {
+            const response = await fetch('/api/auth/interests', {
+                method: 'PUT',
+                headers: { 
+                    'Authorization': `Bearer ${token}`, 
+                    'Content-Type': 'application/json' 
+                },
+                body: JSON.stringify({ interests: categories })
+            });
+            if (response.ok) {
+                showToast('✅ Профиль сохранён!', 'success');
+            } else {
+                showToast('⚠️ Ошибка при сохранении на сервере', 'warning');
+            }
+        } catch (error) { 
+            console.error('Ошибка:', error);
+            showToast('⚠️ Ошибка соединения с сервером', 'warning');
         }
-        
-        const btn = event.target;
-        const originalText = btn.innerHTML;
-        btn.innerHTML = '<i class="bi bi-check-lg"></i> Сохранено!';
-        setTimeout(() => { btn.innerHTML = originalText; }, 2000);
-        alert('Профиль сохранён!');
+    } else {
+        showToast('✅ Профиль сохранён локально', 'success');
     }
+    
+    // Восстанавливаем кнопку
+    saveBtn.disabled = false;
+    saveBtn.innerHTML = originalText;
+}
     
     loadProfile();
 </script>
