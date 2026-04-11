@@ -235,36 +235,46 @@
 <!-- Навбар -->
 <nav class="navbar navbar-expand-lg fixed-top">
     <div class="container">
-        <button class="btn-menu me-2" type="button" data-bs-toggle="offcanvas" data-bs-target="#sidebarMenu"><i class="bi bi-list"></i></button>
+        <button class="btn-menu me-2" type="button" data-bs-toggle="offcanvas" data-bs-target="#sidebarMenu">
+            <i class="bi bi-list"></i>
+        </button>
         <a class="navbar-brand" href="/"><i class="bi bi-compass-fill"></i> Find&Go</a>
-        <div class="search-container ms-auto me-3"><div class="search-wrapper"><i class="bi bi-search search-icon"></i><input type="text" id="searchInput" class="search-input" placeholder="Поиск мест..."></div></div>
+        
+        <!-- Поиск -->
+        <div class="search-container ms-auto me-3">
+            <div class="search-wrapper">
+                <i class="bi bi-search search-icon"></i>
+                <input type="text" id="searchInput" class="search-input" placeholder="Поиск мест...">
+            </div>
+        </div>
+        
+        <!-- Правая группа -->
         <div class="d-flex align-items-center gap-2">
+            <!-- Колокольчик -->
             <div class="position-relative">
                 <button id="notificationsBtn" class="btn btn-link position-relative" style="color: var(--bs-body-color);">
                     <i class="bi bi-bell fs-5"></i>
                     <span id="notificationsBadge" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="display: none;">0</span>
                 </button>
             </div>
-            <div class="d-flex align-items-center gap-2">
-    <!-- Существующие иконки -->
-    <div class="position-relative">...</div>
-    <button class="btn btn-link" onclick="loadInvitesModal(); return false;">...</button>
-    <!-- НОВАЯ КНОПКА -->
-    <a href="/create-event.html" class="btn btn-sm btn-success">
-        <i class="bi bi-plus-circle"></i> Создать поход
-    </a>
-    <!-- Аватар и выход -->
-    <div id="userProfileLink" style="cursor: pointer; display: flex; align-items: center; gap: 8px;">...</div>
-    <button id="logoutBtn" class="btn btn-logout">...</button>
-</div>
+            
+            <!-- Конверт (приглашения) -->
             <button class="btn btn-link" onclick="loadInvitesModal(); return false;" style="color: var(--bs-body-color);">
                 <i class="bi bi-envelope-paper fs-5"></i>
             </button>
-            <!-- Кликабельный блок: аватар + имя -->
+            
+            <!-- Кнопка создания похода (одна) -->
+            <a href="/create-event.html" class="btn btn-sm btn-success">
+                <i class="bi bi-plus-circle"></i> Создать поход
+            </a>
+            
+            <!-- Аватар и имя (кликабельно) -->
             <div id="userProfileLink" style="cursor: pointer; display: flex; align-items: center; gap: 8px;">
                 <img id="headerAvatar" src="https://api.dicebear.com/7.x/avataaars/svg?seed=default" width="32" height="32" class="rounded-circle" style="object-fit: cover;">
                 <span id="userName" class="fw-bold" style="color: var(--bs-body-color);"></span>
             </div>
+            
+            <!-- Выход -->
             <button id="logoutBtn" class="btn btn-logout"><span data-lang-key="logout">Выйти</span></button>
         </div>
     </div>
