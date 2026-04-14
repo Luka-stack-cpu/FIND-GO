@@ -80,14 +80,18 @@
                 alert('Ошибка при регистрации');
             }
         });
-        const submitBtn = document.querySelector('button[type="submit"]');
-        const originalText = submitBtn.innerHTML;
-        submitBtn.disabled = true;
-        submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Вход...';
-
-        // ... после ответа
-        submitBtn.disabled = false;
-        submitBtn.innerHTML = originalText;
+ document.getElementById('loginForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const submitBtn = document.querySelector('button[type="submit"]');
+    const originalText = submitBtn.innerHTML;
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Вход...';
+    
+    // ... fetch ...
+    
+    submitBtn.disabled = false;
+    submitBtn.innerHTML = originalText;
+});
     </script>
 </body>
 </html>

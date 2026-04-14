@@ -1,7 +1,5 @@
 const { DataTypes } = require('sequelize');
 const sequelize = require('../config/database');
-const User = require('./User');
-const Place = require('./Place');
 
 const Event = sequelize.define('Event', {
   id: {
@@ -11,19 +9,11 @@ const Event = sequelize.define('Event', {
   },
   creatorId: {
     type: DataTypes.INTEGER,
-    allowNull: false,
-    references: {
-      model: User,
-      key: 'id'
-    }
+    allowNull: false
   },
   placeId: {
     type: DataTypes.INTEGER,
-    allowNull: false,
-    references: {
-      model: Place,
-      key: 'id'
-    }
+    allowNull: false
   },
   datetime: {
     type: DataTypes.DATE,
@@ -42,9 +32,5 @@ const Event = sequelize.define('Event', {
     defaultValue: ''
   }
 });
-
-Event.belongsTo(User, { as: 'creator', foreignKey: 'creatorId' });
-Event.belongsTo(Place, { as: 'place', foreignKey: 'placeId' });
-Event.belongsToMany(User, { through: 'EventParticipants', as: 'participants' });
 
 module.exports = Event;
