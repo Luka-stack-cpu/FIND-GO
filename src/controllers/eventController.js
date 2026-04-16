@@ -1,4 +1,5 @@
 const { Event, Place, User, Message } = require('../models');
+const db = require('../models'); // для доступа к sequelize
 
 // Создать событие
 exports.createEvent = async (req, res) => {
@@ -34,9 +35,16 @@ exports.getActiveEvents = async (req, res) => {
     });
     
     const eventsWithCount = await Promise.all(events.map(async (event) => {
-      const participants = await event.getParticipants();
-      const participantsCount = participants.length;
-      const participantIds = participants.map(p => p.id);
+      const [result] = await db.sequelize.query(
+        'SELECT COUNT(*) as count FROM EventParticipants WHERE EventId = ?',
+        { replacements: [event.id], type: db.sequelize.QueryTypes.SELECT }
+      );
+      const participantsCount = result ? result.count : 0;
+      const participantsRows = await db.sequelize.query(
+        'SELECT UserId FROM EventParticipants WHERE EventId = ?',
+        { replacements: [event.id], type: db.sequelize.QueryTypes.SELECT }
+      );
+      const participantIds = participantsRows.map(row => row.UserId);
       
       return {
         ...event.toJSON(),
@@ -63,31 +71,52 @@ exports.joinEvent = async (req, res) => {
       return res.status(404).json({ message: 'Событие не найдено' });
     }
     
-    const participantsCount = await event.countParticipants();
-    if (participantsCount >= event.maxParticipants) {
+    // Проверяем, не присоединился ли уже
+    const [existing] = await db.sequelize.query(
+      'SELECT 1 FROM EventParticipants WHERE EventId = ? AND UserId = ?',
+      { replacements: [eventId, userId], type: db.sequelize.QueryTypes.SELECT }
+    );
+    if (existing) {
+      return res.status(400).json({ message: 'Вы уже присоединились к этому походу' });
+    }
+    
+    // Считаем текущих участников
+    const [countResult] = await db.sequelize.query(
+      'SELECT COUNT(*) as count FROM EventParticipants WHERE EventId = ?',
+      { replacements: [eventId], type: db.sequelize.QueryTypes.SELECT }
+    );
+    if (countResult.count >= event.maxParticipants) {
       return res.status(400).json({ message: 'Максимум участников достигнут' });
     }
     
-    await event.addParticipant(userId);
-    const updatedEvent = await Event.findByPk(eventId, {
-      include: [
-        { model: Place, as: 'place' },
-        { model: User, as: 'participants', attributes: ['id', 'name'] }
-      ]
-    });
+    // Добавляем
+    const now = new Date();
+    await db.sequelize.query(
+      `INSERT INTO EventParticipants (EventId, UserId, createdAt, updatedAt)
+       VALUES (?, ?, ?, ?)`,
+      { replacements: [eventId, userId, now, now], type: db.sequelize.QueryTypes.INSERT }
+    );
     
-    const participantsList = await updatedEvent.getParticipants();
+    // Получаем обновлённый список участников
+    const participantsRows = await db.sequelize.query(
+      'SELECT UserId FROM EventParticipants WHERE EventId = ?',
+      { replacements: [eventId], type: db.sequelize.QueryTypes.SELECT }
+    );
+    const participantsCount = participantsRows.length;
+    const participantIds = participantsRows.map(row => row.UserId);
+    
     res.json({
-      ...updatedEvent.toJSON(),
-      participantsCount: participantsList.length,
-      participants: participantsList.map(p => p.id)
+      ...event.toJSON(),
+      participantsCount,
+      participants: participantIds
     });
   } catch (error) {
-    console.error(error);
+    console.error('Ошибка joinEvent:', error);
     res.status(500).json({ message: 'Ошибка при присоединении' });
   }
 };
 
+// Редактировать событие
 exports.updateEvent = async (req, res) => {
   try {
     const eventId = req.params.id;
@@ -106,6 +135,7 @@ exports.updateEvent = async (req, res) => {
   }
 };
 
+// Удалить событие
 exports.deleteEvent = async (req, res) => {
   try {
     const eventId = req.params.id;
@@ -123,6 +153,7 @@ exports.deleteEvent = async (req, res) => {
   }
 };
 
+// Получить событие по ID (с участниками)
 exports.getEventById = async (req, res) => {
   try {
     const event = await Event.findByPk(req.params.id, {
@@ -135,11 +166,17 @@ exports.getEventById = async (req, res) => {
       return res.status(404).json({ message: 'Поход не найден' });
     }
     
-    const participants = await event.getParticipants();
+    const participantsRows = await db.sequelize.query(
+      'SELECT UserId FROM EventParticipants WHERE EventId = ?',
+      { replacements: [event.id], type: db.sequelize.QueryTypes.SELECT }
+    );
+    const participantsCount = participantsRows.length;
+    const participantIds = participantsRows.map(row => row.UserId);
+    
     res.json({
       ...event.toJSON(),
-      participantsCount: participants.length,
-      participants: participants.map(p => p.id)
+      participantsCount,
+      participants: participantIds
     });
   } catch (error) {
     console.error(error);
@@ -147,6 +184,7 @@ exports.getEventById = async (req, res) => {
   }
 };
 
+// Получить сообщения чата
 exports.getEventMessages = async (req, res) => {
   try {
     const messages = await Message.findAll({
@@ -160,18 +198,19 @@ exports.getEventMessages = async (req, res) => {
   }
 };
 
+// Получить участников события
 exports.getEventParticipants = async (req, res) => {
-    try {
-        const event = await Event.findByPk(req.params.id);
-        if (!event) {
-            return res.status(404).json({ message: 'Поход не найден' });
-        }
-        const participants = await event.getParticipants({
-            attributes: ['id', 'name']
-        });
-        res.json(participants);
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ message: 'Ошибка загрузки участников' });
-    }
+  try {
+    const eventId = req.params.id;
+    const participantsRows = await db.sequelize.query(
+      `SELECT Users.id, Users.name FROM EventParticipants
+       JOIN Users ON EventParticipants.UserId = Users.id
+       WHERE EventParticipants.EventId = ?`,
+      { replacements: [eventId], type: db.sequelize.QueryTypes.SELECT }
+    );
+    res.json(participantsRows);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Ошибка загрузки участников' });
+  }
 };
