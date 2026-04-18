@@ -548,60 +548,43 @@ function addNotification(title, message, targetUserId) {
     }
 }
 // ========== 5. ПРИГЛАШЕНИЯ ==========
-let invites = JSON.parse(localStorage.getItem('invites') || '[]');
-function saveInvites() { localStorage.setItem('invites', JSON.stringify(invites)); }
 
-function sendInvite(toUserId, toUserName, placeName) {
-    if (invites.some(i => i.fromUserId === currentUser.id && i.toUserId === toUserId && i.status === 'pending')) { alert('Приглашение уже отправлено!'); return; }
-    const invite = { id: Date.now(), fromUserId: currentUser.id, fromUserName: currentUser.name, toUserId, toUserName, placeName, status: 'pending', createdAt: new Date().toISOString() };
-    invites.push(invite); saveInvites();
-    addNotification('📨 Новое приглашение', `${currentUser.name} приглашает вас в поход в "${placeName}"`, toUserId);
-    alert(`Приглашение отправлено ${toUserName}!`);
-    
-    // Закрываем модальное окно места и остаёмся на главной
-    const modal = bootstrap.Modal.getInstance(document.getElementById('placeDetailTwoColumnsModal'));
-    if (modal) modal.hide();
-    // Перезагружаем события, чтобы обновить кнопки чата (если нужно)
-    loadEvents();
-    // Обновляем список пользователей (если модальное окно закроется и откроется снова)
-    if (window.currentPlaceModalId) window.currentPlaceModalId = null;
-    const btn = event.target;
-const originalText = btn.innerHTML;
-btn.disabled = true;
-btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>';
+// ========== ПРИГЛАШЕНИЯ (РАБОТАЮТ ЧЕРЕЗ API) ==========
 
-// ... после отправки
-btn.disabled = false;
-btn.innerHTML = originalText;
-}
-
-function acceptInvite(id) {
-    const inv = invites.find(i => i.id === id);
-    if (inv && inv.status === 'pending') {
-        inv.status = 'accepted'; saveInvites();
-        addNotification('✅ Приглашение принято', `${currentUser.name} принял приглашение в "${inv.placeName}"`, inv.fromUserId);
-        alert(`Вы приняли приглашение от ${inv.fromUserName}! Теперь вы можете общаться в чате.`);
-        loadInvitesModal();
-        loadEvents();
+// Отправить приглашение
+async function sendInvite(toUserId, toUserName, placeName) {
+    try {
+        const response = await fetch('/api/invite', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({ toUserId, placeName })
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            showToast(`✅ Приглашение отправлено пользователю ${toUserName}!`, 'success');
+            // Обновляем модальное окно, если открыто
+            if (window.currentPlaceModalId) {
+                openPlaceModal(window.currentPlaceModalId);
+            }
+        } else {
+            showToast(data.message || '❌ Ошибка при отправке', 'danger');
+        }
+    } catch (error) {
+        console.error('Ошибка:', error);
+        showToast('❌ Ошибка соединения', 'danger');
     }
 }
 
-function rejectInvite(id) {
-    const inv = invites.find(i => i.id === id);
-    if (inv && inv.status === 'pending') {
-        inv.status = 'rejected'; saveInvites();
-        addNotification('❌ Приглашение отклонено', `${currentUser.name} отклонил приглашение в "${inv.placeName}"`, inv.fromUserId);
-        alert(`Вы отклонили приглашение от ${inv.fromUserName}`);
-        loadInvitesModal();
-        loadEvents();
-    }
-}
-
+// Загрузить и показать модальное окно с приглашениями
 async function loadInvitesModal() {
     const modalBody = document.getElementById('invitesModalBody');
     const modal = new bootstrap.Modal(document.getElementById('invitesModal'));
     
-    // Показываем загрузку
     modalBody.innerHTML = `
         <div class="text-center py-5">
             <div class="spinner-border text-primary"></div>
@@ -611,12 +594,16 @@ async function loadInvitesModal() {
     modal.show();
     
     try {
-        // Здесь можно добавить API для загрузки приглашений с сервера
-        // пока используем localStorage
-        const incoming = invites.filter(i => i.toUserId === currentUser.id && i.status === 'pending');
-        const outgoing = invites.filter(i => i.fromUserId === currentUser.id);
+        const response = await fetch('/api/invites', {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await response.json();
         
-        // ========== ПУСТЫЕ СОСТОЯНИЯ ==========
+        if (!response.ok) throw new Error(data.message);
+        
+        const incoming = data.incoming || [];
+        const outgoing = data.outgoing || [];
+        
         let incomingHtml = '';
         let outgoingHtml = '';
         
@@ -625,28 +612,28 @@ async function loadInvitesModal() {
                 <div class="text-center py-4 text-muted">
                     <i class="bi bi-inbox fs-3"></i>
                     <p class="mb-0">Нет входящих приглашений</p>
-                    <small>Пригласите друга из карточки места</small>
                 </div>
             `;
         } else {
-            incomingHtml = incoming.map(i => `
+            incomingHtml = incoming.map(inv => `
                 <div class="border-bottom pb-3 mb-3">
                     <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
                         <div>
-                            <strong>${escapeHtml(i.fromUserName)}</strong>
+                            <strong>${escapeHtml(inv.fromUser?.name || 'Пользователь')}</strong>
                             <p class="small text-muted mb-0 mt-1">
-                                <i class="bi bi-geo-alt"></i> Приглашает в "${escapeHtml(i.placeName)}"
+                                <i class="bi bi-geo-alt"></i> Приглашает в "${escapeHtml(inv.placeName)}"
                             </p>
                         </div>
-                        <div class="btn-group">
-                            <button class="btn btn-sm btn-success" onclick="acceptInvite(${i.id})">
+                        <div>
+                            <button class="btn btn-sm btn-success me-1" onclick="acceptInvite(${inv.id})">
                                 <i class="bi bi-check-lg"></i> Принять
                             </button>
-                            <button class="btn btn-sm btn-danger" onclick="rejectInvite(${i.id})">
+                            <button class="btn btn-sm btn-danger" onclick="rejectInvite(${inv.id})">
                                 <i class="bi bi-x-lg"></i> Отклонить
                             </button>
                         </div>
                     </div>
+                    <small class="text-muted">${new Date(inv.createdAt).toLocaleString()}</small>
                 </div>
             `).join('');
         }
@@ -656,29 +643,27 @@ async function loadInvitesModal() {
                 <div class="text-center py-4 text-muted">
                     <i class="bi bi-send fs-3"></i>
                     <p class="mb-0">Нет отправленных приглашений</p>
-                    <small>Пригласите друга из карточки места</small>
                 </div>
             `;
         } else {
-            outgoingHtml = outgoing.map(i => `
+            outgoingHtml = outgoing.map(inv => `
                 <div class="border-bottom pb-3 mb-3">
                     <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
                         <div>
-                            <strong>${escapeHtml(i.toUserName)}</strong>
+                            <strong>${escapeHtml(inv.toUser?.name || 'Пользователь')}</strong>
                             <p class="small mb-0 mt-1">
-                                <i class="bi bi-geo-alt"></i> "${escapeHtml(i.placeName)}"
+                                <i class="bi bi-geo-alt"></i> "${escapeHtml(inv.placeName)}"
                             </p>
                         </div>
-                        <span class="badge ${i.status === 'pending' ? 'bg-warning' : i.status === 'accepted' ? 'bg-success' : 'bg-danger'}">
-                            ${i.status === 'pending' ? '⏳ Ожидает' : i.status === 'accepted' ? '✅ Принято' : '❌ Отклонено'}
+                        <span class="badge ${inv.status === 'pending' ? 'bg-warning' : inv.status === 'accepted' ? 'bg-success' : 'bg-danger'}">
+                            ${inv.status === 'pending' ? '⏳ Ожидает' : inv.status === 'accepted' ? '✅ Принято' : '❌ Отклонено'}
                         </span>
                     </div>
-                    <small class="text-muted">${new Date(i.createdAt).toLocaleString()}</small>
+                    <small class="text-muted">${new Date(inv.createdAt).toLocaleString()}</small>
                 </div>
             `).join('');
         }
         
-        // ========== ОСНОВНОЙ HTML ==========
         modalBody.innerHTML = `
             <div class="mb-4">
                 <h6 class="mb-3"><i class="bi bi-inbox-fill text-primary"></i> Входящие приглашения</h6>
@@ -691,7 +676,7 @@ async function loadInvitesModal() {
         `;
         
     } catch (error) {
-        console.error('Ошибка загрузки приглашений:', error);
+        console.error('Ошибка:', error);
         modalBody.innerHTML = `
             <div class="text-center py-5 text-danger">
                 <i class="bi bi-exclamation-triangle fs-1"></i>
@@ -701,6 +686,47 @@ async function loadInvitesModal() {
                 </button>
             </div>
         `;
+    }
+}
+
+// Принять приглашение
+async function acceptInvite(inviteId) {
+    try {
+        const response = await fetch(`/api/invite/${inviteId}/accept`, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await response.json();
+        
+        if (response.ok) {
+            showToast('✅ Приглашение принято!', 'success');
+            loadInvitesModal(); // обновляем модальное окно
+            loadEvents(); // обновляем список походов (может появиться кнопка чата)
+        } else {
+            showToast(data.message || '❌ Ошибка', 'danger');
+        }
+    } catch (error) {
+        showToast('❌ Ошибка соединения', 'danger');
+    }
+}
+
+// Отклонить приглашение
+async function rejectInvite(inviteId) {
+    try {
+        const response = await fetch(`/api/invite/${inviteId}/reject`, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await response.json();
+        
+        if (response.ok) {
+            showToast('❌ Приглашение отклонено', 'info');
+            loadInvitesModal();
+        } else {
+            showToast(data.message || '❌ Ошибка', 'danger');
+        }
+    } catch (error) {
+        showToast('❌ Ошибка соединения', 'danger');
     }
 }
 
@@ -851,7 +877,9 @@ function openPlaceModal(placeId) {
                             <small class="text-muted">${userBio}</small>
                         </div>
                     </div>
-                    ${user.id !== currentUser.id ? `<button class="invite-btn-small" onclick="event.stopPropagation(); sendInvite(${user.id}, '${user.name || 'Пользователь'}', '${place.name}')" ${buttonDisabled ? 'disabled' : ''}>${buttonText}</button>` : ''}
+                    ${user.id !== currentUser.id ? `<button class="invite-btn-small" onclick="event.stopPropagation(); sendInvite(${user.id}, '${user.name}', '${place.name}')" ${buttonDisabled ? 'disabled' : ''}>
+    ${buttonText}
+</button>` : ''}
                 </div>
             `;
         });

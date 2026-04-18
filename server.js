@@ -12,6 +12,8 @@ const db = require('./src/models');
 const authRoutes = require('./src/routes/authRoutes');
 const placeRoutes = require('./src/routes/placeRoutes');
 const eventRoutes = require('./src/routes/eventRoutes');
+const inviteRoutes = require('./src/routes/inviteRoutes');
+app.use('/api', inviteRoutes);
 
 app.use(cors());
 app.use(express.json());
