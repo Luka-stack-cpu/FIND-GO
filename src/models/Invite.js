@@ -23,15 +23,12 @@ const Invite = sequelize.define('Invite', {
   },
   status: {
     type: DataTypes.STRING,
-    defaultValue: 'pending' // pending, accepted, rejected
+    defaultValue: 'pending'
   },
   createdAt: {
     type: DataTypes.DATE,
     defaultValue: DataTypes.NOW
   }
 });
-
-Invite.belongsTo(User, { as: 'fromUser', foreignKey: 'fromUserId' });
-Invite.belongsTo(User, { as: 'toUser', foreignKey: 'toUserId' });
 
 module.exports = Invite;

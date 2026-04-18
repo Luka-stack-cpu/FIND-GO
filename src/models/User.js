@@ -32,7 +32,6 @@ const User = sequelize.define('User', {
     type: DataTypes.TEXT,
     defaultValue: ''
   },
-
   interests: {
     type: DataTypes.TEXT,
     defaultValue: '[]',
@@ -43,7 +42,7 @@ const User = sequelize.define('User', {
     set(value) {
         this.setDataValue('interests', JSON.stringify(value));
     }
-}
+  }
 }, {
   hooks: {
     beforeCreate: async (user) => {
@@ -55,8 +54,5 @@ const User = sequelize.define('User', {
 User.prototype.comparePassword = async function(password) {
   return bcrypt.compare(password, this.password);
 };
-
-User.hasMany(Invite, { as: 'sentInvites', foreignKey: 'fromUserId' });
-User.hasMany(Invite, { as: 'receivedInvites', foreignKey: 'toUserId' });
 
 module.exports = User;
