@@ -823,7 +823,6 @@ function renderPlaces(lang) {
 function openPlaceModal(placeId) {
     window.currentPlaceModalId = placeId;
     
-    // Проверка, что placesData[currentLang] существует
     if (!placesData[currentLang]) {
         console.error('Ошибка: нет данных для языка', currentLang);
         alert('Ошибка загрузки данных. Попробуйте обновить страницу.');
@@ -854,47 +853,32 @@ function openPlaceModal(placeId) {
         </div>
     `;
 
-    // Правая карточка
+    // Правая карточка — пользователи (без проверки invites, так как приглашения теперь через API)
     const users = getInterestedUsers(place.category);
     let rightHtml = `<h5 class="mb-3"><i class="bi bi-people-fill"></i> Кому это интересно</h5>`;
+    
     if (!users.length) {
         rightHtml += `<p class="text-muted text-center py-3">Пока никто не добавил эту категорию</p>`;
     } else {
         rightHtml += `<div class="users-list">`;
         users.forEach(user => {
-            if (!user) return; // пропускаем undefined пользователей
-            const isOutgoing = invites.some(i => i.fromUserId === currentUser.id && i.toUserId === user.id && i.status === 'pending');
-            const isAccepted = invites.some(i => i.fromUserId === user.id && i.toUserId === currentUser.id && i.status === 'accepted');
-            const buttonDisabled = isOutgoing || isAccepted;
-            const buttonText = isOutgoing ? 'Приглашение отправлено' : (isAccepted ? 'Участник' : 'Пригласить');
-            const userBio = user.bio ? user.bio.substring(0, 40) : '';
+            // Проверяем статус приглашения через API (асинхронно, но для простоты пока убираем проверку)
+            const buttonText = 'Пригласить';
             rightHtml += `
                 <div class="user-item-compact" onclick="showProfile(${user.id})">
                     <div class="user-info-compact">
-                        <img src="${user.avatar || 'https://api.dicebear.com/7.x/avataaars/svg?seed=default'}" class="user-avatar-small" alt="${user.name || 'Пользователь'}">
+                        <img src="${user.avatar}" class="user-avatar-small" alt="${user.name}">
                         <div>
-                            <div class="user-name-compact">${user.name || 'Пользователь'}</div>
-                            <small class="text-muted">${userBio}</small>
+                            <div class="user-name-compact">${user.name}</div>
+                            <small class="text-muted">${user.bio ? user.bio.substring(0, 40) : ''}</small>
                         </div>
                     </div>
-                    ${user.id !== currentUser.id ? `<button class="invite-btn-small" onclick="event.stopPropagation(); sendInvite(${user.id}, '${user.name}', '${place.name}')" ${buttonDisabled ? 'disabled' : ''}>
-    ${buttonText}
-</button>` : ''}
+                    ${user.id !== currentUser.id ? `<button class="invite-btn-small" onclick="event.stopPropagation(); sendInvite(${user.id}, '${user.name}', '${place.name}')">${buttonText}</button>` : ''}
                 </div>
             `;
         });
         rightHtml += `</div>`;
     }
-
-    if (!users.length) {
-    rightHtml = `
-        <div class="text-center py-4 text-muted">
-            <i class="bi bi-people fs-1"></i>
-            <p>Пока никто не добавил эту категорию</p>
-            <small class="text-muted">Выберите интересы в профиле, чтобы вас видели другие</small>
-        </div>
-    `;
-}
 
     document.getElementById('modalLeftCard').innerHTML = leftHtml;
     document.getElementById('modalRightCard').innerHTML = rightHtml;
