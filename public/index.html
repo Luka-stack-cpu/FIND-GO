@@ -740,8 +740,7 @@ async function loadAllUsers() {
         });
         if (res.ok) {
             allUsersList = await res.json();
-        } else {
-            console.warn('Не удалось загрузить пользователей. Используем только ботов.');
+            console.log('✅ Загружено пользователей:', allUsersList.length);
         }
     } catch(e) { console.error(e); }
 }

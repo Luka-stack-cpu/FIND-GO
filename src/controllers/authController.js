@@ -85,11 +85,12 @@ exports.updateInterests = async (req, res) => {
 exports.getInterests = async (req, res) => {
   try {
     const users = await User.findAll({
-      attributes: ['id', 'name', 'interests']
+      attributes: ['id', 'name', 'avatar', 'interests']  
     });
     const formatted = users.map(u => ({
       id: u.id,
       name: u.name,
+      avatar: u.avatar,
       interests: u.interests
     }));
     res.json(formatted);

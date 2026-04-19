@@ -178,6 +178,25 @@ document.getElementById('avatarUpload').addEventListener('change', async (e) => 
     } catch (error) {
         console.error('Ошибка:', error);
         showToast('❌ Ошибка соединения', 'danger');
+        // После успешной загрузки аватара
+if (response.ok) {
+    document.getElementById('avatar').src = data.avatarUrl + '?t=' + Date.now();
+    showToast('✅ Аватар обновлён!', 'success');
+    
+    // Обновляем аватар в localStorage
+    const profile = JSON.parse(localStorage.getItem('profile') || '{}');
+    profile.avatar = data.avatarUrl;
+    localStorage.setItem('profile', JSON.stringify(profile));
+    
+    // Обновляем аватар в шапке (если на той же странице)
+    const headerAvatar = document.getElementById('headerAvatar');
+    if (headerAvatar) headerAvatar.src = data.avatarUrl;
+    
+    // Перезагружаем список пользователей для правой колонки
+    if (typeof loadAllUsers === 'function') {
+        loadAllUsers();
+    }
+}
     }
 });
     
