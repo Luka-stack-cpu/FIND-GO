@@ -6,6 +6,14 @@ const http = require('http');
 const socketIo = require('socket.io');
 const userRoutes = require('./src/routes/userRoutes');
 
+const fs = require('fs');
+
+// Создаём папку для загрузки аватаров, если её нет
+const uploadDir = path.join(__dirname, 'public', 'uploads');
+if (!fs.existsSync(uploadDir)) {
+    fs.mkdirSync(uploadDir, { recursive: true });
+    console.log('📁 Папка uploads создана');
+}
 
 console.log('1. Начало загрузки модулей...');
 
