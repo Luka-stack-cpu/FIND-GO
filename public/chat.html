@@ -492,8 +492,8 @@ document.getElementById('userProfileLink')?.addEventListener('click', () => {
         
         container.innerHTML = messages.map(msg => `
             <div class="message ${msg.userId === user.id ? 'my-message' : ''}">
-                <div class="message-avatar">
-                    ${msg.userName ? msg.userName.charAt(0).toUpperCase() : '?'}
+                <div class="message-avatar" style="background:none; overflow:hidden;">
+                    <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(msg.userName || msg.userId)}" width="36" height="36" style="border-radius:50%; object-fit:cover;" alt="${msg.userName}">
                 </div>
                 <div class="message-bubble">
                     <div class="message-text">${escapeHtml(msg.text)}</div>
@@ -512,13 +512,18 @@ document.getElementById('userProfileLink')?.addEventListener('click', () => {
     if (!container) return;
     container.innerHTML = participants.map(p => `
         <div class="participant-item" onclick="showUserProfile(${p.id})">
-            <div class="participant-avatar">
-                ${p.name ? p.name.charAt(0).toUpperCase() : '?'}
-            </div>
+            <img
+                src="https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(p.name || p.id)}"
+                width="40" height="40"
+                class="rounded-circle flex-shrink-0"
+                style="object-fit:cover; border: 2px solid #667eea;"
+                alt="${p.name}"
+                onerror="this.style.display='none'"
+            >
             <div class="participant-info">
                 <div class="participant-name">
                     ${p.name}
-                    ${p.id === user.id ? ' (Вы)' : ''}
+                    ${p.id === user.id ? ' <span class="badge bg-primary" style="font-size:0.6rem;">Вы</span>' : ''}
                 </div>
             </div>
         </div>
@@ -526,7 +531,12 @@ document.getElementById('userProfileLink')?.addEventListener('click', () => {
 }
 
 function showUserProfile(userId) {
-    window.location.href = `/profile.html?userId=${userId}`;
+    // Если клик на себя — открываем свой профиль, иначе чужой
+    if (userId === user.id) {
+        window.location.href = '/profile.html';
+    } else {
+        window.location.href = `/profile.html?userId=${userId}`;
+    }
 }
     
     // Новое сообщение через сокет
@@ -539,8 +549,8 @@ function showUserProfile(userId) {
         
         const messageHtml = `
             <div class="message ${msg.userId === user.id ? 'my-message' : ''}">
-                <div class="message-avatar">
-                    ${msg.userName ? msg.userName.charAt(0).toUpperCase() : '?'}
+                <div class="message-avatar" style="background:none; overflow:hidden;">
+                    <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(msg.userName || msg.userId)}" width="36" height="36" style="border-radius:50%; object-fit:cover;" alt="${msg.userName}">
                 </div>
                 <div class="message-bubble">
                     <div class="message-text">${escapeHtml(msg.text)}</div>

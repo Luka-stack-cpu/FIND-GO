@@ -16,12 +16,14 @@ exports.register = async (req, res) => {
 
     const user = await User.create({ name, email, password });
 
-    res.status(201).json({
-      id: user.id,
-      name: user.name,
-      email: user.email,
-      token: generateToken(user.id)
-    });
+res.json({
+    id: user.id,
+    name: user.name,
+    email: user.email,
+    avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.name}`,
+    interests: user.interests,
+    token: generateToken(user.id)
+});
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Ошибка сервера' });
@@ -42,12 +44,14 @@ exports.login = async (req, res) => {
       return res.status(401).json({ message: 'Неверный email или пароль' });
     }
 
-    res.json({
-      id: user.id,
-      name: user.name,
-      email: user.email,
-      token: generateToken(user.id)
-    });
+res.json({
+    id: user.id,
+    name: user.name,
+    email: user.email,
+    avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.name}`,
+    interests: user.interests,
+    token: generateToken(user.id)
+});
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Ошибка сервера' });
