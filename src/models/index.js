@@ -3,11 +3,12 @@ const User = require('./User');
 const Place = require('./Place');
 const Event = require('./Event');
 const Message = require('./Message');
-const Invite = require('./Invite');  // ← импорт
+const Invite = require('./Invite');
 
 // ========== АССОЦИАЦИИ ДЛЯ INVITE ==========
 Invite.belongsTo(User, { as: 'fromUser', foreignKey: 'fromUserId' });
 Invite.belongsTo(User, { as: 'toUser', foreignKey: 'toUserId' });
+Invite.belongsTo(Event, { as: 'event', foreignKey: 'eventId' });  // ← НОВОЕ
 User.hasMany(Invite, { as: 'sentInvites', foreignKey: 'fromUserId' });
 User.hasMany(Invite, { as: 'receivedInvites', foreignKey: 'toUserId' });
 
@@ -31,14 +32,13 @@ User.belongsToMany(Event, {
   uniqueKey: false
 });
 
-// ========== ЭКСПОРТ ==========
 const db = {
   sequelize,
   User,
   Place,
   Event,
   Message,
-  Invite  // ← Invite используется здесь, ошибка исчезнет
+  Invite
 };
 
 module.exports = db;

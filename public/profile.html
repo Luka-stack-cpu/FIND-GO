@@ -180,21 +180,23 @@ document.getElementById('avatarUpload').addEventListener('change', async (e) => 
         showToast('❌ Ошибка соединения', 'danger');
         // После успешной загрузки аватара
 if (response.ok) {
-    document.getElementById('avatar').src = data.avatarUrl + '?t=' + Date.now();
     showToast('✅ Аватар обновлён!', 'success');
+    // Принудительно обновляем данные пользователя в localStorage
+    const userData = JSON.parse(localStorage.getItem('user') || '{}');
+    userData.avatar = data.avatarUrl;
+    localStorage.setItem('user', JSON.stringify(userData));
     
-    // Обновляем аватар в localStorage
+    // Обновляем профиль в localStorage
     const profile = JSON.parse(localStorage.getItem('profile') || '{}');
     profile.avatar = data.avatarUrl;
     localStorage.setItem('profile', JSON.stringify(profile));
     
-    // Обновляем аватар в шапке (если на той же странице)
-    const headerAvatar = document.getElementById('headerAvatar');
-    if (headerAvatar) headerAvatar.src = data.avatarUrl;
+    // Обновляем аватар на странице
+    document.getElementById('avatar').src = data.avatarUrl + '?t=' + Date.now();
     
-    // Перезагружаем список пользователей для правой колонки
-    if (typeof loadAllUsers === 'function') {
-        loadAllUsers();
+    // Если есть функция обновления списка пользователей – вызываем её
+    if (typeof window.loadAllUsers === 'function') {
+        window.loadAllUsers();
     }
 }
     }

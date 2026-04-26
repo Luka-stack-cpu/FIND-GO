@@ -552,25 +552,37 @@ function addNotification(title, message, targetUserId) {
 // ========== ПРИГЛАШЕНИЯ (РАБОТАЮТ ЧЕРЕЗ API) ==========
 
 // Отправить приглашение
-async function sendInvite(toUserId, toUserName, placeName) {
+// eventId передаётся из карточки места — это ID похода созданного для этого места
+async function sendInvite(toUserId, toUserName, placeName, eventId) {
     try {
+        // Если eventId не передан — ищем первый активный поход для этого места среди allEvents
+        let targetEventId = eventId;
+        if (!targetEventId) {
+            const matchingEvent = allEvents.find(ev =>
+                ev.place?.name === placeName &&
+                ev.creatorId === currentUser.id &&
+                ev.status === 'active'
+            );
+            if (!matchingEvent) {
+                showToast('❌ Сначала создайте поход для этого места, затем приглашайте', 'danger');
+                return;
+            }
+            targetEventId = matchingEvent.id;
+        }
+
         const response = await fetch('/api/invite', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${token}`
             },
-            body: JSON.stringify({ toUserId, placeName })
+            body: JSON.stringify({ toUserId, placeName, eventId: targetEventId })
         });
         
         const data = await response.json();
         
         if (response.ok) {
             showToast(`✅ Приглашение отправлено пользователю ${toUserName}!`, 'success');
-            // Обновляем модальное окно, если открыто
-            if (window.currentPlaceModalId) {
-                openPlaceModal(window.currentPlaceModalId);
-            }
         } else {
             showToast(data.message || '❌ Ошибка при отправке', 'danger');
         }
@@ -699,9 +711,18 @@ async function acceptInvite(inviteId) {
         const data = await response.json();
         
         if (response.ok) {
-            showToast('✅ Приглашение принято!', 'success');
-            loadInvitesModal(); // обновляем модальное окно
-            loadEvents(); // обновляем список походов (может появиться кнопка чата)
+            // Закрываем модал приглашений
+            const invModal = bootstrap.Modal.getInstance(document.getElementById('invitesModal'));
+            if (invModal) invModal.hide();
+
+            showToast('✅ Вы добавлены в поход! Можете открыть чат.', 'success');
+            await loadEvents(); // обновляем список — появится кнопка 💬 Чат
+
+            // Если сервер вернул eventId — предлагаем сразу перейти в чат
+            if (data.eventId) {
+                const go = confirm(`Вы добавлены в поход "${data.eventPlaceName}"! Перейти в чат?`);
+                if (go) window.location.href = `/chat.html?eventId=${data.eventId}`;
+            }
         } else {
             showToast(data.message || '❌ Ошибка', 'danger');
         }
@@ -740,7 +761,10 @@ async function loadAllUsers() {
         });
         if (res.ok) {
             allUsersList = await res.json();
-            console.log('✅ Загружено пользователей:', allUsersList.length);
+            // Обновляем правую колонку, если модальное окно открыто
+            if (window.currentPlaceModalId) {
+                openPlaceModal(window.currentPlaceModalId);
+            }
         }
     } catch(e) { console.error(e); }
 }
@@ -936,6 +960,7 @@ async function loadEvents() {
         });
         if (!response.ok) throw new Error('Ошибка загрузки');
         const events = await response.json();
+        allEvents = events; // ← сохраняем глобально для sendInvite
         
         if (events.length === 0) {
             // ========== ПУСТОЕ СОСТОЯНИЕ ==========

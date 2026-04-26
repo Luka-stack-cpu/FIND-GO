@@ -21,6 +21,11 @@ const Invite = sequelize.define('Invite', {
     type: DataTypes.STRING,
     allowNull: false
   },
+  eventId: {
+    type: DataTypes.INTEGER,
+    allowNull: true,             // ← allowNull: true чтобы alter не ломал старые записи
+    references: { model: 'Events', key: 'id' }
+  },
   status: {
     type: DataTypes.STRING,
     defaultValue: 'pending'
