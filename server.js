@@ -40,8 +40,8 @@ const placeRoutes  = require('./src/routes/placeRoutes');
 const eventRoutes  = require('./src/routes/eventRoutes');
 const inviteRoutes = require('./src/routes/inviteRoutes');
 const userRoutes   = require('./src/routes/userRoutes');
-// ✅ БАГ 9: подключаем маршруты уведомлений
 const notificationRoutes = require('./src/routes/notificationRoutes');
+const reviewRoutes = require('./src/routes/reviewRoutes');
 
 app.use('/api/auth', authRoutes);
 app.use('/api', placeRoutes);
@@ -49,6 +49,7 @@ app.use('/api', eventRoutes);
 app.use('/api', inviteRoutes);
 app.use('/api', userRoutes);
 app.use('/api', notificationRoutes);
+app.use('/api/reviews', reviewRoutes);
 
 app.get('/api/health', (req, res) => {
     res.json({ status: 'ok', uptime: process.uptime(), timestamp: new Date().toISOString() });

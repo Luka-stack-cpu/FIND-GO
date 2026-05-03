@@ -102,6 +102,28 @@
                 </div>
             </div>
             
+            <!-- Рейтинг и отзывы -->
+            <div class="profile-card">
+                <h4><i class="bi bi-star-fill text-warning"></i> Рейтинг и отзывы</h4>
+                <div class="row align-items-center mb-4">
+                    <div class="col-4 text-center">
+                        <h1 class="display-3 fw-bold mb-0" id="avgRatingValue">0.0</h1>
+                        <div class="text-warning fs-4">
+                            <i class="bi bi-star-fill"></i>
+                        </div>
+                        <div class="text-muted small mt-1" id="reviewsCount">0 отзывов</div>
+                    </div>
+                    <div class="col-8">
+                        <p class="text-muted small mb-0">Рейтинг формируется на основе оценок других участников после совместных походов.</p>
+                    </div>
+                </div>
+                
+                <h6 class="fw-bold mb-3">Последние отзывы</h6>
+                <div id="reviewsList">
+                    <div class="text-center text-muted small py-3">Пока нет отзывов</div>
+                </div>
+            </div>
+            
             <!-- Факты о себе -->
             <div class="profile-card">
                 <h4><i class="bi bi-chat-quote"></i> Факты обо мне</h4>
@@ -368,7 +390,45 @@ async function saveProfile(event) {
 }
     
     loadProfile();
-    loadProfileFromServer(); // загружаем актуальные данные из БД поверх localStorage
+    loadProfileFromServer();
+
+    // РЕЙТИНГ И ОТЗЫВЫ
+    async function loadReviews() {
+        try {
+            const res = await fetch(`/api/reviews/user/${user.id}`, { headers: { 'Authorization': `Bearer ${token}` } });
+            if (res.ok) {
+                const data = await res.json();
+                document.getElementById('avgRatingValue').innerText = data.avgRating > 0 ? data.avgRating.toFixed(1) : '0.0';
+                
+                // Склонение слова "отзыв"
+                let countText = 'отзывов';
+                if (data.count % 10 === 1 && data.count % 100 !== 11) countText = 'отзыв';
+                else if ([2, 3, 4].includes(data.count % 10) && ![12, 13, 14].includes(data.count % 100)) countText = 'отзыва';
+                document.getElementById('reviewsCount').innerText = `${data.count} ${countText}`;
+                
+                const list = document.getElementById('reviewsList');
+                if (data.reviews && data.reviews.length > 0) {
+                    list.innerHTML = data.reviews.map(r => `
+                        <div class="d-flex gap-3 mb-3 pb-3 border-bottom">
+                            <img src="${r.fromUserAvatar || 'https://api.dicebear.com/7.x/avataaars/svg?seed='+r.fromUserName}" class="rounded-circle" width="40" height="40" style="object-fit:cover">
+                            <div>
+                                <div class="d-flex align-items-center gap-2">
+                                    <span class="fw-bold">${r.fromUserName}</span>
+                                    <span class="badge bg-warning text-dark"><i class="bi bi-star-fill"></i> ${r.rating}</span>
+                                    <span class="text-muted small">${new Date(r.createdAt).toLocaleDateString()}</span>
+                                </div>
+                                ${r.comment ? `<div class="mt-1 small">${r.comment}</div>` : ''}
+                            </div>
+                        </div>
+                    `).join('');
+                }
+            }
+        } catch(e) {
+            console.error('Ошибка загрузки отзывов:', e);
+        }
+    }
+
+    loadReviews();
 </script>
 </body>
 </html>

@@ -216,10 +216,48 @@ exports.deleteEvent = async (req, res) => {
     if (!event) return res.status(404).json({ message: 'Поход не найден' });
     if (event.creatorId !== userId) return res.status(403).json({ message: 'Только создатель может удалить' });
     
+    // Вручную удаляем все связанные записи, чтобы избежать ошибок Foreign Key Constraint
+    await db.sequelize.query('DELETE FROM EventParticipants WHERE EventId = ?', { replacements: [eventId] });
+    
+    // Пытаемся удалить связанные данные, если модели загружены
+    try {
+        if (db.Review) await db.Review.destroy({ where: { eventId } });
+        if (db.Message) await db.Message.destroy({ where: { eventId } });
+        if (db.Invite) await db.Invite.destroy({ where: { eventId } });
+    } catch(err) {
+        console.warn('Не удалось удалить некоторые связанные данные похода:', err);
+    }
+
     await event.destroy();
-    res.json({ message: 'Поход удалён' });
+    res.json({ message: 'Поход удален' });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: 'Ошибка удаления' });
+    res.status(500).json({ message: 'Ошибка удаления похода' });
+  }
+};
+
+// ========== ЗАВЕРШИТЬ ПОХОД ==========
+exports.completeEvent = async (req, res) => {
+  try {
+    const eventId = req.params.id;
+    const userId = req.user.id;
+
+    const event = await Event.findByPk(eventId);
+    if (!event) return res.status(404).json({ message: 'Поход не найден' });
+    if (event.creatorId !== userId) return res.status(403).json({ message: 'Только создатель может завершить поход' });
+    if (event.status === 'completed') return res.status(400).json({ message: 'Поход уже завершен' });
+
+    // Проверяем, наступило ли время похода
+    if (new Date(event.datetime) > new Date()) {
+      return res.status(400).json({ message: 'Нельзя завершить поход, время которого еще не наступило' });
+    }
+
+    event.status = 'completed';
+    await event.save();
+
+    res.json({ message: 'Поход успешно завершен', event });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Ошибка при завершении похода' });
   }
 };

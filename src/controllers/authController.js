@@ -1,5 +1,6 @@
 const jwt = require('jsonwebtoken');
-const { User } = require('../models');
+const db = require('../models');
+const { User, Review } = require('../models');
 
 // Генерация JWT токена
 const generateToken = (id) => {
@@ -156,6 +157,16 @@ exports.getInterests = async (req, res) => {
             // исключаем текущего пользователя — он и так себя знает
             where: { id: { [require('sequelize').Op.ne]: req.user.id } }
         });
+
+        // Получаем рейтинги всех пользователей
+        const ratings = await db.sequelize.query(
+            'SELECT toUserId, AVG(rating) as avgRating FROM Reviews GROUP BY toUserId',
+            { type: db.sequelize.QueryTypes.SELECT }
+        ).catch(() => []); // Игнорируем ошибку, если таблица еще не создана
+        
+        const ratingMap = {};
+        ratings.forEach(r => ratingMap[r.toUserId] = parseFloat(r.avgRating).toFixed(1));
+
         const formatted = users.map(u => {
             const interests = Array.isArray(u.interests)
                 ? u.interests
@@ -166,7 +177,8 @@ exports.getInterests = async (req, res) => {
                 avatar: u.avatar && (u.avatar.startsWith('http') || u.avatar.startsWith('/uploads/'))
                     ? u.avatar
                     : `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(u.name)}`,
-                interests
+                interests,
+                avgRating: ratingMap[u.id] || null
             };
         });
         res.json(formatted);

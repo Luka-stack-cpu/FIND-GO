@@ -8,7 +8,8 @@ const {
   deleteEvent, 
   getEventMessages, 
   getEventParticipants,
-  getMyEvents 
+  getMyEvents,
+  completeEvent
 } = require('../controllers/eventController');
 const authMiddleware = require('../middleware/authMiddleware');
 
@@ -21,6 +22,7 @@ router.get('/events/:id', authMiddleware, getEventById);
 router.get('/events/:id/messages', authMiddleware, getEventMessages);
 router.get('/events/:id/participants', authMiddleware, getEventParticipants);
 router.post('/events/:id/join', authMiddleware, joinEvent);
+router.post('/events/:id/complete', authMiddleware, completeEvent);
 router.put('/events/:id', authMiddleware, updateEvent);
 router.delete('/events/:id', authMiddleware, deleteEvent);
 
