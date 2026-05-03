@@ -30,7 +30,7 @@ function formatUser(user, token) {
         email: user.email,
         // ИСПРАВЛЕНИЕ #2: используем сохранённый avatar из БД если есть,
         // иначе генерируем через dicebear
-        avatar: user.avatar && user.avatar.startsWith('http')
+        avatar: user.avatar && (user.avatar.startsWith('http') || user.avatar.startsWith('/uploads/'))
             ? user.avatar
             : `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(user.name)}`,
         interests,
@@ -163,7 +163,7 @@ exports.getInterests = async (req, res) => {
             return {
                 id: u.id,
                 name: u.name,
-                avatar: u.avatar && u.avatar.startsWith('http')
+                avatar: u.avatar && (u.avatar.startsWith('http') || u.avatar.startsWith('/uploads/'))
                     ? u.avatar
                     : `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(u.name)}`,
                 interests
@@ -195,7 +195,7 @@ exports.getUserById = async (req, res) => {
         res.json({
             id: user.id,
             name: user.name,
-            avatar: user.avatar && user.avatar.startsWith('http')
+            avatar: user.avatar && (user.avatar.startsWith('http') || user.avatar.startsWith('/uploads/'))
                 ? user.avatar
                 : `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(user.name)}`,
             interests,

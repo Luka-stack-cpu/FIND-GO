@@ -26,7 +26,7 @@ const User = sequelize.define('User', {
   },
   avatar: {
     type: DataTypes.STRING,
-    defaultValue: 'default-avatar.png'
+    defaultValue: ''
   },
   bio: {
     type: DataTypes.TEXT,
