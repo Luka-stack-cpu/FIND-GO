@@ -33,11 +33,20 @@ exports.getAllUsersInterests = async (req, res) => {
         const users = await User.findAll({
             attributes: ['id', 'name', 'interests']
         });
-        const formatted = users.map(u => ({
-            id: u.id,
-            name: u.name,
-            interests: u.interests
-        }));
+        const formatted = users.map(u => {
+            let interestsArray = [];
+            try {
+                if (Array.isArray(u.interests)) interestsArray = u.interests;
+                else if (u.interests) interestsArray = JSON.parse(u.interests);
+            } catch (e) {
+                interestsArray = [];
+            }
+            return {
+                id: u.id,
+                name: u.name,
+                interests: Array.isArray(interestsArray) ? interestsArray : []
+            };
+        });
         res.json(formatted);
     } catch (error) {
         console.error(error);

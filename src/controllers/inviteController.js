@@ -147,15 +147,4 @@ exports.getPendingCount = async (req, res) => {
     }
 };
 
-// ✅ Количество pending-приглашений для бейджа
-exports.getPendingCount = async (req, res) => {
-    try {
-        const count = await Invite.count({
-            where: { toUserId: req.user.id, status: 'pending' }
-        });
-        res.json({ count });
-    } catch (error) {
-        console.error('❌ getPendingCount:', error.message);
-        res.status(500).json({ message: 'Ошибка' });
-    }
-};
+// ✅ Количество pending-приглашений для бейджа (дубликат удален)

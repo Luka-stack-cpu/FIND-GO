@@ -76,8 +76,10 @@ exports.updateProfile = async (req, res) => {
         const { bio } = req.body;
         const updateData = {};
 
-        if (bio !== undefined) {
-            updateData.bio = String(bio).substring(0, 1000);
+        if (bio !== undefined && bio !== null) {
+            // Если bio - объект (например JSON-строка с фактами), то преобразуем его безопасно
+            const bioString = typeof bio === 'object' ? JSON.stringify(bio) : String(bio);
+            updateData.bio = bioString.substring(0, 1000);
         }
 
         if (Object.keys(updateData).length === 0) {

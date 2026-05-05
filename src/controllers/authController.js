@@ -20,11 +20,20 @@ function sanitizeString(str) {
     return str.trim().substring(0, 200); // обрезаем до 200 символов
 }
 
+function safeParseJSON(data, fallback = []) {
+    if (Array.isArray(data)) return data;
+    if (!data) return fallback;
+    try {
+        const parsed = JSON.parse(data);
+        return Array.isArray(parsed) ? parsed : fallback;
+    } catch (e) {
+        return fallback;
+    }
+}
+
 // Формат ответа пользователя (без пароля, с аватаркой)
 function formatUser(user, token) {
-    const interests = Array.isArray(user.interests)
-        ? user.interests
-        : JSON.parse(user.interests || '[]');
+    const interests = safeParseJSON(user.interests);
     return {
         id: user.id,
         name: user.name,
@@ -112,7 +121,12 @@ exports.getProfile = async (req, res) => {
             attributes: { exclude: ['password'] }
         });
         if (!user) return res.status(404).json({ message: 'Пользователь не найден' });
-        res.json(user);
+        
+        // Преобразуем объект Sequelize в обычный объект, чтобы можно было безопасно изменять поля
+        const userData = user.toJSON();
+        userData.interests = safeParseJSON(userData.interests);
+        
+        res.json(userData);
     } catch (error) {
         console.error('❌ getProfile:', error.message);
         res.status(500).json({ message: 'Ошибка сервера' });
@@ -168,9 +182,7 @@ exports.getInterests = async (req, res) => {
         ratings.forEach(r => ratingMap[r.toUserId] = parseFloat(r.avgRating).toFixed(1));
 
         const formatted = users.map(u => {
-            const interests = Array.isArray(u.interests)
-                ? u.interests
-                : JSON.parse(u.interests || '[]');
+            const interests = safeParseJSON(u.interests);
             return {
                 id: u.id,
                 name: u.name,
@@ -200,9 +212,7 @@ exports.getUserById = async (req, res) => {
         });
         if (!user) return res.status(404).json({ message: 'Пользователь не найден' });
 
-        const interests = Array.isArray(user.interests)
-            ? user.interests
-            : JSON.parse(user.interests || '[]');
+        const interests = safeParseJSON(user.interests);
 
         res.json({
             id: user.id,
