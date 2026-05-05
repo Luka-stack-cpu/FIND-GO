@@ -9,23 +9,40 @@ const fs = require('fs');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-const allowedOrigins = process.env.ALLOWED_ORIGINS
-    ? process.env.ALLOWED_ORIGINS.split(',')
-    : ['http://localhost:3000'];
+// ✅ ИСПРАВЛЕНО: Получаем разрешённые домены из переменной окружения
+const allowedOrigins = process.env.ALLOWED_ORIGINS 
+    ? process.env.ALLOWED_ORIGINS.split(',') 
+    : [
+        'http://localhost:3000',
+        'http://localhost:8080',
+        'https://find-go-production.up.railway.app',
+        'https://*.railway.app'
+    ];
 
+// ✅ ИСПРАВЛЕНО: CORS для Express
 app.use(cors({
-    origin: (origin, callback) => {
-        if (!origin || allowedOrigins.includes(origin)) {
-            callback(null, true);
-        } else {
-            callback(new Error('CORS: домен не разрешён'));
-        }
-    },
-    credentials: true
+  origin: function(origin, callback) {
+    // Разрешаем запросы без origin (как от curl или мобильных приложений)
+    if (!origin) return callback(null, true);
+    
+    if (allowedOrigins.some(allowed => {
+      // Поддержка wildcard *.railway.app
+      if (allowed.includes('*')) {
+        const pattern = allowed.replace('*', '.*');
+        return new RegExp(pattern).test(origin);
+      }
+      return allowed === origin;
+    })) {
+      callback(null, true);
+    } else {
+      console.log('❌ CORS блокирует:', origin);
+      callback(new Error('CORS: домен не разрешён'));
+    }
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
 }));
-
-app.use(express.json({ limit: '1mb' }));
-app.use(express.static(path.join(__dirname, 'public')));
 
 const uploadDir = path.join(__dirname, 'public', 'uploads');
 if (!fs.existsSync(uploadDir)) {
@@ -55,22 +72,29 @@ app.get('/api/health', (req, res) => {
     res.json({ status: 'ok', uptime: process.uptime(), timestamp: new Date().toISOString() });
 });
 
+// Middleware для обработки ошибок
 app.use((err, req, res, next) => {
     console.error('❌ Необработанная ошибка:', err.message);
     res.status(500).json({ message: 'Внутренняя ошибка сервера' });
 });
 
 const server = http.createServer(app);
+
+// ✅ ИСПРАВЛЕНО: CORS для Socket.IO
 const io = socketIo(server, {
     cors: {
-        origin: process.env.ALLOWED_ORIGINS || '*',
-        methods: ['GET', 'POST']
-    }
+        origin: allowedOrigins,
+        methods: ['GET', 'POST'],
+        credentials: true
+    },
+    allowEIO3: true // Для совместимости
 });
 
 const roomUsers = new Map();
 
 io.on('connection', (socket) => {
+    console.log('🔌 Новое Socket.IO подключение');
+    
     socket.on('joinEvent', (data) => {
         if (!data?.eventId) return;
         const room = `event_${data.eventId}`;
@@ -81,6 +105,7 @@ io.on('connection', (socket) => {
 
         socket.eventId = data.eventId;
         socket.userName = data.userName;
+        console.log(`📡 Пользователь ${data.userName} присоединился к событию ${data.eventId}`);
     });
 
     socket.on('sendMessage', async (data) => {
@@ -122,10 +147,10 @@ io.on('connection', (socket) => {
                 roomUsers.delete(socket.eventId);
             }
         }
+        console.log('🔌 Socket.IO отключение');
     });
 });
 
-// ✅ БАГ 1: seedIfEmpty теперь вызывается внутри start() с await
 async function seedIfEmpty() {
     try {
         const count = await db.Place.count();
@@ -168,14 +193,14 @@ const start = async () => {
         await db.sequelize.sync({ alter: false });
         console.log('✅ База данных синхронизирована');
 
-        // ✅ БАГ 1: ждём заполнения до старта сервера
         await seedIfEmpty();
 
         server.listen(PORT, () => {
-            console.log(`✅ Сервер запущен на http://localhost:${PORT}`);
+            console.log(`✅ Сервер запущен на порту ${PORT}`);
             console.log(`📍 Регистрация: http://localhost:${PORT}/register.html`);
             console.log(`🔑 Вход: http://localhost:${PORT}/login.html`);
             console.log(`💬 Чат доступен после создания похода`);
+            console.log(`🌐 Railway URL: ${process.env.RAILWAY_URL || 'не задан'}`);
         });
     } catch (error) {
         console.error('❌ Ошибка при запуске:', error);
@@ -193,6 +218,7 @@ process.on('SIGTERM', async () => {
 
 process.on('uncaughtException', (err) => {
     console.error('💥 Необработанное исключение:', err.message);
+    console.error(err.stack);
     process.exit(1);
 });
 
