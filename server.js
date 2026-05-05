@@ -9,40 +9,34 @@ const fs = require('fs');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// ✅ ИСПРАВЛЕНО: Получаем разрешённые домены из переменной окружения
-const allowedOrigins = process.env.ALLOWED_ORIGINS 
-    ? process.env.ALLOWED_ORIGINS.split(',') 
-    : [
-        'http://localhost:3000',
-        'http://localhost:8080',
-        'https://find-go-production.up.railway.app',
-        'https://*.railway.app'
-    ];
-
-// ✅ ИСПРАВЛЕНО: CORS для Express
+// ✅ ВРЕМЕННО: ПОЛНОСТЬЮ ОТКЛЮЧАЕМ CORS ДЛЯ ТЕСТА
 app.use(cors({
-  origin: function(origin, callback) {
-    // Разрешаем запросы без origin (как от curl или мобильных приложений)
-    if (!origin) return callback(null, true);
-    
-    if (allowedOrigins.some(allowed => {
-      // Поддержка wildcard *.railway.app
-      if (allowed.includes('*')) {
-        const pattern = allowed.replace('*', '.*');
-        return new RegExp(pattern).test(origin);
-      }
-      return allowed === origin;
-    })) {
-      callback(null, true);
-    } else {
-      console.log('❌ CORS блокирует:', origin);
-      callback(new Error('CORS: домен не разрешён'));
-    }
-  },
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+    origin: '*',
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH', 'HEAD'],
+    allowedHeaders: ['*']
 }));
+
+// ✅ Разрешаем все заголовки
+app.use((req, res, next) => {
+    res.header('Access-Control-Allow-Origin', '*');
+    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+    
+    // Обрабатываем preflight запросы
+    if (req.method === 'OPTIONS') {
+        return res.sendStatus(200);
+    }
+    next();
+});
+
+// Статические файлы
+app.use(express.static(path.join(__dirname, 'public')));
+app.use('/uploads', express.static(path.join(__dirname, 'public', 'uploads')));
+
+// Парсинг тела запроса
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 const uploadDir = path.join(__dirname, 'public', 'uploads');
 if (!fs.existsSync(uploadDir)) {
@@ -72,28 +66,47 @@ app.get('/api/health', (req, res) => {
     res.json({ status: 'ok', uptime: process.uptime(), timestamp: new Date().toISOString() });
 });
 
+// Отдача HTML файлов из корня
+app.get('/login.html', (req, res) => {
+    res.sendFile(path.join(__dirname, 'login.html'));
+});
+
+app.get('/register.html', (req, res) => {
+    res.sendFile(path.join(__dirname, 'register.html'));
+});
+
+app.get('/index.html', (req, res) => {
+    res.sendFile(path.join(__dirname, 'index.html'));
+});
+
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'index.html'));
+});
+
 // Middleware для обработки ошибок
 app.use((err, req, res, next) => {
     console.error('❌ Необработанная ошибка:', err.message);
-    res.status(500).json({ message: 'Внутренняя ошибка сервера' });
+    console.error(err.stack);
+    res.status(500).json({ message: 'Внутренняя ошибка сервера', error: err.message });
 });
 
 const server = http.createServer(app);
 
-// ✅ ИСПРАВЛЕНО: CORS для Socket.IO
+// ✅ Socket.IO с отключённым CORS
 const io = socketIo(server, {
     cors: {
-        origin: allowedOrigins,
+        origin: '*',
         methods: ['GET', 'POST'],
         credentials: true
     },
-    allowEIO3: true // Для совместимости
+    allowEIO3: true,
+    transports: ['websocket', 'polling']
 });
 
 const roomUsers = new Map();
 
 io.on('connection', (socket) => {
-    console.log('🔌 Новое Socket.IO подключение');
+    console.log('🔌 Новое Socket.IO подключение, ID:', socket.id);
     
     socket.on('joinEvent', (data) => {
         if (!data?.eventId) return;
@@ -195,12 +208,11 @@ const start = async () => {
 
         await seedIfEmpty();
 
-        server.listen(PORT, () => {
+        server.listen(PORT, '0.0.0.0', () => {
             console.log(`✅ Сервер запущен на порту ${PORT}`);
-            console.log(`📍 Регистрация: http://localhost:${PORT}/register.html`);
-            console.log(`🔑 Вход: http://localhost:${PORT}/login.html`);
+            console.log(`📍 Регистрация: /register.html`);
+            console.log(`🔑 Вход: /login.html`);
             console.log(`💬 Чат доступен после создания похода`);
-            console.log(`🌐 Railway URL: ${process.env.RAILWAY_URL || 'не задан'}`);
         });
     } catch (error) {
         console.error('❌ Ошибка при запуске:', error);
@@ -219,7 +231,6 @@ process.on('SIGTERM', async () => {
 process.on('uncaughtException', (err) => {
     console.error('💥 Необработанное исключение:', err.message);
     console.error(err.stack);
-    process.exit(1);
 });
 
 process.on('unhandledRejection', (reason) => {
