@@ -160,17 +160,31 @@ async function seedIfEmpty() {
         const count = await db.Place.count();
         if (count === 0) {
             await db.Place.bulkCreate([
-                { name: 'Квест «Тайна старого дома»', description: 'Интерактивный квест в центре Бишкека', category: 'квест' },
-                { name: 'Квест «Побег из тюрьмы»', description: 'Адреналиновый квест', category: 'квест' },
-                { name: 'Паб «Beer House»', description: 'Крафтовое пиво и спорт', category: 'паб' },
-                { name: 'Бар «No Name»', description: 'Авторские коктейли', category: 'паб' },
-                { name: 'Ирландский паб «Molly»', description: 'Виски и эль', category: 'паб' },
-                { name: 'Кинотеатр «Ала-Тоо»', description: 'Новинки кино', category: 'кино' },
-                { name: 'Кинотеатр «Кыргызстан»', description: 'Уютный кинотеатр', category: 'кино' },
-                { name: 'Арт-кафе «Старый Баку»', description: 'Живая музыка', category: 'кафе' },
-                { name: 'Кофейня «Coffee House»', description: 'Кофе и десерты', category: 'кафе' },
-                { name: 'Клуб «Metro»', description: 'Главный ночной клуб', category: 'клуб' },
-                { name: 'Клуб «Restobar 12»', description: 'Ресторан и танцы', category: 'клуб' }
+                { name: 'Парк «Байтик»', description: 'Уютный городской парк', category: 'парк' },
+                { name: 'Парк «Евразия»', description: 'Современный парк с развлечениями', category: 'парк' },
+                { name: 'Парк им. Панфилова', description: 'Исторический парк в центре города', category: 'парк' },
+                { name: 'Дубовый парк (Ынтымак)', description: 'Любимое место для пробежек', category: 'парк' },
+                { name: 'Ресторан «Анар»', description: 'Кыргызская и восточная кухня', category: 'кафе' },
+                { name: 'Кафе «Faiza»', description: 'Популярное кафе с пловом', category: 'кафе' },
+                { name: 'Кафе «Navat»', description: 'Атмосферное место с восточным интерьером', category: 'кафе' },
+                { name: 'Ресторан «Кореана»', description: 'Корейская кухня', category: 'кафе' },
+                { name: 'Кафе «Печки-Лавочки»', description: 'Домашняя русская кухня', category: 'кафе' },
+                { name: 'Кафе «Бублик»', description: 'Свежая выпечка и кофе', category: 'кафе' },
+                { name: 'Кафе «Бостон»', description: 'Семейное кафе', category: 'кафе' },
+                { name: 'ТРЦ SkyPark (Азия Молл)', description: 'Зона развлечений', category: 'трц' },
+                { name: 'ТРЦ «Бишкек Парк»', description: 'Крупный ТРЦ в центре', category: 'трц' },
+                { name: 'ТРЦ «Вефа»', description: 'ТЦ с магазинами и кино', category: 'трц' },
+                { name: 'Guinness Pub', description: 'Ирландский паб', category: 'паб' },
+                { name: 'Hello Stranger Beer', description: 'Крафт-бар', category: 'паб' },
+                { name: 'Паб «Чешский двор»', description: 'Атмосферный чешский паб', category: 'паб' },
+                { name: 'Ресторан «Хмель & Солод»', description: 'Пивной ресторан', category: 'паб' },
+                { name: 'Ramada by Wyndham', description: '5-звёздочный отель', category: 'отель' },
+                { name: 'Hyatt Regency Bishkek', description: 'Роскошный международный отель', category: 'отель' },
+                { name: 'Нац. парк «Ала-Арча»', description: 'Живописное ущелье', category: 'природа' },
+                { name: 'Площадь Ала-Тоо', description: 'Главная площадь города', category: 'природа' },
+                { name: 'Водопад «Ала-Арчинский»', description: 'Горный водопад', category: 'природа' },
+                { name: 'Водопад «Ала-Сочинский»', description: 'Популярный маршрут для хайкинга', category: 'природа' },
+                { name: 'Голубиный водопад', description: 'Скрытый водопад в горах', category: 'природа' }
             ]);
             console.log('✅ База данных заполнена начальными местами');
         } else {
