@@ -28,6 +28,10 @@ const Notification = sequelize.define('Notification', {
     read: {
         type: DataTypes.BOOLEAN,
         defaultValue: false
+    },
+    link: {
+        type: DataTypes.STRING,
+        allowNull: true
     }
 }, {
     timestamps: true

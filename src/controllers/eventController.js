@@ -39,7 +39,8 @@ exports.getActiveEvents = async (req, res) => {
         'SELECT UserId FROM EventParticipants WHERE EventId = ?',
         { replacements: [event.id], type: db.sequelize.QueryTypes.SELECT }
       );
-      const participantsIds = participantsRows.map(p => p.UserId);
+      // Поддержка разного регистра в разных БД
+      const participantsIds = participantsRows.map(p => Number(p.UserId || p.userid || p.UserID));
       return {
         ...event.toJSON(),
         participantsCount: participantsIds.length,
@@ -173,13 +174,17 @@ exports.getEventParticipants = async (req, res) => {
   }
 };
 
-// ========== ИСТОРИЯ ЧАТА ==========
+// ========== ИСТОРИЯ ЧАТА (С АВАТАРКАМИ) ==========
 exports.getEventMessages = async (req, res) => {
   try {
-    const messages = await Message.findAll({
-      where: { eventId: req.params.id },
-      order: [['createdAt', 'ASC']]
-    });
+    const messages = await db.sequelize.query(
+      `SELECT Messages.*, Users.avatar as userAvatar, Users.name as userName 
+       FROM Messages 
+       JOIN Users ON Messages.userId = Users.id 
+       WHERE Messages.eventId = ? 
+       ORDER BY Messages.createdAt ASC`,
+      { replacements: [req.params.id], type: db.sequelize.QueryTypes.SELECT }
+    );
     res.json(messages);
   } catch (error) {
     console.error(error);

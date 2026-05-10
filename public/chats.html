@@ -6,6 +6,7 @@
     <title>Мои чаты | Find&Go</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
     <style>
         body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bs-body-bg); transition: background-color 0.3s ease; }
         .navbar { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(20px); padding: 12px 0; }
@@ -166,8 +167,8 @@
 
             // Фильтруем: создатель или участник
             const myChats = events.filter(ev =>
-                ev.creatorId === currentUser.id ||
-                (ev.participants && ev.participants.includes(currentUser.id))
+                Number(ev.creatorId) === Number(currentUser.id) ||
+                (ev.participants && ev.participants.map(id => Number(id)).includes(Number(currentUser.id)))
             );
 
             if (!myChats.length) {
@@ -185,19 +186,33 @@
                     const placeName = escapeHtml(ev.place?.name || 'Место');
                     const dateStr = new Date(ev.datetime).toLocaleString([], {year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute:'2-digit'});
                     
+                    const avatarUrl = ev.creator?.avatar
+                        ? (ev.creator.avatar.startsWith('/uploads/') || ev.creator.avatar.startsWith('http'))
+                            ? ev.creator.avatar
+                            : `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(ev.creator.name || ev.creatorId)}`
+                        : `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(ev.creatorId)}`;
+
+                    let badgeHtml = isCreator 
+                        ? '<span class="badge bg-primary rounded-pill">Ваш поход</span>' 
+                        : '<span class="badge bg-success rounded-pill">Вы участник</span>';
+                    
+                    if (ev.isPersonal) {
+                        badgeHtml = '<span class="badge bg-purple rounded-pill" style="background-color: #764ba2;">Личный чат</span>';
+                    }
+
                     return `
                         <a href="/chat.html?eventId=${ev.id}" class="chat-card d-flex align-items-center gap-3">
-                            <div class="chat-icon">
-                                <i class="bi bi-chat-dots"></i>
+                            <div class="chat-avatar-container">
+                                <img src="${avatarUrl}" class="rounded-circle" width="50" height="50" style="object-fit: cover; border: 2px solid #667eea;" onerror="this.src='https://api.dicebear.com/7.x/avataaars/svg?seed=${ev.creatorId}'">
                             </div>
                             <div class="flex-grow-1">
                                 <div class="d-flex justify-content-between align-items-center">
-                                    <div class="chat-title">${placeName}</div>
-                                    ${isCreator ? '<span class="badge bg-primary rounded-pill">Ваш поход</span>' : '<span class="badge bg-success rounded-pill">Вы участник</span>'}
+                                    <div class="chat-title">${ev.isPersonal ? 'Личная встреча: ' + placeName : placeName}</div>
+                                    ${badgeHtml}
                                 </div>
                                 <div class="chat-meta mt-1">
                                     <span><i class="bi bi-calendar-event"></i> ${dateStr}</span>
-                                    <span class="ms-3"><i class="bi bi-people"></i> ${ev.participantsCount || 0}/${ev.maxParticipants} участников</span>
+                                    ${ev.isPersonal ? '' : `<span class="ms-3"><i class="bi bi-people"></i> ${ev.participantsCount || 0}/${ev.maxParticipants}</span>`}
                                 </div>
                             </div>
                             <i class="bi bi-chevron-right fs-4 text-muted ms-2"></i>

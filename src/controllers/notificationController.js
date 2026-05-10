@@ -43,9 +43,9 @@ exports.markAllRead = async (req, res) => {
 };
 
 // ✅ Внутренняя функция для создания уведомления (вызывается из других контроллеров)
-exports.createNotification = async (userId, title, message, type = 'info') => {
+exports.createNotification = async (userId, title, message, type = 'info', link = null) => {
     try {
-        await Notification.create({ userId, title, message, type });
+        await Notification.create({ userId, title, message, type, link });
     } catch (error) {
         console.error('❌ createNotification:', error.message);
     }

@@ -30,6 +30,10 @@ const Event = sequelize.define('Event', {
   description: {
     type: DataTypes.TEXT,
     defaultValue: ''
+  },
+  isPersonal: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false
   }
 });
 

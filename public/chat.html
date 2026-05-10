@@ -6,6 +6,7 @@
     <title>Чат | Find&Go</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
     <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
     <style>
         * {
@@ -138,6 +139,32 @@
         [data-bs-theme="dark"] .chat-header {
             background: #1a1a24;
             border-bottom-color: #2a2a35;
+        }
+
+        /* Тёмная тема для сообщений */
+        [data-bs-theme="dark"] .message-bubble {
+            background: #2a2a35 !important;
+            color: #ffffff !important;
+        }
+        
+        [data-bs-theme="dark"] .message-text {
+            color: #ffffff !important;
+        }
+
+        [data-bs-theme="dark"] .my-message .message-bubble {
+            background: linear-gradient(135deg, #667eea, #764ba2) !important;
+            color: white !important;
+        }
+
+        [data-bs-theme="dark"] .message-time {
+            color: #aaa !important;
+        }
+
+        /* Профиль в модальном окне (для чата) */
+        [data-bs-theme="dark"] .fact-item {
+            background-color: #16161f !important;
+            color: #eee !important;
+            border: 1px solid #2a2a35 !important;
         }
 
         /* Область сообщений */
@@ -296,7 +323,31 @@
                 left: 0;
             }
             .message {
-                max-width: 85%;
+                max-width: 90%;
+            }
+            .chat-header {
+                padding: 12px 16px;
+            }
+            .messages-area {
+                padding: 12px;
+                gap: 8px;
+            }
+            .input-area {
+                padding: 12px;
+                gap: 8px;
+            }
+            .input-area input {
+                padding: 10px 14px;
+                font-size: 0.9rem;
+            }
+        }
+        
+        @media (max-width: 400px) {
+            .navbar-brand {
+                font-size: 1.2rem;
+            }
+            #userName {
+                display: none;
             }
         }
 
@@ -389,6 +440,17 @@
         <div class="emoji-picker" id="emojiPicker">
             <span>😀</span><span>😍</span><span>🥳</span><span>😎</span><span>😂</span><span>😭</span><span>❤️</span><span>🔥</span>
             <span>👍</span><span>🎉</span><span>🤔</span><span>😴</span><span>🙏</span><span>💪</span><span>✨</span><span>⭐</span>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно профиля пользователя -->
+<div class="modal fade" id="userProfileModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 24px;">
+            <div class="modal-body p-4" id="userProfileModalBody">
+                <!-- Контент загружается динамически -->
+            </div>
         </div>
     </div>
 </div>
@@ -490,17 +552,25 @@ document.getElementById('userProfileLink')?.addEventListener('click', () => {
             return;
         }
         
-        container.innerHTML = messages.map(msg => `
-            <div class="message ${msg.userId === user.id ? 'my-message' : ''}">
-                <div class="message-avatar" style="background:none; overflow:hidden;">
-                    <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(msg.userName || msg.userId)}" width="36" height="36" style="border-radius:50%; object-fit:cover;" alt="${msg.userName}">
+        container.innerHTML = messages.map(msg => {
+            const avatarUrl = msg.userAvatar
+                ? (msg.userAvatar.startsWith('/uploads/') || msg.userAvatar.startsWith('http'))
+                    ? msg.userAvatar
+                    : `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(msg.userName || msg.userId)}`
+                : `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(msg.userName || msg.userId)}`;
+
+            return `
+                <div class="message ${msg.userId === user.id ? 'my-message' : ''}">
+                    <div class="message-avatar" style="background:none; overflow:hidden; cursor:pointer;" onclick="showUserProfile(${msg.userId})">
+                        <img src="${avatarUrl}" width="36" height="36" style="border-radius:50%; object-fit:cover;" alt="${msg.userName}" onerror="this.src='https://api.dicebear.com/7.x/avataaars/svg?seed=${msg.userId}'">
+                    </div>
+                    <div class="message-bubble">
+                        <div class="message-text">${escapeHtml(msg.text)}</div>
+                        <div class="message-time">${new Date(msg.createdAt).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</div>
+                    </div>
                 </div>
-                <div class="message-bubble">
-                    <div class="message-text">${escapeHtml(msg.text)}</div>
-                    <div class="message-time">${new Date(msg.createdAt).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</div>
-                </div>
-            </div>
-        `).join('');
+            `;
+        }).join('');
         
         // Скролл вниз
         container.scrollTop = container.scrollHeight;
@@ -510,33 +580,82 @@ document.getElementById('userProfileLink')?.addEventListener('click', () => {
     function renderParticipants(participants) {
     const container = document.getElementById('participantsList');
     if (!container) return;
-    container.innerHTML = participants.map(p => `
-        <div class="participant-item" onclick="showUserProfile(${p.id})">
-            <img
-                src="https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(p.name || p.id)}"
-                width="40" height="40"
-                class="rounded-circle flex-shrink-0"
-                style="object-fit:cover; border: 2px solid #667eea;"
-                alt="${p.name}"
-                onerror="this.style.display='none'"
-            >
-            <div class="participant-info">
-                <div class="participant-name">
-                    ${p.name}
-                    ${p.id === user.id ? ' <span class="badge bg-primary" style="font-size:0.6rem;">Вы</span>' : ''}
+    container.innerHTML = participants.map(p => {
+        const avatarUrl = p.avatar
+            ? (p.avatar.startsWith('/uploads/') || p.avatar.startsWith('http'))
+                ? p.avatar
+                : `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(p.name || p.id)}`
+            : `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(p.name || p.id)}`;
+
+        return `
+            <div class="participant-item" onclick="showUserProfile(${p.id})">
+                <img
+                    src="${avatarUrl}"
+                    width="40" height="40"
+                    class="rounded-circle flex-shrink-0"
+                    style="object-fit:cover; border: 2px solid #667eea;"
+                    alt="${p.name}"
+                    onerror="this.src='https://api.dicebear.com/7.x/avataaars/svg?seed=${p.id}'"
+                >
+                <div class="participant-info">
+                    <div class="participant-name">
+                        ${p.name}
+                        ${p.id === user.id ? ' <span class="badge bg-primary" style="font-size:0.6rem;">Вы</span>' : ''}
+                    </div>
                 </div>
             </div>
-        </div>
-    `).join('');
+        `;
+    }).join('');
 }
 
 function showUserProfile(userId) {
-    // Если клик на себя — открываем свой профиль, иначе чужой
-    if (userId === user.id) {
-        window.location.href = '/profile.html';
-    } else {
-        window.location.href = `/profile.html?userId=${userId}`;
-    }
+    const modalBody = document.getElementById('userProfileModalBody');
+    if (!modalBody) return;
+    modalBody.innerHTML = '<div class="spinner-border text-primary my-4"></div>';
+    const modal = new bootstrap.Modal(document.getElementById('userProfileModal'));
+    modal.show();
+
+    fetch(`/api/auth/users/${userId}`, { headers: { 'Authorization': `Bearer ${token}` } })
+        .then(r => r.json())
+        .then(u => {
+            if (!u || !u.id) { modalBody.innerHTML = '<p class="text-muted">Пользователь не найден</p>'; return; }
+            
+            let factsHtml = '';
+            try {
+                if (u.bio) {
+                    const bioData = JSON.parse(u.bio);
+                    if (bioData.fact1) factsHtml += `<div class="fact-item mb-2 text-start p-2 rounded bg-light small"><i class="bi bi-patch-check text-primary"></i> ${escapeHtml(bioData.fact1)}</div>`;
+                    if (bioData.fact2) factsHtml += `<div class="fact-item mb-2 text-start p-2 rounded bg-light small"><i class="bi bi-patch-check text-primary"></i> ${escapeHtml(bioData.fact2)}</div>`;
+                }
+            } catch(e) {
+                if (u.bio) factsHtml = `<p class="small text-muted">${escapeHtml(u.bio)}</p>`;
+            }
+
+            const interests = Array.isArray(u.interests) ? u.interests : JSON.parse(u.interests || '[]');
+            const avatarSrc = u.avatar && (u.avatar.startsWith('http') || u.avatar.startsWith('/uploads/'))
+                ? u.avatar
+                : `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(u.name)}`;
+
+            modalBody.innerHTML = `
+                <div class="text-center">
+                    <img src="${avatarSrc}" class="rounded-circle mb-3" width="100" height="100"
+                         style="border:4px solid #667eea; object-fit:cover;"
+                         onerror="this.src='https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(u.name)}'">
+                    <h4>${escapeHtml(u.name)}</h4>
+                    <div class="mb-3">${u.avgRating ? `<span class="badge bg-warning text-dark fs-6"><i class="bi bi-star-fill"></i> ${u.avgRating}</span>` : '<span class="badge bg-light text-muted">Нет рейтинга</span>'}</div>
+                    
+                    <div class="text-start mt-4">
+                        <h6 class="fw-bold">Факты</h6>
+                        ${factsHtml || '<p class="text-muted small">Информации нет</p>'}
+                    </div>
+                    <div class="text-start mt-3">
+                        <h6 class="fw-bold">Интересы</h6>
+                        ${interests.length ? interests.map(i => `<span class="badge bg-primary-subtle text-primary me-1">${escapeHtml(i)}</span>`).join('') : '<span class="text-muted small">не указаны</span>'}
+                    </div>
+                    <button class="btn btn-primary w-100 mt-4 rounded-pill" data-bs-dismiss="modal">Понятно</button>
+                </div>`;
+        })
+        .catch(() => { modalBody.innerHTML = '<p class="text-danger">Ошибка загрузки</p>'; });
 }
     
     // Новое сообщение через сокет

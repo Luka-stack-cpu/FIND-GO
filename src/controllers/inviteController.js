@@ -5,7 +5,7 @@ const { createNotification } = require('./notificationController');
 // ✅ БАГ 5: Отправить приглашение — создаём уведомление получателю
 exports.sendInvite = async (req, res) => {
     try {
-        const { toUserId, eventId, placeName } = req.body;
+        const { toUserId, eventId, placeName, placeId } = req.body;
         const fromUserId = req.user.id;
 
         if (!toUserId || !placeName) {
@@ -13,13 +13,13 @@ exports.sendInvite = async (req, res) => {
         }
 
         const existing = await Invite.findOne({
-            where: { fromUserId, toUserId, status: 'pending' }
+            where: { fromUserId, toUserId, status: 'pending', eventId: eventId || null }
         });
         if (existing) {
             return res.status(400).json({ message: 'Приглашение уже отправлено' });
         }
 
-        const invite = await Invite.create({ fromUserId, toUserId, eventId: eventId || null, placeName });
+        const invite = await Invite.create({ fromUserId, toUserId, eventId: eventId || null, placeName, placeId });
 
         // ✅ БАГ 5: создаём уведомление для получателя
         const sender = await User.findByPk(fromUserId, { attributes: ['name'] });
@@ -27,7 +27,8 @@ exports.sendInvite = async (req, res) => {
             toUserId,
             '📩 Новое приглашение',
             `${sender?.name || 'Пользователь'} приглашает тебя в "${placeName}"`,
-            'invite'
+            'invite',
+            '/'
         );
 
         res.status(201).json(invite);
@@ -50,46 +51,76 @@ exports.acceptInvite = async (req, res) => {
         let eventId = invite.eventId;
         let eventPlaceName = invite.placeName;
 
-        // Если eventId задан — добавляем в участники
-        if (eventId) {
-            const event = await Event.findByPk(eventId, {
-                include: [{ model: Place, as: 'place' }]
-            });
-            if (event) {
-                eventPlaceName = event.place?.name || invite.placeName;
+        const now = new Date();
+        const dialect = db.sequelize.getDialect();
 
-                const now = new Date();
-                // SQLite: INSERT OR IGNORE / PostgreSQL: ON CONFLICT DO NOTHING
-                const dialect = db.sequelize.getDialect();
-                if (dialect === 'sqlite') {
-                    await db.sequelize.query(
-                        `INSERT OR IGNORE INTO EventParticipants (EventId, UserId, createdAt, updatedAt) VALUES (?, ?, ?, ?)`,
-                        { replacements: [eventId, userId, now, now] }
-                    );
-                } else {
-                    await db.sequelize.query(
-                        `INSERT INTO "EventParticipants" ("EventId", "UserId", "createdAt", "updatedAt") VALUES (?, ?, ?, ?) ON CONFLICT DO NOTHING`,
-                        { replacements: [eventId, userId, now, now] }
-                    );
-                }
+        // Если это персональное приглашение (eventId == null), создаём персональное событие
+        if (!eventId) {
+            const newEvent = await Event.create({
+                creatorId: invite.fromUserId,
+                placeId: invite.placeId || 1, // Если нет ID, используем 1
+                datetime: now,
+                maxParticipants: 2,
+                description: `Персональный чат: ${invite.placeName}`,
+                isPersonal: true
+            });
+            eventId = newEvent.id;
+            
+            // Добавляем отправителя приглашения в участники
+            if (dialect === 'sqlite') {
+                await db.sequelize.query(
+                    `INSERT OR IGNORE INTO EventParticipants (EventId, UserId, createdAt, updatedAt) VALUES (?, ?, ?, ?)`,
+                    { replacements: [eventId, invite.fromUserId, now, now] }
+                );
+            } else {
+                await db.sequelize.query(
+                    `INSERT INTO "EventParticipants" ("EventId", "UserId", "createdAt", "updatedAt") VALUES (?, ?, ?, ?) ON CONFLICT DO NOTHING`,
+                    { replacements: [eventId, invite.fromUserId, now, now] }
+                );
             }
         }
 
+        // Добавляем текущего пользователя (кто принял) в участники
+        if (dialect === 'sqlite') {
+            await db.sequelize.query(
+                `INSERT OR IGNORE INTO EventParticipants (EventId, UserId, createdAt, updatedAt) VALUES (?, ?, ?, ?)`,
+                { replacements: [eventId, userId, now, now] }
+            );
+        } else {
+            await db.sequelize.query(
+                `INSERT INTO "EventParticipants" ("EventId", "UserId", "createdAt", "updatedAt") VALUES (?, ?, ?, ?) ON CONFLICT DO NOTHING`,
+                { replacements: [eventId, userId, now, now] }
+            );
+        }
+
         invite.status = 'accepted';
+        invite.eventId = eventId; // Привязываем созданное событие к приглашению
         await invite.save();
 
-        // ✅ БАГ 5: уведомляем отправителя о принятии
+        // ✅ БАГ 5: уведомляем обоих пользователей о создании чата
         const acceptor = await User.findByPk(userId, { attributes: ['name'] });
+        const sender = await User.findByPk(invite.fromUserId, { attributes: ['name'] });
+        
         await createNotification(
             invite.fromUserId,
             '✅ Приглашение принято',
             `${acceptor?.name || 'Пользователь'} принял твоё приглашение в "${eventPlaceName}"`,
-            'accepted'
+            'accepted',
+            `/chat.html?eventId=${eventId}`
+        );
+
+        // Уведомление для того, кто принял (чтобы у него осталась ссылка)
+        await createNotification(
+            userId,
+            '🤝 Встреча подтверждена',
+            `Вы приняли приглашение от ${sender?.name || 'Пользователя'} в "${eventPlaceName}". Чат создан!`,
+            'accepted',
+            `/chat.html?eventId=${eventId}`
         );
 
         res.json({
-            message: 'Приглашение принято! Вы добавлены в поход.',
-            eventId,           // ✅ БАГ 3: фронтенд получает eventId для кнопки Чат
+            message: 'Приглашение принято! Чат создан.',
+            eventId,
             eventPlaceName
         });
     } catch (error) {
