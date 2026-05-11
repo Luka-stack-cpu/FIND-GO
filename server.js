@@ -244,4 +244,4 @@ process.on('unhandledRejection', (reason) => {
     console.error('💥 Необработанный Promise rejection:', reason);
 });
 
-start();
+start();// Force update Mon May 11 13:20:12 +06 2026
