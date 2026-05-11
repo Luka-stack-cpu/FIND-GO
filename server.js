@@ -208,7 +208,7 @@ const start = async () => {
         `);
         console.log('✅ Таблица EventParticipants создана/проверена');
 
-        await db.sequelize.sync({ alter: false });
+        await db.sequelize.sync({ alter: true });
         console.log('✅ База данных синхронизирована');
 
         await seedIfEmpty();

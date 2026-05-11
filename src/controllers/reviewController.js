@@ -16,12 +16,17 @@ exports.createReview = async (req, res) => {
         if (event.status !== 'completed') return res.status(400).json({ message: 'Отзывы можно оставлять только после завершения похода' });
 
         // Проверяем участие обоих
+        const dialect = db.sequelize.getDialect();
+        const query = dialect === 'sqlite' 
+            ? 'SELECT 1 FROM EventParticipants WHERE EventId = ? AND UserId = ? LIMIT 1'
+            : 'SELECT 1 FROM "EventParticipants" WHERE "EventId" = ? AND "UserId" = ? LIMIT 1';
+
         const isFromParticipant = await db.sequelize.query(
-            'SELECT 1 FROM EventParticipants WHERE EventId = ? AND UserId = ? LIMIT 1',
+            query,
             { replacements: [eventId, fromUserId], type: db.sequelize.QueryTypes.SELECT }
         );
         const isToParticipant = await db.sequelize.query(
-            'SELECT 1 FROM EventParticipants WHERE EventId = ? AND UserId = ? LIMIT 1',
+            query,
             { replacements: [eventId, toUserId], type: db.sequelize.QueryTypes.SELECT }
         );
 
