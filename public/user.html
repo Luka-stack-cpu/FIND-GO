@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="ru" data-bs-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Профиль пользователя | Find&Go</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
+    <style>
+        :root { --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+        body { font-family: 'Inter', -apple-system, system-ui, sans-serif; background: var(--bs-body-bg); transition: 0.3s; }
+        .navbar { background: var(--bs-tertiary-bg); backdrop-filter: blur(15px); }
+        .profile-header { background: var(--primary-gradient); padding: 80px 0 120px; color: white; border-radius: 0 0 50px 50px; margin-bottom: -80px; }
+        .profile-card { background: var(--bs-card-bg); border-radius: 30px; box-shadow: 0 15px 35px rgba(0,0,0,0.05); border: 1px solid var(--bs-border-color); padding: 30px; margin-bottom: 30px; transition: 0.3s; }
+        .avatar-container { position: relative; width: 150px; height: 150px; margin: 0 auto 20px; }
+        .avatar-img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; border: 6px solid white; box-shadow: 0 8px 20px rgba(0,0,0,0.1); }
+        [data-bs-theme="dark"] .avatar-img { border-color: #2b3035; }
+        .rating-badge { background: #f59e0b; color: white; padding: 8px 20px; border-radius: 50px; font-weight: 700; display: inline-flex; align-items: center; gap: 8px; font-size: 1.1rem; }
+        .review-card { background: var(--bs-tertiary-bg); border-radius: 24px; padding: 24px; margin-bottom: 16px; border: 1px solid var(--bs-border-color); transition: 0.3s; }
+        .review-card:hover { transform: scale(1.01); box-shadow: 0 8px 20px rgba(0,0,0,0.05); }
+        .review-avatar { width: 45px; height: 45px; border-radius: 50%; object-fit: cover; }
+        .interest-tag { background: rgba(102, 126, 234, 0.1); color: #667eea; padding: 8px 20px; border-radius: 50px; font-size: 0.9rem; font-weight: 600; margin: 6px; display: inline-block; }
+        [data-bs-theme="dark"] .interest-tag { background: rgba(102, 126, 234, 0.2); color: #a5b4fc; }
+        .btn-action { border-radius: 50px; padding: 14px 36px; font-weight: 600; transition: 0.3s; }
+        .btn-action:hover { transform: translateY(-3px); box-shadow: 0 10px 20px rgba(0,0,0,0.1); }
+        .fact-item { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 16px; padding: 16px; background: var(--bs-tertiary-bg); border-radius: 16px; border: 1px solid var(--bs-border-color); }
+        .fact-icon { color: #667eea; font-size: 1.2rem; }
+    </style>
+</head>
+<body>
+
+<nav class="navbar navbar-expand-lg fixed-top">
+    <div class="container">
+        <a class="navbar-brand fw-bold fs-4" href="/" style="background: var(--primary-gradient); -webkit-background-clip: text; color: transparent;">🧭 Find&Go</a>
+        <div class="ms-auto">
+            <a href="/" class="btn btn-outline-primary rounded-pill px-4"><i class="bi bi-house-door"></i> На главную</a>
+        </div>
+    </div>
+</nav>
+
+<div class="profile-header text-center">
+    <div class="container">
+        <h1 class="fw-black display-5 mb-2">Знакомьтесь!</h1>
+        <p class="opacity-75 fs-5">Посмотрите профиль будущего друга</p>
+    </div>
+</div>
+
+<div class="container" style="position: relative; z-index: 10;">
+    <div class="row">
+        <div class="col-lg-4">
+            <div class="profile-card text-center">
+                <div class="avatar-container">
+                    <img id="userAvatar" src="https://api.dicebear.com/7.x/avataaars/svg?seed=loading" class="avatar-img" alt="Аватар">
+                </div>
+                <h2 id="userName" class="fw-bold mb-1">Загрузка...</h2>
+                <div id="userRating" class="mb-4"></div>
+                
+                <h6 class="text-uppercase text-muted small fw-bold mb-3">Интересы</h6>
+                <div id="userInterests" class="mb-4"></div>
+                
+                <button class="btn btn-primary btn-action w-100" id="msgBtn"><i class="bi bi-chat-fill me-2"></i> Написать сообщение</button>
+            </div>
+            
+            <div class="profile-card">
+                <h5 class="fw-bold mb-4"><i class="bi bi-patch-check-fill text-primary"></i> Немного о себе</h5>
+                <div id="userFacts"></div>
+            </div>
+        </div>
+        
+        <div class="col-lg-8">
+            <div class="profile-card h-100">
+                <div class="d-flex justify-content-between align-items-center mb-5">
+                    <h4 class="fw-bold mb-0 d-flex align-items-center gap-3">
+                        <i class="bi bi-chat-left-heart-fill text-danger"></i> Отзывы участников
+                    </h4>
+                    <span id="totalReviews" class="badge bg-primary rounded-pill px-3 py-2 fs-6">0</span>
+                </div>
+                <div id="reviewsList">
+                    <div class="text-center py-5">
+                        <div class="spinner-border text-primary" role="status"></div>
+                        <p class="mt-3 text-muted">Загружаем отзывы...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    const token = localStorage.getItem('token');
+    const urlParams = new URLSearchParams(window.location.search);
+    const userId = urlParams.get('id');
+
+    if (!token) window.location.href = '/login.html';
+    if (!userId) window.location.href = '/';
+
+    async function loadUserProfile() {
+        try {
+            const res = await fetch(`/api/auth/users/${userId}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const u = await res.json();
+
+            if (!res.ok) throw new Error(u.message);
+
+            document.title = `${u.name} | Профиль Find&Go`;
+            document.getElementById('userName').textContent = u.name;
+            document.getElementById('userAvatar').src = u.avatar;
+            
+            // Рейтинг
+            if (u.avgRating && u.avgRating > 0) {
+                document.getElementById('userRating').innerHTML = `
+                    <div class="rating-badge">
+                        <i class="bi bi-star-fill"></i> ${u.avgRating}
+                    </div>
+                    <div class="small text-muted mt-2">${u.totalReviews} отзывов от участников</div>
+                `;
+                document.getElementById('totalReviews').textContent = u.totalReviews;
+            } else {
+                document.getElementById('userRating').innerHTML = '<div class="badge bg-secondary-subtle text-secondary px-3 py-2 rounded-pill mt-2">Нет оценок</div>';
+                document.getElementById('totalReviews').textContent = '0';
+            }
+
+            // Интересы
+            const interests = Array.isArray(u.interests) ? u.interests : [];
+            if (interests.length) {
+                document.getElementById('userInterests').innerHTML = interests.map(i => `<span class="interest-tag">${i}</span>`).join('');
+            } else {
+                document.getElementById('userInterests').innerHTML = '<p class="text-muted small">Интересы не указаны</p>';
+            }
+
+            // Факты
+            let factsHtml = '';
+            try {
+                if (u.bio) {
+                    const bioData = JSON.parse(u.bio);
+                    if (bioData.fact1) factsHtml += `<div class="fact-item"><i class="bi bi-check2-circle fact-icon"></i><div>${bioData.fact1}</div></div>`;
+                    if (bioData.fact2) factsHtml += `<div class="fact-item"><i class="bi bi-check2-circle fact-icon"></i><div>${bioData.fact2}</div></div>`;
+                }
+            } catch(e) {
+                if (u.bio) factsHtml = `<div class="fact-item"><i class="bi bi-quote fact-icon"></i><div>${u.bio}</div></div>`;
+            }
+            document.getElementById('userFacts').innerHTML = factsHtml || '<p class="text-muted text-center py-4">Пользователь скромничает и пока ничего не рассказал</p>';
+
+            // Отзывы
+            if (!u.reviews || u.reviews.length === 0) {
+                document.getElementById('reviewsList').innerHTML = '<div class="text-center py-5 text-muted bg-body-tertiary rounded-4 mt-4"><i class="bi bi-chat-dots fs-1 mb-3 d-block opacity-25"></i><p class="mb-0">Этот пользователь еще не получал отзывов.</p><p class="small">Будьте первым, кто сходит с ним в поход!</p></div>';
+            } else {
+                document.getElementById('reviewsList').innerHTML = u.reviews.map(r => `
+                    <div class="review-card">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <div class="d-flex align-items-center gap-3">
+                                <img src="${r.fromUser.avatar}" class="review-avatar" alt="${r.fromUser.name}">
+                                <div>
+                                    <div class="fw-bold">${r.fromUser.name}</div>
+                                    <div class="text-warning small">${'★'.repeat(r.rating)}${'☆'.repeat(5-r.rating)}</div>
+                                </div>
+                            </div>
+                            <small class="text-muted bg-body-tertiary px-2 py-1 rounded small">${new Date(r.createdAt).toLocaleDateString()}</small>
+                        </div>
+                        <p class="mb-0 text-secondary" style="line-height: 1.6;">${r.comment || '<i>Без комментария</i>'}</p>
+                    </div>
+                `).join('');
+            }
+
+            // Сообщения
+            document.getElementById('msgBtn').onclick = () => {
+                window.location.href = `/dm.html?userId=${u.id}`;
+            };
+
+        } catch (error) {
+            console.error(error);
+            document.getElementById('userName').innerHTML = '<span class="text-danger">Ошибка</span>';
+            document.getElementById('reviewsList').innerHTML = '<div class="alert alert-danger">Не удалось загрузить данные профиля.</div>';
+        }
+    }
+
+    loadUserProfile();
+
+    // Темная тема
+    if (localStorage.getItem('theme') === 'dark') {
+        document.documentElement.setAttribute('data-bs-theme', 'dark');
+    }
+</script>
+
+</body>
+</html>
