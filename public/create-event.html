@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Создать поход | Find&Go</title>
+    <title>Создать встречу | FindGo</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
@@ -12,60 +12,6 @@
     <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/ru.js"></script>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
     <link rel="stylesheet" href="/index.css">
-    <style><!--
-        .spinner-border-sm {ner-border-sm {
-            width: 1rem;
-            height: 1rem;
-            border-width: 0.2em;
-        }
-
-        @keyframes spinner-border {
-            to { transform: rotate(360deg); }
-        }
-
-    .spinner-border {
-            display: inline-block;
-            animation: spinner-border 0.75s linear infinite;
-        }   
-        
-        /* Стили для спиннера */
-        .spinner-border-sm {
-            width: 1rem;
-            height: 1rem;
-            border-width: 0.2em;
-        }
-        
-        @keyframes spinner-border {
-            to { transform: rotate(360deg); }
-        }
-        
-        .spinner-border {
-            display: inline-block;
-            animation: spinner-border 0.75s linear infinite;
-        }
-
-        /* Тёмная тема для полей ввода */
-        [data-bs-theme="dark"] .form-control, 
-        [data-bs-theme="dark"] .form-select,
-        [data-bs-theme="dark"] textarea {
-            background-color: #1a1a24 !important;
-            color: #ffffff !important;
-            border-color: #2a2a35 !important;
-        }
-
-        [data-bs-theme="dark"] .form-control::placeholder {
-            color: #888 !important;
-        }
-
-        [data-bs-theme="dark"] .form-text {
-            color: #999 !important;
-        }
-        
-        @media (max-width: 600px) {
-            .form-card { padding: 24px; margin-top: 70px; }
-            .form-title { font-size: 1.5rem; }
-        }
--->
 </head>
 <body>
 
@@ -98,7 +44,7 @@
         <div class="col-md-8 col-lg-7">
             <div class="form-card">
                 <div class="text-center">
-                    <h1 class="form-title"><i class="bi bi-plus-circle"></i> Создать поход</h1>
+                    <h1 class="form-title"><i class="bi bi-plus-circle"></i> Создать встречу</h1>
                     <p class="form-subtitle">Найди компанию для совместного отдыха</p>
                 </div>
                 
@@ -170,8 +116,8 @@
                     </div>
                     
                     <!-- Кнопка отправки -->
-                    <button type="submit" class="btn btn-gradient w-100 text-white">
-                        <i class="bi bi-send-fill"></i> Создать поход
+                    <button type="submit" class="btn btn-primary w-100 text-white" style="border-radius: 50px; padding: 14px; font-weight: 600; font-size: 1.1rem;">
+                        <i class="bi bi-send-fill"></i> Создать встречу
                     </button>
                 </form>
             </div>
@@ -290,7 +236,6 @@
         }
     }
     
-    // ========== УСТАНОВКА МИНИМАЛЬНОЙ ДАТЫ ==========
     // ========== FLAT PICKR ==========
     let fp = null;
     function initFlatpickr() {
@@ -304,7 +249,7 @@
         });
     }
     
-    // ========== СОЗДАНИЕ ПОХОДА (С ВАЛИДАЦИЕЙ И ТОСТАМИ) ==========
+    // ========== СОЗДАНИЕ ВСТРЕЧИ ==========
     document.getElementById('createEventForm').addEventListener('submit', async (e) => {
         e.preventDefault();
         
@@ -345,7 +290,7 @@
         // Превращаем в формат для API
         const datetime = datetimeRaw.replace(' ', 'T') + ':00';
         
-        const submitBtn = document.querySelector('.btn-gradient');
+        const submitBtn = e.target.querySelector('button[type="submit"]');
         const originalText = submitBtn.innerHTML;
         
         // ========== ПОКАЗЫВАЕМ ЗАГРУЗКУ ==========
@@ -371,13 +316,13 @@
             });
             
             if (response.ok) {
-                showToast('🎉 Поход успешно создан!', 'success');
+                showToast('🎉 Встреча успешно создана!', 'success');
                 setTimeout(() => {
                     window.location.href = '/';
                 }, 1500);
             } else {
                 const error = await response.json();
-                showToast(error.message || '❌ Ошибка при создании похода', 'danger');
+                showToast(error.message || '❌ Ошибка при создании встречи', 'danger');
                 submitBtn.disabled = false;
                 submitBtn.innerHTML = originalText;
             }
