@@ -15,6 +15,21 @@ const Event = sequelize.define('Event', {
     type: DataTypes.INTEGER,
     allowNull: false
   },
+  title: {
+    type: DataTypes.STRING,
+    allowNull: false,
+    defaultValue: 'Встреча'
+  },
+  category: {
+    type: DataTypes.STRING,
+    allowNull: false,
+    defaultValue: 'другое'
+  },
+  ageGroup: {
+    type: DataTypes.STRING,
+    allowNull: false,
+    defaultValue: '18-21'
+  },
   datetime: {
     type: DataTypes.DATE,
     allowNull: false

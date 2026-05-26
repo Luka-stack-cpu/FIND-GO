@@ -4,12 +4,15 @@ const db = require('../models'); // для прямых SQL-запросов
 // ========== СОЗДАТЬ ПОХОД ==========
 exports.createEvent = async (req, res) => {
   try {
-    const { placeId, datetime, maxParticipants, description } = req.body;
+    const { placeId, datetime, maxParticipants, description, title, category, ageGroup } = req.body;
     const creatorId = req.user.id;
     
     const event = await Event.create({
       creatorId,
       placeId,
+      title: title || 'Встреча',
+      category: category || 'другое',
+      ageGroup: ageGroup || '18-21',
       datetime,
       maxParticipants: maxParticipants || 5,
       description
@@ -258,13 +261,13 @@ exports.updateEvent = async (req, res) => {
   try {
     const eventId = req.params.id;
     const userId = req.user.id;
-    const { datetime, maxParticipants, description } = req.body;
+    const { datetime, maxParticipants, description, title, category, ageGroup } = req.body;
     
     const event = await Event.findByPk(eventId);
     if (!event) return res.status(404).json({ message: 'Поход не найден' });
     if (event.creatorId !== userId) return res.status(403).json({ message: 'Только создатель может редактировать' });
     
-    await event.update({ datetime, maxParticipants, description });
+    await event.update({ datetime, maxParticipants, description, title, category, ageGroup });
     res.json(event);
   } catch (error) {
     console.error(error);

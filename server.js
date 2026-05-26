@@ -255,6 +255,20 @@ const start = async () => {
         `);
         console.log('✅ Таблица EventParticipants создана/проверена');
 
+        // Safe SQLite migrations for new columns
+        try {
+            await db.sequelize.query("ALTER TABLE Events ADD COLUMN title VARCHAR(255) DEFAULT 'Встреча';");
+            console.log('✅ Добавлена колонка title в Events');
+        } catch (e) {}
+        try {
+            await db.sequelize.query("ALTER TABLE Events ADD COLUMN category VARCHAR(255) DEFAULT 'другое';");
+            console.log('✅ Добавлена колонка category в Events');
+        } catch (e) {}
+        try {
+            await db.sequelize.query("ALTER TABLE Events ADD COLUMN ageGroup VARCHAR(255) DEFAULT '18-21';");
+            console.log('✅ Добавлена колонка ageGroup в Events');
+        } catch (e) {}
+
         await db.sequelize.sync();
         console.log('✅ База данных синхронизирована');
 
