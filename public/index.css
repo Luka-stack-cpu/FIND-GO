@@ -346,6 +346,11 @@ h1, h2, h3, h4, h5, h6 {
     border-radius: 99px !important;
     border: none !important;
     transition: var(--transition-smooth) !important;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    width: 100%;
+    padding: 8px 12px !important;
 }
 
 .btn-join:hover:not(:disabled) {
