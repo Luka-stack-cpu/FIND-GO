@@ -747,69 +747,189 @@
         #modalRightCard {
             padding: 25px;
             background: var(--bs-tertiary-bg);
+            overflow-y: auto;
+        }
+
+        /* ===== MODAL RIGHT PANEL ===== */
+        .modal-actions-block {
+            background: var(--bs-card-bg);
+            border-radius: 20px;
+            padding: 18px;
+            border: 1px solid var(--bs-border-color);
+            margin-bottom: 16px;
+        }
+
+        .modal-actions-block h6 {
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: var(--bs-secondary-color);
+            margin-bottom: 12px;
+        }
+
+        .modal-active-events {
+            margin-bottom: 16px;
+        }
+
+        .modal-event-item {
+            background: var(--bs-card-bg);
+            border: 1px solid var(--bs-border-color);
+            border-radius: 16px;
+            padding: 12px 14px;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+        }
+
+        .modal-event-item.has-events {
+            border-color: rgba(102, 126, 234, 0.4);
+        }
+
+        .modal-event-meta {
+            font-size: 0.82rem;
+            color: var(--bs-secondary-color);
+            margin-top: 2px;
+        }
+
+        .modal-social-divider {
+            font-size: 0.72rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.07em;
+            color: var(--bs-secondary-color);
+            margin: 16px 0 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .modal-social-divider::before,
+        .modal-social-divider::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: var(--bs-border-color);
         }
 
         .users-list {
             display: flex;
             flex-direction: column;
-            gap: 12px;
+            gap: 8px;
             overflow-y: auto;
-            max-height: 450px;
-            padding-right: 5px;
+            max-height: 280px;
+            padding-right: 4px;
         }
 
         .user-item-compact {
             background: var(--bs-card-bg);
-            border-radius: 20px;
-            padding: 12px 16px;
+            border-radius: 16px;
+            padding: 10px 12px;
             display: flex;
             align-items: center;
             justify-content: space-between;
-            transition: 0.3s;
+            transition: 0.2s;
             border: 1px solid var(--bs-border-color);
             cursor: pointer;
         }
 
         .user-item-compact:hover {
-            transform: translateX(5px);
             border-color: #667eea;
-            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.1);
+            box-shadow: 0 2px 10px rgba(102, 126, 234, 0.1);
         }
 
         .user-info-compact {
             display: flex;
             align-items: center;
-            gap: 12px;
+            gap: 10px;
+            min-width: 0;
         }
 
         .user-avatar-small {
-            width: 42px;
-            height: 42px;
+            width: 38px;
+            height: 38px;
             border-radius: 50%;
             object-fit: cover;
-            border: 2px solid white;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            flex-shrink: 0;
         }
 
         .user-name-compact {
             font-weight: 600;
-            font-size: 0.95rem;
+            font-size: 0.88rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .user-intent-text {
+            font-size: 0.78rem;
+            color: var(--bs-secondary-color);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 130px;
+        }
+
+        .user-cta-btns {
+            display: flex;
+            gap: 4px;
+            flex-shrink: 0;
         }
 
         .invite-btn-small {
             background: var(--primary-gradient);
             color: white;
             border: none;
-            padding: 6px 14px;
+            padding: 5px 11px;
             border-radius: 50px;
-            font-size: 0.8rem;
+            font-size: 0.75rem;
             font-weight: 600;
-            transition: 0.3s;
+            transition: 0.2s;
+            white-space: nowrap;
         }
 
         .invite-btn-small:hover {
-            transform: scale(1.05);
-            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+            opacity: 0.85;
+            transform: scale(1.03);
+        }
+
+        .write-btn-small {
+            background: transparent;
+            color: var(--bs-secondary-color);
+            border: 1px solid var(--bs-border-color);
+            padding: 5px 10px;
+            border-radius: 50px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            transition: 0.2s;
+            white-space: nowrap;
+        }
+
+        .write-btn-small:hover {
+            border-color: #667eea;
+            color: #667eea;
+        }
+
+        .empty-state-action {
+            text-align: center;
+            padding: 20px 16px;
+            background: var(--bs-card-bg);
+            border: 1px dashed var(--bs-border-color);
+            border-radius: 16px;
+            color: var(--bs-secondary-color);
+        }
+
+        .empty-state-action .es-icon {
+            font-size: 1.8rem;
+            margin-bottom: 8px;
+            display: block;
+        }
+
+        .empty-state-action p {
+            font-size: 0.85rem;
+            margin-bottom: 12px;
         }
 
         @media (max-width: 992px) {
@@ -988,15 +1108,13 @@
     <!-- Hero Section -->
     <div class="hero" id="heroSection">
         <div class="hero-content">
-            <h1 id="heroTitle">Найди свою идеальную компанию! 🇰🇬</h1>
-            <p id="heroSubtitle">Не с кем пойти в кафе, погулять в парке или в горы? Создавай поход, находи
-                единомышленников и открывай Бишкек заново!</p>
+            <h1 id="heroTitle">Найди компанию в Бишкеке 🇰🇬</h1>
+            <p id="heroSubtitle">Выбери место, посмотри активные встречи или создай свою. Найди людей со схожими планами.</p>
             <div class="d-flex justify-content-center gap-3 flex-wrap mt-4">
                 <button class="btn btn-primary"
                     onclick="document.getElementById('categoryFilters').scrollIntoView({behavior:'smooth'})">Выбрать
                     место</button>
-                <a href="/create-event.html" class="btn btn-outline"><span id="createBtnText">Собрать
-                        компанию</span></a>
+                <a href="/create-event.html" class="btn btn-outline"><span id="createBtnText">Создать встречу</span></a>
             </div>
         </div>
     </div>
@@ -1054,8 +1172,6 @@
             <button class="filter-btn" data-category="трц">🛍️ ТРЦ</button>
             <button class="filter-btn" data-category="отель">🏨 Отели</button>
         </div>
-    </div>
-
     </div>
 
     <!-- Интерактивная карта -->
@@ -1328,7 +1444,6 @@
         document.getElementById('notificationsBtn').addEventListener('click', showNotifications);
 
         // ========== 6. ПРИГЛАШЕНИЯ ==========
-        // ✅ БАГ 2: sendInvite — закрываем модальное окно корректно, не оставляем затемнение
         async function sendInvite(toUserId, toUserName, placeName, placeId) {
             try {
                 const response = await fetch('/api/invite', {
@@ -1338,18 +1453,7 @@
                 });
                 const data = await response.json();
                 if (response.ok) {
-                    // ✅ БАГ 2: правильно закрываем модал через getInstance
-                    const modalEl = document.getElementById('placeDetailTwoColumnsModal');
-                    const existingModal = bootstrap.Modal.getInstance(modalEl);
-                    if (existingModal) existingModal.hide();
-
-                    // ✅ БАГ 2: убираем затемнение принудительно
-                    document.querySelectorAll('.modal-backdrop').forEach(el => el.remove());
-                    document.body.classList.remove('modal-open');
-                    document.body.style.removeProperty('padding-right');
-                    document.body.style.removeProperty('overflow');
-
-                    showToast(`✅ Приглашение отправлено ${toUserName}!`, 'success');
+                    showToast(`✅ Приглашение отправлено ${escapeHtml(toUserName)}!`, 'success');
                     refreshBadges();
                 } else {
                     showToast(data.message || 'Ошибка', 'danger');
@@ -1553,7 +1657,7 @@
             }
             container.innerHTML = filteredPlaces.map(place => {
                 const photos = place.photos || [place.img || ''];
-                const slides = photos.map(url => `<div class="place-slider-slide"><img src="${url}" alt="${place.name}" loading="lazy"></div>`).join('');
+                const slides = photos.map(url => `<div class="place-slider-slide"><img src="${url}" alt="${escapeHtml(place.name)}" loading="lazy"></div>`).join('');
                 const dots = photos.map((_, i) => `<button class="place-slider-dot${i === 0 ? ' active' : ''}" onclick="event.stopPropagation()"></button>`).join('');
                 return `
         <div class="place-card" onclick="openPlaceModal(${place.id})" data-slider-id="${place.id}">
@@ -1562,34 +1666,13 @@
                 <div class="place-slider-dots">${dots}</div>
             </div>
             <div class="card-body">
-                <span class="place-tag">${place.tag || ''}</span>
-                <h4>${place.name}</h4>
-                <p>${(place.desc || '').substring(0, 75)}…</p>
+                <span class="place-tag">${escapeHtml(place.tag || '')}</span>
+                <h4>${escapeHtml(place.name)}</h4>
+                <p>${escapeHtml((place.desc || '').substring(0, 75))}…</p>
             </div>
         </div>`;
             }).join('');
             filteredPlaces.forEach(p => { if ((p.photos || [p.img]).length > 1) startSlider(p.id, (p.photos || [p.img]).length); });
-        }
-
-        // ========== 11. ПРЕМИАЛЬНЫЙ МОДАЛ МЕСТА ==========
-        function modalGalleryGo(id, idx) {
-            const track = document.querySelector(`#${id} .modal-gallery-track`);
-            const dots = document.querySelectorAll(`#${id}_dots .modal-gallery-dot`);
-            if (track) track.style.transform = `translateX(-${idx * 100}%)`;
-            if (dots.length) dots.forEach((d, i) => d.classList.toggle('active', i === idx));
-            if (track) track.dataset.currentIdx = idx;
-        }
-        function modalGalleryNext(id, total) {
-            const track = document.querySelector(`#${id} .modal-gallery-track`);
-            let idx = parseInt(track?.dataset.currentIdx || 0);
-            idx = (idx + 1) % total;
-            modalGalleryGo(id, idx);
-        }
-        function modalGalleryPrev(id, total) {
-            const track = document.querySelector(`#${id} .modal-gallery-track`);
-            let idx = parseInt(track?.dataset.currentIdx || 0);
-            idx = (idx - 1 + total) % total;
-            modalGalleryGo(id, idx);
         }
 
         async function openPlaceModal(placeId) {
@@ -1599,7 +1682,7 @@
 
             const photos = place.photos || [place.img];
             const galleryId = `mg_${placeId}`;
-            const slides = photos.map(url => `<div class="modal-gallery-slide"><img src="${url}" alt="${place.name}" loading="lazy"></div>`).join('');
+            const slides = photos.map(url => `<div class="modal-gallery-slide"><img src="${url}" alt="${escapeHtml(place.name)}" loading="lazy"></div>`).join('');
             const mdots = photos.map((_, i) => `<button class="modal-gallery-dot${i === 0 ? ' active' : ''}" onclick="modalGalleryGo('${galleryId}',${i})"></button>`).join('');
 
             const leftHtml = `
@@ -1611,103 +1694,148 @@
         <div class="modal-info-content">
             <div class="d-flex justify-content-between align-items-start mb-4">
                 <div>
-                    <span class="place-tag mb-2">${place.tag}</span>
-                    <h2 class="fw-bold mb-0">${place.name}</h2>
+                    <span class="place-tag mb-2">${escapeHtml(place.tag)}</span>
+                    <h2 class="fw-bold mb-0">${escapeHtml(place.name)}</h2>
                 </div>
                 <div class="text-end">
-                    <button class="btn btn-primary rounded-pill px-4 shadow-sm py-2" onclick="goToCreate('${place.name.replace(/'/g, "\\'")}')">
-                        <i class="bi bi-plus-circle me-2"></i> Иду сюда!
+                    <button class="btn btn-primary rounded-pill px-4 shadow-sm py-2" onclick="goToCreate('${place.name.replace(/\\/g, '\\\\').replace(/'/g, "\\'")}')">
+                        <i class="bi bi-plus-circle me-2"></i>Создать встречу
                     </button>
                 </div>
             </div>
             
-            <p class="fs-5 text-secondary mb-4" style="line-height: 1.6;">${place.desc || 'Описание отсутствует'}</p>
+            <p class="text-secondary mb-4" style="line-height: 1.6; font-size: 0.97rem;">${escapeHtml(place.desc || 'Описание отсутствует')}</p>
             
             <div class="row g-3 mb-4">
                 <div class="col-sm-6">
                     <div class="p-3 bg-body-tertiary rounded-4 border">
                         <small class="text-muted d-block mb-1"><i class="bi bi-geo-alt"></i> Адрес</small>
-                        <span class="fw-semibold small d-block text-truncate">${place.address || 'Не указан'}</span>
+                        <span class="fw-semibold small d-block text-truncate">${escapeHtml(place.address || 'Не указан')}</span>
                     </div>
                 </div>
                 <div class="col-sm-6">
                     <div class="p-3 bg-body-tertiary rounded-4 border">
                         <small class="text-muted d-block mb-1"><i class="bi bi-telephone"></i> Телефон</small>
-                        <span class="fw-semibold small d-block">${place.phone || 'Не указан'}</span>
+                        <span class="fw-semibold small d-block">${escapeHtml(place.phone || 'Не указан')}</span>
                     </div>
                 </div>
             </div>
 
             <div class="d-flex gap-2">
-                <a href="${place.gisLink || '#'}" target="_blank" class="btn btn-light rounded-pill border px-4 btn-sm py-2">
+                <a href="${escapeHtml(place.gisLink || '#')}" target="_blank" rel="noopener" class="btn btn-light rounded-pill border px-4 btn-sm py-2">
                     <img src="https://2gis.kg/favicon.ico" width="16" class="me-2"> 2ГИС
                 </a>
-                <a href="https://instagram.com/${place.instagram || ''}" target="_blank" class="btn btn-light rounded-pill border px-4 btn-sm py-2">
-                    <i class="bi bi-instagram text-danger me-2"></i> Instagram
-                </a>
+                ${place.instagram ? `<a href="https://instagram.com/${escapeHtml(place.instagram)}" target="_blank" rel="noopener" class="btn btn-light rounded-pill border px-4 btn-sm py-2">
+                    <i class="bi bi-instagram text-danger me-2"></i>Instagram
+                </a>` : ''}
             </div>
         </div>
     `;
 
+            // Load users in parallel
             await loadAllUsers();
             const users = getInterestedUsers(place.category);
 
-            const placeEvents = (typeof allEvents !== 'undefined' ? allEvents : []).filter(e => e.place?.id === place.id && e.status === 'active');
-            
-            let rightHtml = `
-                <div class="mb-4">
-                    <h5 class="fw-bold mb-3">Действия</h5>
-                    <div class="d-flex flex-column gap-2">
-            `;
+            // Safe guard — allEvents may not be loaded yet
+            const safeEvents = Array.isArray(allEvents) ? allEvents : [];
+            const placeEvents = safeEvents.filter(e => {
+                const placeId = e.placeId || e.place?.id;
+                return placeId === place.id && e.status === 'active';
+            });
+
+            const safePlaceName = place.name.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+
+            // ====== RIGHT PANEL: PRIMARY ACTIONS BLOCK ======
+            let rightHtml = `<div class="modal-actions-block">`;
+            rightHtml += `<h6>Действия</h6>`;
 
             if (placeEvents.length > 0) {
+                // Active meetings exist → show them first
+                rightHtml += `<div class="modal-active-events">`;
+                placeEvents.slice(0, 3).forEach(ev => {
+                    const dt = new Date(ev.datetime).toLocaleString('ru-RU', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+                    const cnt = ev.participantsCount || 0;
+                    const max = ev.maxParticipants || '?';
+                    const isFull = ev.participantsCount >= ev.maxParticipants;
+                    const isParticipant = ev.participants?.includes(currentUser.id);
+                    const isCreator = ev.creatorId === currentUser.id;
+                    rightHtml += `
+                    <div class="modal-event-item has-events">
+                        <div style="min-width:0;">
+                            <div class="fw-semibold" style="font-size:0.88rem;">${escapeHtml(ev.title || 'Встреча')}</div>
+                            <div class="modal-event-meta"><i class="bi bi-calendar3"></i> ${dt} &nbsp;·&nbsp; <i class="bi bi-people"></i> ${cnt}/${max}</div>
+                        </div>
+                        <div class="flex-shrink-0">
+                        ${isCreator ? `<span class="badge bg-primary-subtle text-primary" style="font-size:0.72rem;">Ваша</span>` :
+                            isParticipant ? `<a href="/chat.html?eventId=${ev.id}" class="btn btn-sm btn-outline-success py-1 px-2" style="font-size:0.78rem;">💬 Чат</a>` :
+                            isFull ? `<span class="badge bg-secondary" style="font-size:0.72rem;">Мест нет</span>` :
+                            `<button class="btn btn-sm btn-primary py-1 px-2" style="font-size:0.78rem;" onclick="event.stopPropagation(); joinEventFromModal(${ev.id})">Войти</button>`
+                        }
+                        </div>
+                    </div>`;
+                });
+                rightHtml += `</div>`;
+                if (placeEvents.length > 3) {
+                    rightHtml += `<button class="btn btn-link btn-sm p-0 mb-2" style="font-size:0.82rem;" onclick="goToEvents()">Ещё ${placeEvents.length - 3} встреч ↓</button>`;
+                }
                 rightHtml += `
-                    <button class="btn btn-primary w-100 fw-semibold" onclick="goToEvents()">Присоединиться к встрече (${placeEvents.length})</button>
-                    <button class="btn btn-outline-primary w-100 fw-semibold" onclick="goToCreate('${place.name.replace(/'/g, "\\'")}')">Создать свою встречу</button>
-                `;
+                <div class="d-flex flex-column gap-2 mt-2">
+                    <button class="btn btn-outline-primary w-100 fw-semibold btn-sm" onclick="goToCreate('${safePlaceName}')">Создать свою встречу</button>
+                    <button class="btn btn-light w-100 border btn-sm" onclick="goToEvents()">Все встречи рядом</button>
+                </div>`;
             } else {
+                // No meetings → show create-first state
                 rightHtml += `
-                    <button class="btn btn-primary w-100 fw-semibold" onclick="goToCreate('${place.name.replace(/'/g, "\\'")}')">Создать встречу здесь</button>
-                `;
+                <div class="empty-state-action mb-2">
+                    <span class="es-icon">📍</span>
+                    <p>Встреч здесь пока нет.<br>Создайте первую.</p>
+                    <button class="btn btn-primary w-100 fw-semibold" onclick="goToCreate('${safePlaceName}')">Создать встречу</button>
+                </div>
+                <div class="d-flex flex-column gap-2 mt-2">
+                    <button class="btn btn-light w-100 border btn-sm" onclick="goToEvents()">Все активные встречи</button>
+                </div>`;
             }
 
-            rightHtml += `
-                        <button class="btn btn-light w-100 fw-semibold border" onclick="goToEvents()">Посмотреть активные встречи рядом</button>
-                        <button class="btn btn-light w-100 fw-semibold border" onclick="document.querySelector('.users-list')?.scrollIntoView({behavior: 'smooth', block: 'start'})">Найти компанию</button>
-                    </div>
-                </div>
-            `;
+            rightHtml += `</div>`; // end modal-actions-block
 
-            rightHtml += `
-                <div>
-                    <h6 class="fw-bold text-muted mb-3">Открытые намерения / запросы</h6>
-            `;
+            // ====== RIGHT PANEL: SOCIAL LAYER (secondary) ======
+            if (users.length > 0) {
+                rightHtml += `<div class="modal-social-divider">Открытые намерения</div>`;
+                rightHtml += `<div class="users-list">`;
 
-            if (!users.length) {
-                rightHtml += `<div class="text-muted small">Пока нет открытых намерений.</div>`;
-            } else {
-                rightHtml += `<div class="users-list" style="max-height: 250px; overflow-y: auto;">`;
-                const intents = ["открыт к присоединению", "ищет компанию на сегодня", "планирует сходить сюда", "хочет присоединиться"];
+                const intentTemplates = [
+                    'планирует сходить сюда',
+                    'ищет компанию на сегодня',
+                    'открыт к присоединению',
+                    'хочет посетить это место'
+                ];
+
                 users.forEach((user, index) => {
-                    const avatarUrl = user.avatar || \`https://api.dicebear.com/7.x/avataaars/svg?seed=\${user.id}\`;
-                    const intent = intents[index % intents.length];
-                    
+                    const avatarUrl = user.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.id}`;
+                    const intent = intentTemplates[index % intentTemplates.length];
+                    const safeName = user.name.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+                    const isMe = user.id === currentUser.id;
+
                     rightHtml += `
-                <div class="user-item-compact p-2 mb-2 bg-white rounded border d-flex align-items-center justify-content-between" onclick="showProfile(${user.id})" style="cursor: pointer; transition: 0.2s;">
-                    <div class="d-flex align-items-center gap-2">
-                        <img src="${avatarUrl}" class="rounded-circle border" width="40" height="40" alt="${user.name}">
-                        <div class="overflow-hidden">
-                            <div class="fw-bold" style="font-size: 0.95rem;">${user.name}</div>
-                            <div class="text-muted text-truncate" style="font-size: 0.85rem; max-width: 160px;">— ${intent}</div>
+                    <div class="user-item-compact" onclick="showProfile(${user.id})">
+                        <div class="user-info-compact">
+                            <img src="${escapeHtml(avatarUrl)}" class="user-avatar-small" alt="${escapeHtml(user.name)}">
+                            <div style="min-width:0;">
+                                <div class="user-name-compact">${escapeHtml(user.name)}</div>
+                                <div class="user-intent-text">${escapeHtml(intent)}</div>
+                            </div>
                         </div>
-                    </div>
-                    ${user.id !== currentUser.id ? 
-                        `<button class="btn btn-sm btn-outline-primary py-1 px-2" style="font-size: 0.8rem; font-weight: 500;" onclick="event.stopPropagation(); sendInvite(${user.id}, '${user.name.replace(/'/g, "\\'")}', '${place.name.replace(/'/g, "\\'")}', ${place.id})">Пригласить</button>` 
-                        : '<span class="badge bg-secondary-subtle text-secondary rounded-pill">Вы</span>'}
-                </div>
-            `;
+                        <div class="user-cta-btns" onclick="event.stopPropagation()">
+                            ${isMe
+                                ? `<span class="badge bg-secondary-subtle text-secondary rounded-pill" style="font-size:0.72rem;">Вы</span>`
+                                : `<button class="invite-btn-small" onclick="sendInvite(${user.id}, '${safeName}', '${safePlaceName}', ${place.id})">Пригласить</button>
+                                   <button class="write-btn-small" onclick="window.location.href='/dm.html?userId=${user.id}'">Написать</button>`
+                            }
+                        </div>
+                    </div>`;
                 });
-                rightHtml += `</div></div>`;
+
+                rightHtml += `</div>`; // end users-list
             }
 
             document.getElementById('modalLeftCard').innerHTML = leftHtml;
@@ -1718,6 +1846,23 @@
             modal.show();
         }
 
+        // Join event directly from modal
+        window.joinEventFromModal = async (id) => {
+            try {
+                const res = await fetch(`/api/events/${id}/join`, { method: 'POST', headers: { 'Authorization': `Bearer ${token}` } });
+                if (res.ok) {
+                    confetti({ particleCount: 100, spread: 60, origin: { y: 0.6 }, colors: ['#667eea', '#764ba2', '#ffffff'] });
+                    showToast(`✅ Вы в встрече! <a href="/chat.html?eventId=${id}" class="text-white fw-bold">💬 Чат</a>`, 'success');
+                    await loadEvents();
+                    // Refresh modal right panel
+                    if (window.currentPlaceModalId) openPlaceModal(window.currentPlaceModalId);
+                } else {
+                    const err = await res.json();
+                    showToast(err.message || 'Ошибка', 'danger');
+                }
+            } catch (e) { showToast('Ошибка соединения', 'danger'); }
+        };
+
 
 
         function showProfile(userId) {
@@ -1725,24 +1870,38 @@
             window.location.href = `/user.html?id=${userId}`;
         }
 
+        function _closeModal() {
+            try {
+                const modalEl = document.getElementById('placeDetailTwoColumnsModal');
+                const m = bootstrap.Modal.getInstance(modalEl);
+                if (m) m.hide();
+            } catch(e) {}
+            // Always clean up backdrop
+            setTimeout(() => {
+                document.querySelectorAll('.modal-backdrop').forEach(el => el.remove());
+                document.body.classList.remove('modal-open');
+                document.body.style.removeProperty('overflow');
+                document.body.style.removeProperty('padding-right');
+            }, 50);
+        }
+
         function goToCreate(placeName) {
-            const modal = bootstrap.Modal.getInstance(document.getElementById('placeDetailTwoColumnsModal'));
-            if (modal) modal.hide();
-            // Убираем backdrop
-            document.querySelectorAll('.modal-backdrop').forEach(el => el.remove());
-            document.body.classList.remove('modal-open');
-            document.body.style.removeProperty('overflow');
-            window.location.href = `/create-event.html?place=${encodeURIComponent(placeName)}`;
+            _closeModal();
+            setTimeout(() => {
+                window.location.href = `/create-event.html?place=${encodeURIComponent(placeName)}`;
+            }, 150);
         }
 
         function goToEvents() {
-            const modal = bootstrap.Modal.getInstance(document.getElementById('placeDetailTwoColumnsModal'));
-            if (modal) modal.hide();
-            document.querySelectorAll('.modal-backdrop').forEach(el => el.remove());
-            document.body.classList.remove('modal-open');
-            document.body.style.removeProperty('overflow');
-            const el = document.getElementById('eventsList');
-            if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            _closeModal();
+            setTimeout(() => {
+                const el = document.getElementById('eventsList');
+                if (el) {
+                    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                } else {
+                    window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+                }
+            }, 200);
         }
 
         // ========== 12. ПОХОДЫ ==========

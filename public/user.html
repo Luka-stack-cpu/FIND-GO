@@ -9,7 +9,7 @@
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧭</text></svg>">
     <style>
         :root { --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
-        body { font-family: 'Inter', -apple-system, system-ui, sans-serif; background: var(--bs-body-bg); transition: 0.3s; }
+        body { font-family: 'Inter', -apple-system, system-ui, sans-serif; background: var(--bs-body-bg); transition: 0.3s; padding-top: 70px; }
         .navbar { background: var(--bs-tertiary-bg); backdrop-filter: blur(15px); }
         .profile-header { background: var(--primary-gradient); padding: 80px 0 120px; color: white; border-radius: 0 0 50px 50px; margin-bottom: -80px; }
         .profile-card { background: var(--bs-card-bg); border-radius: 30px; box-shadow: 0 15px 35px rgba(0,0,0,0.05); border: 1px solid var(--bs-border-color); padding: 30px; margin-bottom: 30px; transition: 0.3s; }
@@ -107,7 +107,7 @@
 
             document.title = `${u.name} | Профиль Find&Go`;
             document.getElementById('userName').textContent = u.name;
-            document.getElementById('userAvatar').src = u.avatar;
+            document.getElementById('userAvatar').src = u.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${u.name || u.id}`;
             
             // Рейтинг
             if (u.avgRating && u.avgRating > 0) {
