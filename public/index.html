@@ -1652,33 +1652,62 @@
             await loadAllUsers();
             const users = getInterestedUsers(place.category);
 
+            const placeEvents = (typeof allEvents !== 'undefined' ? allEvents : []).filter(e => e.place?.id === place.id && e.status === 'active');
+            
             let rightHtml = `
-        <div class="d-flex align-items-center gap-2 mb-4">
-            <div class="p-2 bg-primary text-white rounded-3 shadow-sm"><i class="bi bi-people-fill"></i></div>
-            <h5 class="fw-bold mb-0">Кому интересно</h5>
-        </div>
-    `;
+                <div class="mb-4">
+                    <h5 class="fw-bold mb-3">Действия</h5>
+                    <div class="d-flex flex-column gap-2">
+            `;
+
+            if (placeEvents.length > 0) {
+                rightHtml += `
+                    <button class="btn btn-primary w-100 fw-semibold" onclick="goToEvents()">Присоединиться к встрече (${placeEvents.length})</button>
+                    <button class="btn btn-outline-primary w-100 fw-semibold" onclick="goToCreate('${place.name.replace(/'/g, "\\'")}')">Создать свою встречу</button>
+                `;
+            } else {
+                rightHtml += `
+                    <button class="btn btn-primary w-100 fw-semibold" onclick="goToCreate('${place.name.replace(/'/g, "\\'")}')">Создать встречу здесь</button>
+                `;
+            }
+
+            rightHtml += `
+                        <button class="btn btn-light w-100 fw-semibold border" onclick="goToEvents()">Посмотреть активные встречи рядом</button>
+                        <button class="btn btn-light w-100 fw-semibold border" onclick="document.querySelector('.users-list')?.scrollIntoView({behavior: 'smooth', block: 'start'})">Найти компанию</button>
+                    </div>
+                </div>
+            `;
+
+            rightHtml += `
+                <div>
+                    <h6 class="fw-bold text-muted mb-3">Открытые намерения / запросы</h6>
+            `;
 
             if (!users.length) {
-                rightHtml += `<div class="text-center py-5 opacity-50"><i class="bi bi-person-dash fs-1"></i><p class="mt-2 text-muted">Пока никого нет.<br>Будь первым!</p></div>`;
+                rightHtml += `<div class="text-muted small">Пока нет открытых намерений.</div>`;
             } else {
-                rightHtml += `<div class="users-list">`;
-                users.forEach(user => {
-                    const avatarUrl = user.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.id}`;
+                rightHtml += `<div class="users-list" style="max-height: 250px; overflow-y: auto;">`;
+                const intents = ["открыт к присоединению", "ищет компанию на сегодня", "планирует сходить сюда", "хочет присоединиться"];
+                users.forEach((user, index) => {
+                    const avatarUrl = user.avatar || \`https://api.dicebear.com/7.x/avataaars/svg?seed=\${user.id}\`;
+                    const intent = intents[index % intents.length];
+                    
                     rightHtml += `
-                <div class="user-item-compact" onclick="showProfile(${user.id})">
-                    <div class="user-info-compact">
-                        <img src="${avatarUrl}" class="user-avatar-small" alt="${user.name}">
+                <div class="user-item-compact p-2 mb-2 bg-white rounded border d-flex align-items-center justify-content-between" onclick="showProfile(${user.id})" style="cursor: pointer; transition: 0.2s;">
+                    <div class="d-flex align-items-center gap-2">
+                        <img src="${avatarUrl}" class="rounded-circle border" width="40" height="40" alt="${user.name}">
                         <div class="overflow-hidden">
-                            <div class="user-name-compact text-truncate">${user.name}</div>
-                            <small class="text-muted d-block text-truncate" style="font-size: 0.75rem;">${user.bio ? user.bio.substring(0, 30) : 'Ищет компанию'}</small>
+                            <div class="fw-bold" style="font-size: 0.95rem;">${user.name}</div>
+                            <div class="text-muted text-truncate" style="font-size: 0.85rem; max-width: 160px;">— ${intent}</div>
                         </div>
                     </div>
-                    ${user.id !== currentUser.id ? `<button class="invite-btn-small" onclick="event.stopPropagation(); sendInvite(${user.id}, '${user.name.replace(/'/g, "\\'")}', '${place.name.replace(/'/g, "\\'")}', ${place.id})">Зову!</button>` : '<span class="badge bg-secondary-subtle text-secondary rounded-pill">Вы</span>'}
+                    ${user.id !== currentUser.id ? 
+                        `<button class="btn btn-sm btn-outline-primary py-1 px-2" style="font-size: 0.8rem; font-weight: 500;" onclick="event.stopPropagation(); sendInvite(${user.id}, '${user.name.replace(/'/g, "\\'")}', '${place.name.replace(/'/g, "\\'")}', ${place.id})">Пригласить</button>` 
+                        : '<span class="badge bg-secondary-subtle text-secondary rounded-pill">Вы</span>'}
                 </div>
             `;
                 });
-                rightHtml += `</div>`;
+                rightHtml += `</div></div>`;
             }
 
             document.getElementById('modalLeftCard').innerHTML = leftHtml;
@@ -1704,6 +1733,16 @@
             document.body.classList.remove('modal-open');
             document.body.style.removeProperty('overflow');
             window.location.href = `/create-event.html?place=${encodeURIComponent(placeName)}`;
+        }
+
+        function goToEvents() {
+            const modal = bootstrap.Modal.getInstance(document.getElementById('placeDetailTwoColumnsModal'));
+            if (modal) modal.hide();
+            document.querySelectorAll('.modal-backdrop').forEach(el => el.remove());
+            document.body.classList.remove('modal-open');
+            document.body.style.removeProperty('overflow');
+            const el = document.getElementById('eventsList');
+            if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
         }
 
         // ========== 12. ПОХОДЫ ==========
