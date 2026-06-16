@@ -1,36 +1,17 @@
 const { Sequelize } = require('sequelize');
+const config = require('./config.js');
+
+const env = process.env.NODE_ENV || (process.env.DATABASE_URL ? 'production' : 'development');
+const dbConfig = config[env];
 
 let sequelize;
-
-let dbUrl = process.env.DATABASE_URL;
-// Fix double prefix issue if Render passes "DATABASE_URL=postgres://..."
-if (dbUrl && dbUrl.startsWith('DATABASE_URL=')) {
-  dbUrl = dbUrl.replace('DATABASE_URL=', '');
-}
-
-if (dbUrl) {
-  // === Настройка для PostgreSQL на Render ===
-  sequelize = new Sequelize(dbUrl, {
-    dialect: 'postgres',
-    logging: false, // Отключает вывод SQL-запросов в консоль, можно включить для отладки
-    dialectOptions: {
-      ssl: {
-        require: true,
-        rejectUnauthorized: false, // Обязательно для подключения к БД на Render
-      },
-    },
-  });
+if (dbConfig.url) {
+  sequelize = new Sequelize(dbConfig.url, dbConfig);
 } else {
-  // === Локальная настройка для SQLite ===
-  const path = require('path');
-  sequelize = new Sequelize({
-    dialect: 'sqlite',
-    storage: path.join(__dirname, '../../database.sqlite'),
-    logging: false,
-  });
+  sequelize = new Sequelize(dbConfig);
 }
- 
-if (!dbUrl && process.env.NODE_ENV === 'production') {
+
+if (!dbConfig.url && env === 'production') {
   console.error("DATABASE_URL is missing in production environment");
   process.exit(1);
 }
