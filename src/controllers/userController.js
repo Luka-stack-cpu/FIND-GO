@@ -1,34 +1,28 @@
 const multer = require('multer');
 const path = require('path');
-const fs = require('fs');
 const { User } = require('../models');
+const { createClient } = require('@supabase/supabase-js');
+const { v4: uuidv4 } = require('uuid');
 
-// Убеждаемся, что папка существует
-const uploadDir = path.join(__dirname, '../../public/uploads');
-if (!fs.existsSync(uploadDir)) {
-    fs.mkdirSync(uploadDir, { recursive: true });
-}
+const supabase = createClient(
+    process.env.SUPABASE_URL,
+    process.env.SUPABASE_SERVICE_ROLE_KEY
+);
 
 // ============================================================
 // Multer — загрузка аватаров
 // ============================================================
-const storage = multer.diskStorage({
-    destination: (req, file, cb) => cb(null, uploadDir),
-    filename: (req, file, cb) => {
-        // ИСПРАВЛЕНИЕ: безопасное имя файла (только расширение от оригинала)
-        const ext = path.extname(file.originalname).toLowerCase();
-        const allowed = ['.jpg', '.jpeg', '.png', '.webp', '.gif'];
-        if (!allowed.includes(ext)) {
-            return cb(new Error('Недопустимый тип файла'));
-        }
-        cb(null, `avatar_${req.user.id}_${Date.now()}${ext}`);
-    }
-});
+const storage = multer.memoryStorage();
 
 const upload = multer({
     storage,
     limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
     fileFilter: (req, file, cb) => {
+        const ext = path.extname(file.originalname).toLowerCase();
+        const allowed = ['.jpg', '.jpeg', '.png', '.webp', '.gif'];
+        if (!allowed.includes(ext)) {
+            return cb(new Error('Недопустимый тип файла'));
+        }
         if (!file.mimetype.startsWith('image/')) {
             return cb(new Error('Разрешены только изображения'));
         }
@@ -50,14 +44,30 @@ exports.uploadAvatar = async (req, res) => {
         }
 
         try {
-            // Удаляем старый аватар если это был загруженный файл (не dicebear URL)
-            const oldUser = await User.findByPk(req.user.id, { attributes: ['avatar'] });
-            if (oldUser?.avatar && oldUser.avatar.startsWith('/uploads/')) {
-                const oldPath = path.join(__dirname, '../../public', oldUser.avatar);
-                if (fs.existsSync(oldPath)) fs.unlinkSync(oldPath);
+            const ext = path.extname(req.file.originalname).toLowerCase();
+            const fileName = `${uuidv4()}${ext}`;
+
+            // Загружаем файл в Supabase Storage
+            const { data, error } = await supabase.storage
+                .from('avatars')
+                .upload(fileName, req.file.buffer, {
+                    contentType: req.file.mimetype,
+                    upsert: false
+                });
+
+            if (error) {
+                console.error('Supabase upload error:', error.message);
+                return res.status(500).json({ message: 'Ошибка загрузки файла в хранилище' });
             }
 
-            const avatarUrl = `/uploads/${req.file.filename}`;
+            // Получаем публичный URL загруженного файла
+            const { data: publicUrlData } = supabase.storage
+                .from('avatars')
+                .getPublicUrl(fileName);
+
+            const avatarUrl = publicUrlData.publicUrl;
+
+            // Обновляем пользователя в БД
             await User.update({ avatar: avatarUrl }, { where: { id: req.user.id } });
             res.json({ avatarUrl, message: 'Аватар обновлён' });
         } catch (dbError) {
