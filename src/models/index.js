@@ -13,6 +13,10 @@ Event.belongsTo(User, { as: 'creator', foreignKey: 'creatorId' });
 Event.belongsTo(Place, { as: 'place', foreignKey: 'placeId' });
 User.hasMany(Event, { as: 'createdEvents', foreignKey: 'creatorId' });
 
+// Ассоциации участников походов (многие-ко-многим)
+Event.belongsToMany(User, { through: 'EventParticipants', as: 'participants', foreignKey: 'EventId' });
+User.belongsToMany(Event, { through: 'EventParticipants', as: 'participatedEvents', foreignKey: 'UserId' });
+
 Invite.belongsTo(User, { as: 'fromUser', foreignKey: 'fromUserId' });
 Invite.belongsTo(User, { as: 'toUser', foreignKey: 'toUserId' });
 Invite.belongsTo(Event, { as: 'event', foreignKey: 'eventId' });

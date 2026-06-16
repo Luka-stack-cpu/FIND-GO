@@ -52,11 +52,11 @@ exports.acceptInvite = async (req, res) => {
         let eventPlaceName = invite.placeName;
 
         const now = new Date();
-        const dialect = db.sequelize.getDialect();
 
+        let event;
         // Если это персональное приглашение (eventId == null), создаём персональное событие
         if (!eventId) {
-            const newEvent = await Event.create({
+            event = await Event.create({
                 creatorId: invite.fromUserId,
                 placeId: invite.placeId || 1, // Если нет ID, используем 1
                 datetime: now,
@@ -64,33 +64,17 @@ exports.acceptInvite = async (req, res) => {
                 description: `Персональный чат: ${invite.placeName}`,
                 isPersonal: true
             });
-            eventId = newEvent.id;
+            eventId = event.id;
             
             // Добавляем отправителя приглашения в участники
-            if (dialect === 'sqlite') {
-                await db.sequelize.query(
-                    `INSERT OR IGNORE INTO EventParticipants (EventId, UserId, createdAt, updatedAt) VALUES (?, ?, ?, ?)`,
-                    { replacements: [eventId, invite.fromUserId, now, now] }
-                );
-            } else {
-                await db.sequelize.query(
-                    `INSERT INTO "EventParticipants" ("EventId", "UserId", "createdAt", "updatedAt") VALUES (?, ?, ?, ?) ON CONFLICT DO NOTHING`,
-                    { replacements: [eventId, invite.fromUserId, now, now] }
-                );
-            }
+            await event.addParticipant(invite.fromUserId);
+        } else {
+            event = await Event.findByPk(eventId);
         }
 
         // Добавляем текущего пользователя (кто принял) в участники
-        if (dialect === 'sqlite') {
-            await db.sequelize.query(
-                `INSERT OR IGNORE INTO EventParticipants (EventId, UserId, createdAt, updatedAt) VALUES (?, ?, ?, ?)`,
-                { replacements: [eventId, userId, now, now] }
-            );
-        } else {
-            await db.sequelize.query(
-                `INSERT INTO "EventParticipants" ("EventId", "UserId", "createdAt", "updatedAt") VALUES (?, ?, ?, ?) ON CONFLICT DO NOTHING`,
-                { replacements: [eventId, userId, now, now] }
-            );
+        if (event) {
+            await event.addParticipant(userId);
         }
 
         invite.status = 'accepted';

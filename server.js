@@ -261,32 +261,8 @@ async function seedIfEmpty() {
 
 const start = async () => {
     try {
-        await db.sequelize.query(`
-            CREATE TABLE IF NOT EXISTS EventParticipants (
-                EventId INTEGER NOT NULL REFERENCES Events(id) ON DELETE CASCADE,
-                UserId INTEGER NOT NULL REFERENCES Users(id) ON DELETE CASCADE,
-                createdAt DATETIME NOT NULL,
-                updatedAt DATETIME NOT NULL,
-                PRIMARY KEY (EventId, UserId)
-            );
-        `);
-        console.log('✅ Таблица EventParticipants создана/проверена');
-
-        // Safe SQLite migrations for new columns
-        try {
-            await db.sequelize.query("ALTER TABLE Events ADD COLUMN title VARCHAR(255) DEFAULT 'Встреча';");
-            console.log('✅ Добавлена колонка title в Events');
-        } catch (e) {}
-        try {
-            await db.sequelize.query("ALTER TABLE Events ADD COLUMN category VARCHAR(255) DEFAULT 'другое';");
-            console.log('✅ Добавлена колонка category в Events');
-        } catch (e) {}
-        try {
-            await db.sequelize.query("ALTER TABLE Events ADD COLUMN ageGroup VARCHAR(255) DEFAULT '18-21';");
-            console.log('✅ Добавлена колонка ageGroup в Events');
-        } catch (e) {}
-
-        await db.sequelize.sync();
+        const dialect = db.sequelize.getDialect();
+        await db.sequelize.sync({ alter: dialect === 'postgres' });
         console.log('✅ База данных синхронизирована');
 
         await seedIfEmpty();

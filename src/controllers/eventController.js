@@ -19,19 +19,7 @@ exports.createEvent = async (req, res) => {
     });
 
     // ✅ Добавляем создателя в участники
-    const now = new Date();
-    const dialect = db.sequelize.getDialect();
-    if (dialect === 'sqlite') {
-      await db.sequelize.query(
-        'INSERT OR IGNORE INTO EventParticipants (EventId, UserId, createdAt, updatedAt) VALUES (?, ?, ?, ?)',
-        { replacements: [event.id, creatorId, now, now] }
-      );
-    } else {
-      await db.sequelize.query(
-        'INSERT INTO "EventParticipants" ("EventId", "UserId", "createdAt", "updatedAt") VALUES (?, ?, ?, ?) ON CONFLICT DO NOTHING',
-        { replacements: [event.id, creatorId, now, now] }
-      );
-    }
+    await event.addParticipant(creatorId);
     
     res.status(201).json(event);
   } catch (error) {
@@ -56,18 +44,8 @@ exports.getActiveEvents = async (req, res) => {
     
     const eventsWithDetails = await Promise.all(events.map(async (event) => {
       try {
-        const dialect = db.sequelize.getDialect();
-        const participantsRows = await db.sequelize.query(
-          dialect === 'sqlite' 
-            ? 'SELECT * FROM EventParticipants WHERE EventId = ?' 
-            : 'SELECT * FROM "EventParticipants" WHERE "EventId" = ?',
-          { replacements: [event.id], type: db.sequelize.QueryTypes.SELECT }
-        );
-        
-        const participantsIds = participantsRows.map(p => {
-            const id = p.UserId || p.userid || p.UserID || p.user_id;
-            return id ? Number(id) : null;
-        }).filter(id => id !== null);
+        const participants = await event.getParticipants();
+        const participantsIds = participants.map(p => p.id);
 
         return {
           ...event.toJSON(),
@@ -103,51 +81,32 @@ exports.joinEvent = async (req, res) => {
     }
     
     // Проверка, не присоединился ли уже
-    const existing = await db.sequelize.query(
-      'SELECT 1 FROM EventParticipants WHERE EventId = ? AND UserId = ? LIMIT 1',
-      { replacements: [eventId, userId], type: db.sequelize.QueryTypes.SELECT }
-    );
-    if (existing.length) {
+    const isParticipant = await event.hasParticipant(userId);
+    if (isParticipant) {
       return res.status(400).json({ message: 'Вы уже присоединились к этому походу' });
     }
     
     // Количество участников
-    const [countResult] = await db.sequelize.query(
-      'SELECT COUNT(*) as count FROM EventParticipants WHERE EventId = ?',
-      { replacements: [eventId], type: db.sequelize.QueryTypes.SELECT }
-    );
-    if (countResult.count >= event.maxParticipants) {
+    const participantsCount = await event.countParticipants();
+    if (participantsCount >= event.maxParticipants) {
       return res.status(400).json({ message: 'Максимум участников достигнут' });
     }
     
-    // Добавляем участника (с учетом диалекта БД)
-    const now = new Date();
-    const dialect = db.sequelize.getDialect();
-    
-    if (dialect === 'sqlite') {
-      await db.sequelize.query(
-        `INSERT OR IGNORE INTO EventParticipants (EventId, UserId, createdAt, updatedAt) VALUES (?, ?, ?, ?)`,
-        { replacements: [eventId, userId, now, now] }
-      );
-    } else {
-      await db.sequelize.query(
-        `INSERT INTO "EventParticipants" ("EventId", "UserId", "createdAt", "updatedAt") VALUES (?, ?, ?, ?) ON CONFLICT DO NOTHING`,
-        { replacements: [eventId, userId, now, now] }
-      );
-    }
+    // Добавляем участника
+    await event.addParticipant(userId);
     
     // ✅ Отправляем обновление через Socket.IO
     const io = req.app.get('io');
     if (io) {
       io.to('global_updates').emit('eventParticipantUpdated', { 
         eventId: parseInt(eventId), 
-        participantsCount: countResult.count + 1 
+        participantsCount: participantsCount + 1 
       });
     }
     
     res.json({ 
       ...event.toJSON(),
-      participantsCount: countResult.count + 1
+      participantsCount: participantsCount + 1
     });
   } catch (error) {
     console.error('❌ joinEvent Error:', error.message);
@@ -164,14 +123,8 @@ exports.getMyEvents = async (req, res) => {
       order: [['datetime', 'ASC']]
     });
     const eventsWithDetails = await Promise.all(events.map(async (event) => {
-      const dialect = db.sequelize.getDialect();
-      const participantsRows = await db.sequelize.query(
-        dialect === 'sqlite' 
-          ? 'SELECT UserId FROM EventParticipants WHERE EventId = ?' 
-          : 'SELECT "UserId" FROM "EventParticipants" WHERE "EventId" = ?',
-        { replacements: [event.id], type: db.sequelize.QueryTypes.SELECT }
-      );
-      const participantsIds = participantsRows.map(p => Number(p.UserId || p.userid || p.UserID));
+      const participants = await event.getParticipants();
+      const participantsIds = participants.map(p => p.id);
       return {
         ...event.toJSON(),
         participantsCount: participantsIds.length,
@@ -199,17 +152,11 @@ exports.getEventById = async (req, res) => {
       return res.status(404).json({ message: 'Поход не найден' });
     }
     
-    const dialect = db.sequelize.getDialect();
-    const participants = await db.sequelize.query(
-      dialect === 'sqlite' 
-        ? 'SELECT UserId FROM EventParticipants WHERE EventId = ?' 
-        : 'SELECT "UserId" FROM "EventParticipants" WHERE "EventId" = ?',
-      { replacements: [event.id], type: db.sequelize.QueryTypes.SELECT }
-    );
+    const participantUsers = await event.getParticipants();
     res.json({
       ...event.toJSON(),
-      participantsCount: participants.length,
-      participants: participants.map(p => Number(p.UserId || p.userid || p.UserID))
+      participantsCount: participantUsers.length,
+      participants: participantUsers.map(p => p.id)
     });
   } catch (error) {
     console.error(error);
@@ -220,17 +167,12 @@ exports.getEventById = async (req, res) => {
 // ========== ПОЛУЧИТЬ УЧАСТНИКОВ ПОХОДА ==========
 exports.getEventParticipants = async (req, res) => {
   try {
-    const dialect = db.sequelize.getDialect();
-    const participants = await db.sequelize.query(
-      dialect === 'sqlite'
-        ? `SELECT Users.id, Users.name, Users.avatar FROM EventParticipants
-           JOIN Users ON EventParticipants.UserId = Users.id
-           WHERE EventParticipants.EventId = ?`
-        : `SELECT "Users"."id", "Users"."name", "Users"."avatar" FROM "EventParticipants"
-           JOIN "Users" ON "EventParticipants"."UserId" = "Users"."id"
-           WHERE "EventParticipants"."EventId" = ?`,
-      { replacements: [req.params.id], type: db.sequelize.QueryTypes.SELECT }
-    );
+    const event = await Event.findByPk(req.params.id);
+    if (!event) return res.status(404).json({ message: 'Событие не найдено' });
+    const participants = await event.getParticipants({
+        attributes: ['id', 'name', 'avatar'],
+        joinTableAttributes: []
+    });
     res.json(participants);
   } catch (error) {
     console.error(error);
@@ -286,11 +228,7 @@ exports.deleteEvent = async (req, res) => {
     if (event.creatorId !== userId) return res.status(403).json({ message: 'Только создатель может удалить' });
     
     // Вручную удаляем все связанные записи, чтобы избежать ошибок Foreign Key Constraint
-    const dialect = db.sequelize.getDialect();
-    await db.sequelize.query(
-      dialect === 'sqlite' ? 'DELETE FROM EventParticipants WHERE EventId = ?' : 'DELETE FROM "EventParticipants" WHERE "EventId" = ?',
-      { replacements: [eventId] }
-    );
+    await event.setParticipants([]);
     
     // Пытаемся удалить связанные данные, если модели загружены
     try {

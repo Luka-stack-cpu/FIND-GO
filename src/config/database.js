@@ -2,9 +2,15 @@ const { Sequelize } = require('sequelize');
 
 let sequelize;
 
-if (process.env.DATABASE_URL) {
+let dbUrl = process.env.DATABASE_URL;
+// Fix double prefix issue if Render passes "DATABASE_URL=postgres://..."
+if (dbUrl && dbUrl.startsWith('DATABASE_URL=')) {
+  dbUrl = dbUrl.replace('DATABASE_URL=', '');
+}
+
+if (dbUrl) {
   // === Настройка для PostgreSQL на Render ===
-  sequelize = new Sequelize(process.env.DATABASE_URL, {
+  sequelize = new Sequelize(dbUrl, {
     dialect: 'postgres',
     logging: false, // Отключает вывод SQL-запросов в консоль, можно включить для отладки
     dialectOptions: {
@@ -24,8 +30,8 @@ if (process.env.DATABASE_URL) {
   });
 }
  
-if (!process.env.DATABASE_URL) {
-  console.error("DATABASE_URL is missing");
+if (!dbUrl && process.env.NODE_ENV === 'production') {
+  console.error("DATABASE_URL is missing in production environment");
   process.exit(1);
 }
 

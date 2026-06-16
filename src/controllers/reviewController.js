@@ -16,27 +16,16 @@ exports.createReview = async (req, res) => {
         if (event.status !== 'completed') return res.status(400).json({ message: 'Отзывы можно оставлять только после завершения похода' });
 
         // Проверяем участие обоих
-        const dialect = db.sequelize.getDialect();
-        const query = dialect === 'sqlite' 
-            ? 'SELECT 1 FROM EventParticipants WHERE EventId = ? AND UserId = ? LIMIT 1'
-            : 'SELECT 1 FROM "EventParticipants" WHERE "EventId" = ? AND "UserId" = ? LIMIT 1';
-
-        const isFromParticipant = await db.sequelize.query(
-            query,
-            { replacements: [eventId, fromUserId], type: db.sequelize.QueryTypes.SELECT }
-        );
-        const isToParticipant = await db.sequelize.query(
-            query,
-            { replacements: [eventId, toUserId], type: db.sequelize.QueryTypes.SELECT }
-        );
+        const isFromParticipant = await event.hasParticipant(fromUserId);
+        const isToParticipant = await event.hasParticipant(toUserId);
 
         const fromIsCreator = event.creatorId === fromUserId;
         const toIsCreator = event.creatorId === parseInt(toUserId);
 
-        if (!fromIsCreator && isFromParticipant.length === 0) {
+        if (!fromIsCreator && !isFromParticipant) {
             return res.status(403).json({ message: 'Вы не участвовали в этом походе' });
         }
-        if (!toIsCreator && isToParticipant.length === 0) {
+        if (!toIsCreator && !isToParticipant) {
             return res.status(400).json({ message: 'Указанный пользователь не участвовал в этом походе' });
         }
 
