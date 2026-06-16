@@ -1,3 +1,5 @@
+console.log("DATABASE_URL =", process.env.DATABASE_URL);
+
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
@@ -103,6 +105,7 @@ const userRoutes   = require('./src/routes/userRoutes');
 const notificationRoutes = require('./src/routes/notificationRoutes');
 const reviewRoutes = require('./src/routes/reviewRoutes');
 const dmRoutes = require('./src/routes/dmRoutes');
+
 
 app.use('/api/auth', authRoutes);
 app.use('/api', placeRoutes);

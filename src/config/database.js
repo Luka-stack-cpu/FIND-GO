@@ -23,5 +23,10 @@ if (process.env.DATABASE_URL) {
     logging: false,
   });
 }
+ 
+if (!process.env.DATABASE_URL) {
+  console.error("DATABASE_URL is missing");
+  process.exit(1);
+}
 
 module.exports = sequelize;
