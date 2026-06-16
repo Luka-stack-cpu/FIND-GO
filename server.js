@@ -121,6 +121,8 @@ app.use((err, req, res, next) => {
 
 const server = http.createServer(app);
 
+console.log("DATABASE_URL =", process.env.DATABASE_URL);
+
 // ========== CORS ДЛЯ SOCKET.IO ПОЛНОСТЬЮ ОТКЛЮЧЁН ==========
 const io = socketIo(server, {
     cors: {
