@@ -1,0 +1,2414 @@
+<!DOCTYPE html>
+<html lang="ru" data-bs-theme="light">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Find&Go – Найди компанию в Бишкеке</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <link rel="stylesheet" type="text/css" href="https://npmcdn.com/flatpickr/dist/themes/airbnb.css">
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <link rel="icon" type="image/png" href="/img/logo.png">
+    <style>
+        :root {
+            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --hero-gradient: linear-gradient(135deg, #e0c3fc 0%, #8ec5fc 100%);
+        }
+
+        [data-bs-theme="dark"] {
+            --hero-gradient: linear-gradient(135deg, #2a2a35 0%, #1a1a24 100%);
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bs-body-bg);
+            transition: background-color 0.3s ease;
+            overflow-x: hidden;
+            color: var(--bs-body-color);
+        }
+
+        /* Animations */
+        @keyframes fadeUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes float {
+            0% {
+                transform: translateY(0px);
+            }
+
+            50% {
+                transform: translateY(-10px);
+            }
+
+            100% {
+                transform: translateY(0px);
+            }
+        }
+
+        @keyframes shimmer {
+            0% {
+                background-position: -200% 0;
+            }
+
+            100% {
+                background-position: 200% 0;
+            }
+        }
+
+        .skeleton {
+            background: linear-gradient(90deg, var(--bs-secondary-bg) 25%, var(--bs-tertiary-bg) 50%, var(--bs-secondary-bg) 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite;
+            border-radius: 8px;
+        }
+
+        .skeleton-text {
+            height: 1.2rem;
+            margin-bottom: 0.5rem;
+            width: 100%;
+        }
+
+        .skeleton-title {
+            height: 1.5rem;
+            margin-bottom: 1rem;
+            width: 60%;
+        }
+
+        .skeleton-circle {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+        }
+
+        .skeleton-img {
+            height: 200px;
+            border-radius: 24px;
+            margin-bottom: 1rem;
+        }
+
+        /* Navbar */
+        .navbar {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(15px);
+            padding: 16px 0;
+            transition: all 0.3s ease;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+        }
+
+        [data-bs-theme="dark"] .navbar {
+            background: rgba(33, 37, 41, 0.85);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .navbar-brand {
+            font-weight: 800;
+            font-size: 1.5rem;
+            background: var(--primary-gradient);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+
+        .btn-menu {
+            background: none;
+            border: none;
+            font-size: 1.8rem;
+            color: #667eea;
+        }
+
+        .btn-logout {
+            border: none;
+            background: rgba(220, 53, 69, 0.1);
+            border-radius: 50px;
+            padding: 6px 20px;
+            color: #dc2626;
+            font-weight: 500;
+            transition: 0.3s;
+        }
+
+        .btn-logout:hover {
+            background: #dc2626;
+            color: white;
+        }
+
+        /* Search */
+        .search-container {
+            max-width: 350px;
+            width: 100%;
+        }
+
+        .search-wrapper {
+            position: relative;
+        }
+
+        .search-input {
+            background: var(--bs-secondary-bg);
+            border: 1px solid transparent;
+            border-radius: 50px;
+            padding: 10px 16px 10px 42px;
+            width: 100%;
+            transition: 0.3s;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--bs-secondary-color);
+        }
+
+        /* Hero Section */
+        .hero {
+            background: var(--hero-gradient);
+            margin: 100px 20px 40px;
+            border-radius: 32px;
+            padding: 80px 24px;
+            position: relative;
+            overflow: hidden;
+            text-align: center;
+            animation: fadeUp 0.8s ease-out;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.05);
+        }
+
+        [data-bs-theme="dark"] .hero {
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+        }
+
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.2) 0%, transparent 60%);
+            pointer-events: none;
+            animation: float 15s infinite linear;
+        }
+
+        .hero-content {
+            position: relative;
+            z-index: 2;
+        }
+
+        .hero h1 {
+            font-size: 3.5rem;
+            font-weight: 900;
+            margin-bottom: 20px;
+            color: #2d3748;
+            letter-spacing: -1px;
+        }
+
+        [data-bs-theme="dark"] .hero h1 {
+            color: #f7fafc;
+        }
+
+        .hero p {
+            font-size: 1.25rem;
+            color: #4a5568;
+            max-width: 600px;
+            margin: 0 auto 32px;
+            line-height: 1.6;
+        }
+
+        [data-bs-theme="dark"] .hero p {
+            color: #a0aec0;
+        }
+
+        .hero .btn-primary {
+            background: var(--primary-gradient);
+            border: none;
+            border-radius: 50px;
+            padding: 14px 36px;
+            font-weight: 600;
+            font-size: 1.1rem;
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+            transition: all 0.3s ease;
+        }
+
+        .hero .btn-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 25px rgba(102, 126, 234, 0.4);
+        }
+
+        .hero .btn-outline {
+            background: rgba(255, 255, 255, 0.5);
+            border: 2px solid transparent;
+            color: #4a5568;
+            border-radius: 50px;
+            padding: 12px 32px;
+            font-weight: 600;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+        }
+
+        [data-bs-theme="dark"] .hero .btn-outline {
+            background: rgba(0, 0, 0, 0.2);
+            color: #fff;
+        }
+
+        .hero .btn-outline:hover {
+            background: white;
+            color: #667eea;
+            border-color: white;
+        }
+
+        /* How it works */
+        .info-section {
+            padding: 80px 20px;
+        }
+
+        .section-title-main {
+            font-size: 2.2rem;
+            font-weight: 800;
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .step-card {
+            background: var(--bs-card-bg);
+            border-radius: 24px;
+            padding: 32px 24px;
+            height: 100%;
+            border: 1px solid var(--bs-border-color);
+            transition: all 0.4s ease;
+            text-align: center;
+        }
+
+        .step-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.08);
+            border-color: #667eea;
+        }
+
+        .step-icon {
+            width: 80px;
+            height: 80px;
+            background: rgba(102, 126, 234, 0.1);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 24px;
+            font-size: 2.5rem;
+            color: #667eea;
+            transition: all 0.3s ease;
+        }
+
+        .step-card:hover .step-icon {
+            background: var(--primary-gradient);
+            color: white;
+            transform: scale(1.1);
+        }
+
+        .step-card h5 {
+            font-size: 1.25rem;
+            font-weight: 700;
+            margin-bottom: 12px;
+        }
+
+        .step-card p {
+            color: var(--bs-secondary-color);
+            font-size: 0.95rem;
+            line-height: 1.5;
+            margin: 0;
+        }
+
+        /* Categories */
+        .category-container {
+            padding: 40px 20px;
+            background: var(--bs-tertiary-bg);
+            border-radius: 32px;
+            margin: 0 20px;
+        }
+
+        .category-filters {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-bottom: 30px;
+        }
+
+        .filter-btn {
+            background: var(--bs-card-bg);
+            border: 1px solid var(--bs-border-color);
+            border-radius: 50px;
+            padding: 10px 24px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            color: var(--bs-body-color);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.02);
+        }
+
+        .filter-btn.active {
+            background: var(--primary-gradient);
+            color: white;
+            border-color: transparent;
+            box-shadow: 0 8px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .filter-btn:hover:not(.active) {
+            transform: translateY(-2px);
+            border-color: #667eea;
+        }
+
+        /* Places Scroll */
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            padding: 0 24px;
+            margin: 60px 0 24px;
+        }
+
+        .section-title {
+            font-size: 1.8rem;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .places-scroll {
+            display: flex;
+            overflow-x: auto;
+            gap: 20px;
+            padding: 8px 24px 32px;
+            scroll-behavior: smooth;
+        }
+
+        .places-scroll::-webkit-scrollbar {
+            height: 6px;
+        }
+
+        .places-scroll::-webkit-scrollbar-track {
+            background: var(--bs-secondary-bg);
+            border-radius: 10px;
+            margin: 0 24px;
+        }
+
+        .places-scroll::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 10px;
+        }
+
+        .places-scroll::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+
+        .place-card {
+            flex: 0 0 300px;
+            background: var(--bs-card-bg);
+            border-radius: 24px;
+            overflow: hidden;
+            cursor: pointer;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.05);
+            border: 1px solid var(--bs-border-color);
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .place-card:hover {
+            transform: translateY(-12px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.12);
+            border-color: rgba(102, 126, 234, 0.5);
+        }
+
+        .place-card .card-body {
+            padding: 20px;
+        }
+
+        .place-tag {
+            display: inline-block;
+            background: rgba(102, 126, 234, 0.1);
+            color: #667eea;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            margin-bottom: 12px;
+        }
+
+        .place-card h4 {
+            font-size: 1.25rem;
+            font-weight: 800;
+            margin-bottom: 8px;
+            line-height: 1.3;
+        }
+
+        .place-card p {
+            font-size: 0.9rem;
+            color: var(--bs-secondary-color);
+            line-height: 1.5;
+            margin: 0;
+        }
+
+        /* Sliders */
+        .place-slider {
+            position: relative;
+            width: 100%;
+            height: 200px;
+            overflow: hidden;
+        }
+
+        .place-slider-track {
+            display: flex;
+            height: 100%;
+            transition: transform 0.6s cubic-bezier(.4, 0, .2, 1);
+            will-change: transform;
+        }
+
+        .place-slider-slide {
+            flex: 0 0 100%;
+            height: 100%;
+        }
+
+        .place-slider-slide img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+            transition: transform 0.5s ease;
+        }
+
+        .place-card:hover .place-slider-slide img {
+            transform: scale(1.05);
+        }
+
+        .place-slider-dots {
+            position: absolute;
+            bottom: 12px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 6px;
+        }
+
+        .place-slider-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.4);
+            transition: all 0.3s;
+            border: none;
+            padding: 0;
+        }
+
+        .place-slider-dot.active {
+            background: white;
+            transform: scale(1.2);
+        }
+
+        /* Events Grid */
+        .events-container {
+            padding: 40px 24px;
+            background: var(--bs-tertiary-bg);
+            border-radius: 32px;
+            margin: 0 20px 60px;
+        }
+
+        .events-grid {
+            display: grid;
+            gap: 16px;
+        }
+
+        @media (min-width: 768px) {
+            .events-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (min-width: 1024px) {
+            .events-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+
+        .event-card {
+            background: var(--bs-card-bg);
+            border-radius: 20px;
+            padding: 20px;
+            border: 1px solid var(--bs-border-color);
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.02);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .event-card:hover {
+            border-color: #667eea;
+            transform: translateY(-5px);
+            box-shadow: 0 12px 25px rgba(0, 0, 0, 0.08);
+        }
+
+        .event-title {
+            font-weight: 800;
+            font-size: 1.15rem;
+            margin-bottom: 8px;
+        }
+
+        .event-meta {
+            font-size: 0.9rem;
+            color: var(--bs-secondary-color);
+            display: flex;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .btn-join {
+            background: var(--primary-gradient);
+            border: none;
+            border-radius: 50px;
+            padding: 10px 24px;
+            color: white;
+            font-weight: 600;
+            width: 100%;
+            transition: 0.3s;
+        }
+
+        .btn-join:hover {
+            opacity: 0.9;
+            transform: scale(1.02);
+        }
+
+        /* Offcanvas */
+        .offcanvas-header {
+            background: var(--primary-gradient);
+            color: white;
+        }
+
+        .offcanvas-body .nav-link {
+            padding: 14px 16px;
+            color: var(--bs-body-color);
+            font-weight: 500;
+            border-radius: 12px;
+            transition: 0.2s;
+            margin-bottom: 4px;
+        }
+
+        .offcanvas-body .nav-link:hover {
+            background: var(--bs-secondary-bg);
+            padding-left: 20px;
+            color: #667eea;
+        }
+
+        .offcanvas-body .nav-link i {
+            margin-right: 14px;
+            width: 24px;
+            font-size: 1.2rem;
+        }
+
+        /* Modals & Misc */
+        .modal-content {
+            background-color: var(--bs-modal-bg);
+            border-radius: 24px;
+            border: none;
+            overflow: hidden;
+        }
+
+        .modal-header {
+            border-bottom: 1px solid var(--bs-border-color);
+        }
+
+        /* ПРЕМИАЛЬНЫЙ ДИЗАЙН МОДАЛЬНОГО ОКНА МЕСТА */
+        .modal-two-cards {
+            display: grid;
+            grid-template-columns: 1.5fr 1fr;
+            gap: 25px;
+            min-height: 550px;
+        }
+
+        .modal-card {
+            background: var(--bs-card-bg);
+            border-radius: 32px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            border: 1px solid var(--bs-border-color);
+            transition: 0.3s;
+        }
+
+        #modalLeftCard {
+            padding: 0;
+            position: relative;
+        }
+
+        .modal-info-content {
+            padding: 30px;
+            flex-grow: 1;
+        }
+
+        .modal-gallery {
+            height: 320px;
+            position: relative;
+            overflow: hidden;
+            background: #eee;
+        }
+
+        .modal-gallery-track {
+            display: flex;
+            height: 100%;
+            transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .modal-gallery-slide {
+            min-width: 100%;
+            height: 100%;
+        }
+
+        .modal-gallery-slide img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .modal-gallery-nav {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(255, 255, 255, 0.3);
+            backdrop-filter: blur(10px);
+            border: none;
+            color: white;
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            cursor: pointer;
+            z-index: 10;
+            transition: 0.3s;
+        }
+
+        .modal-gallery-nav:hover {
+            background: rgba(255, 255, 255, 0.5);
+        }
+
+        .modal-gallery-nav.prev {
+            left: 15px;
+        }
+
+        .modal-gallery-nav.next {
+            right: 15px;
+        }
+
+        .modal-gallery-dots {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 8px;
+            z-index: 10;
+        }
+
+        .modal-gallery-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.4);
+            border: none;
+            padding: 0;
+            transition: 0.3s;
+        }
+
+        .modal-gallery-dot.active {
+            background: white;
+            width: 24px;
+            border-radius: 10px;
+        }
+
+        #modalRightCard {
+            padding: 25px;
+            background: var(--bs-tertiary-bg);
+            overflow-y: auto;
+        }
+
+        /* ===== MODAL RIGHT PANEL ===== */
+        .modal-actions-block {
+            background: var(--bs-card-bg);
+            border-radius: 20px;
+            padding: 18px;
+            border: 1px solid var(--bs-border-color);
+            margin-bottom: 16px;
+        }
+
+        .modal-actions-block h6 {
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: var(--bs-secondary-color);
+            margin-bottom: 12px;
+        }
+
+        .modal-active-events {
+            margin-bottom: 16px;
+        }
+
+        .modal-event-item {
+            background: var(--bs-card-bg);
+            border: 1px solid var(--bs-border-color);
+            border-radius: 16px;
+            padding: 12px 14px;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+        }
+
+        .modal-event-item.has-events {
+            border-color: rgba(102, 126, 234, 0.4);
+        }
+
+        .modal-event-meta {
+            font-size: 0.82rem;
+            color: var(--bs-secondary-color);
+            margin-top: 2px;
+        }
+
+        .modal-social-divider {
+            font-size: 0.72rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.07em;
+            color: var(--bs-secondary-color);
+            margin: 16px 0 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .modal-social-divider::before,
+        .modal-social-divider::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: var(--bs-border-color);
+        }
+
+        .users-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            overflow-y: auto;
+            max-height: 280px;
+            padding-right: 4px;
+        }
+
+        .user-item-compact {
+            background: var(--bs-card-bg);
+            border-radius: 16px;
+            padding: 10px 12px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            transition: 0.2s;
+            border: 1px solid var(--bs-border-color);
+            cursor: pointer;
+        }
+
+        .user-item-compact:hover {
+            border-color: #667eea;
+            box-shadow: 0 2px 10px rgba(102, 126, 234, 0.1);
+        }
+
+        .user-info-compact {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            min-width: 0;
+        }
+
+        .user-avatar-small {
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            object-fit: cover;
+            flex-shrink: 0;
+        }
+
+        .user-name-compact {
+            font-weight: 600;
+            font-size: 0.88rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .user-intent-text {
+            font-size: 0.78rem;
+            color: var(--bs-secondary-color);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 130px;
+        }
+
+        .user-cta-btns {
+            display: flex;
+            gap: 4px;
+            flex-shrink: 0;
+        }
+
+        .invite-btn-small {
+            background: var(--primary-gradient);
+            color: white;
+            border: none;
+            padding: 5px 11px;
+            border-radius: 50px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            transition: 0.2s;
+            white-space: nowrap;
+        }
+
+        .invite-btn-small:hover {
+            opacity: 0.85;
+            transform: scale(1.03);
+        }
+
+        .write-btn-small {
+            background: transparent;
+            color: var(--bs-secondary-color);
+            border: 1px solid var(--bs-border-color);
+            padding: 5px 10px;
+            border-radius: 50px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            transition: 0.2s;
+            white-space: nowrap;
+        }
+
+        .write-btn-small:hover {
+            border-color: #667eea;
+            color: #667eea;
+        }
+
+        .empty-state-action {
+            text-align: center;
+            padding: 20px 16px;
+            background: var(--bs-card-bg);
+            border: 1px dashed var(--bs-border-color);
+            border-radius: 16px;
+            color: var(--bs-secondary-color);
+        }
+
+        .empty-state-action .es-icon {
+            font-size: 1.8rem;
+            margin-bottom: 8px;
+            display: block;
+        }
+
+        .empty-state-action p {
+            font-size: 0.85rem;
+            margin-bottom: 12px;
+        }
+
+        @media (max-width: 992px) {
+            .modal-two-cards {
+                grid-template-columns: 1fr;
+            }
+
+            .modal-gallery {
+                height: 250px;
+            }
+        }
+
+        /* Calendar */
+        .calendar-container {
+            background: var(--bs-card-bg);
+            border-radius: 24px;
+            padding: 24px;
+            border: 1px solid var(--bs-border-color);
+            margin: 0 24px 40px;
+        }
+
+        @media (max-width: 768px) {
+            .hero {
+                padding: 60px 20px;
+                margin: 80px 12px 30px;
+            }
+
+            .hero h1 {
+                font-size: 2.2rem;
+            }
+
+            .hero p {
+                font-size: 1rem;
+            }
+
+            .section-header {
+                padding: 0 16px;
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 8px;
+            }
+
+            .places-scroll {
+                padding: 8px 16px 24px;
+            }
+
+            .category-container,
+            .events-container {
+                margin: 0 12px;
+                padding: 30px 16px;
+            }
+
+            .search-container {
+                display: none;
+            }
+        }
+
+        @keyframes pulse-highlight {
+            0% {
+                transform: scale(1);
+                box-shadow: 0 0 0 0 rgba(102, 126, 234, 0.7);
+            }
+
+            70% {
+                transform: scale(1.05);
+                box-shadow: 0 0 0 10px rgba(102, 126, 234, 0);
+            }
+
+            100% {
+                transform: scale(1);
+                box-shadow: 0 0 0 0 rgba(102, 126, 234, 0);
+            }
+        }
+
+        .pulse-update {
+            animation: pulse-highlight 0.6s ease-out;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- Боковое меню -->
+    <div class="offcanvas offcanvas-start" tabindex="-1" id="sidebarMenu">
+        <div class="offcanvas-header border-0">
+            <h5 class="offcanvas-title fw-bold"><img src="/img/logo.png" alt="Find&Go" width="36" height="36" class="d-inline-block align-top me-2" style="border-radius: 4px;">Find&Go</h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas"></button>
+        </div>
+        <div class="offcanvas-body">
+            <ul class="nav flex-column mb-auto">
+                <li class="nav-item"><a class="nav-link" href="#heroSection" data-bs-dismiss="offcanvas"><i
+                            class="bi bi-house-door"></i> Главная</a></li>
+                <li class="nav-item"><a class="nav-link" href="#howItWorksSection" data-bs-dismiss="offcanvas"><i
+                            class="bi bi-info-circle"></i> Как это работает</a></li>
+                <li class="nav-item"><a class="nav-link" href="/create-event.html"><i class="bi bi-plus-circle"></i>
+                        Создать поход</a></li>
+                <li class="nav-item"><a class="nav-link" href="/profile.html"><i class="bi bi-person"></i> Мой
+                        профиль</a></li>
+                <li class="nav-item"><a class="nav-link" href="/faq.html"><i class="bi bi-question-circle"></i> Вопросы
+                        и ответы</a></li>
+                <li class="nav-item"><a class="nav-link" href="#" onclick="loadInvitesModal(); return false;"
+                        data-bs-dismiss="offcanvas"><i class="bi bi-envelope-paper"></i> Приглашения <span
+                            id="sidebarInvitesBadge" class="badge bg-danger ms-1" style="display:none;"></span></a></li>
+                <li class="nav-item"><a class="nav-link" href="/chats.html"><i class="bi bi-chat-dots"></i> Чаты
+                        походов</a></li>
+                <li class="nav-item"><a class="nav-link" href="/dm.html"><i class="bi bi-person-heart"></i> Личные
+                        сообщения</a></li>
+                <li class="nav-item"><a class="nav-link" href="/icebreakers.html"><i class="bi bi-snow2"></i> Темы для
+                        общения</a></li>
+            </ul>
+            <hr>
+            <div
+                class="theme-switch p-2 rounded-3 bg-secondary-subtle mb-3 d-flex justify-content-between align-items-center">
+                <span class="fw-medium"><i class="bi bi-moon-stars text-primary me-2"></i> Тёмная тема</span>
+                <div class="form-check form-switch m-0">
+                    <input class="form-check-input" type="checkbox" id="darkModeSwitch">
+                </div>
+            </div>
+            <div class="d-flex gap-2">
+                <button class="btn btn-outline-primary flex-fill btn-sm" onclick="switchLanguage('ru')">Русский</button>
+                <button class="btn btn-outline-primary flex-fill btn-sm"
+                    onclick="switchLanguage('ky')">Кыргызча</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Навбар -->
+    <nav class="navbar navbar-expand-lg fixed-top shadow-sm">
+        <div class="container-fluid px-3 px-md-4">
+            <button class="btn-menu me-2" type="button" data-bs-toggle="offcanvas" data-bs-target="#sidebarMenu">
+                <i class="bi bi-list"></i>
+            </button>
+            <a class="navbar-brand d-flex align-items-center" href="/">
+                <img src="/img/logo.png" alt="Find&Go" width="45" height="45" class="d-inline-block align-top me-2" style="border-radius: 6px;">
+                Find&Go
+            </a>
+
+            <div class="search-container ms-auto me-4">
+                <div class="search-wrapper">
+                    <i class="bi bi-search search-icon"></i>
+                    <input type="text" id="searchInput" class="search-input" placeholder="Найти интересное место...">
+                </div>
+            </div>
+
+            <div class="d-flex align-items-center gap-1 gap-md-3">
+                <button id="notificationsBtn" class="btn btn-link position-relative text-decoration-none"
+                    style="color: var(--bs-body-color);">
+                    <i class="bi bi-bell fs-5"></i>
+                    <span id="notificationsBadge"
+                        class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger shadow-sm"
+                        style="display: none;font-size:0.65rem;">0</span>
+                </button>
+
+                <button class="btn btn-link position-relative text-decoration-none d-none d-sm-block"
+                    onclick="loadInvitesModal()" style="color: var(--bs-body-color);">
+                    <i class="bi bi-envelope-paper fs-5"></i>
+                    <span id="invitesBadge"
+                        class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger shadow-sm"
+                        style="display: none;font-size:0.65rem;">0</span>
+                </button>
+
+                <a href="/create-event.html"
+                    class="btn btn-primary btn-sm rounded-pill px-3 d-none d-md-block shadow-sm">
+                    <i class="bi bi-plus-lg"></i> Создать
+                </a>
+
+                <div id="userProfileLink" class="ms-2 ms-md-0 d-flex align-items-center gap-2"
+                    style="cursor: pointer; padding: 4px; border-radius: 50px; background: var(--bs-secondary-bg); transition: 0.2s;">
+                    <img id="headerAvatar" src="https://api.dicebear.com/7.x/avataaars/svg?seed=default" width="36"
+                        height="36" class="rounded-circle shadow-sm" style="object-fit: cover;">
+                    <span id="userName" class="fw-bold pe-2 d-none d-sm-block" style="font-size: 0.9rem;"></span>
+                </div>
+
+                <button id="logoutBtn" class="btn btn-logout ms-2 d-none d-lg-block">Выйти</button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <div class="hero" id="heroSection">
+        <div class="hero-content">
+            <h1 id="heroTitle">Найди компанию в Бишкеке 🇰🇬</h1>
+            <p id="heroSubtitle">Выбери место, посмотри активные встречи или создай свою. Найди людей со схожими планами.</p>
+            <div class="d-flex justify-content-center gap-3 flex-wrap mt-4">
+                <button class="btn btn-primary"
+                    onclick="document.getElementById('categoryFilters').scrollIntoView({behavior:'smooth'})">Выбрать
+                    место</button>
+                <a href="/create-event.html" class="btn btn-outline"><span id="createBtnText">Создать встречу</span></a>
+            </div>
+        </div>
+    </div>
+
+    <div id="welcomeBanner" class="container" style="display: none;">
+        <div class="alert alert-primary border-0 shadow-sm text-center position-relative rounded-4 p-4 mx-3 mx-md-5">
+            <button type="button" class="btn-close position-absolute top-0 end-0 m-3"
+                onclick="closeWelcomeBanner()"></button>
+            <div class="fs-1 mb-2">👋</div>
+            <h4 class="fw-bold">Добро пожаловать в Find&Go!</h4>
+            <p class="text-muted mb-4">Твой первый шаг к новым знакомствам начинается здесь.</p>
+            <a href="/create-event.html" class="btn btn-primary rounded-pill px-4">Создать первый поход</a>
+        </div>
+    </div>
+
+    <!-- Как это работает -->
+    <div class="container" id="howItWorksSection">
+        <div class="info-section">
+            <h2 class="section-title-main" id="howItWorksTitle">Всё очень просто</h2>
+            <div class="row g-4 px-2 px-md-5">
+                <div class="col-md-4">
+                    <div class="step-card">
+                        <div class="step-icon"><i class="bi bi-geo-alt"></i></div>
+                        <h5 id="step1Title">Выбери классное место</h5>
+                        <p>Листай нашу подборку парков, кафе и развлечений в Бишкеке.</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="step-card">
+                        <div class="step-icon"><i class="bi bi-people"></i></div>
+                        <h5 id="step2Title">Создай или присоединись</h5>
+                        <p>Организуй свой поход или откликнись на приглашение других.</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="step-card">
+                        <div class="step-icon"><i class="bi bi-chat-heart"></i></div>
+                        <h5 id="step3Title">Встречайся и общайся</h5>
+                        <p>Договаривайтесь в удобном чате и наслаждайтесь общением!</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Категории и Фильтры -->
+    <div class="category-container shadow-sm" id="categoryCards">
+        <h3 class="text-center fw-bold mb-4">Куда пойдем сегодня?</h3>
+        <div class="category-filters" id="categoryFilters">
+            <button class="filter-btn active" data-category="all">Всё подряд</button>
+            <button class="filter-btn" data-category="парк">🌳 Парки</button>
+            <button class="filter-btn" data-category="природа">⛰️ Природа</button>
+            <button class="filter-btn" data-category="кафе">☕ Кафе и Рестораны</button>
+            <button class="filter-btn" data-category="паб">🍺 Пабы</button>
+            <button class="filter-btn" data-category="трц">🛍️ ТРЦ</button>
+            <button class="filter-btn" data-category="отель">🏨 Отели</button>
+        </div>
+    </div>
+
+    <!-- Интерактивная карта -->
+    <div class="container mt-5" id="mapSection">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h3 class="fw-bold mb-0"><i class="bi bi-map text-primary"></i> Карта Бишкека</h3>
+            <button class="btn btn-sm btn-outline-primary rounded-pill" onclick="toggleMap()"><i class="bi bi-eye"></i>
+                <span id="mapToggleText">Показать карту</span></button>
+        </div>
+        <div id="mapContainer"
+            style="display: none; height: 400px; border-radius: 24px; overflow: hidden; border: 1px solid var(--bs-border-color); margin-bottom: 30px;">
+            <div id="map" style="height: 100%;"></div>
+        </div>
+    </div>
+
+    <!-- Скролл мест -->
+    <div class="container-fluid px-0" id="placesGrid">
+        <div class="section-header">
+            <div class="section-title"><i class="bi bi-star text-warning"></i> Популярные места</div>
+            <div class="text-muted small fw-medium bg-secondary-subtle px-3 py-1 rounded-pill">листай вправо <i
+                    class="bi bi-arrow-right"></i></div>
+        </div>
+        <div class="places-scroll" id="placesScroll"></div>
+    </div>
+
+    <!-- Активные походы и календарь -->
+    <div class="events-container shadow-sm mt-5">
+        <div class="row">
+            <div class="col-lg-8">
+                <h3 class="fw-bold mb-4 d-flex align-items-center gap-2"><i class="bi bi-activity text-success"></i>
+                    Сейчас ищут компанию</h3>
+                <div id="eventsList" class="events-grid"></div>
+            </div>
+            <div class="col-lg-4 mt-5 mt-lg-0">
+                <div class="calendar-container shadow-sm bg-body m-0">
+                    <h5 class="fw-bold mb-3 d-flex align-items-center gap-2"><i
+                            class="bi bi-calendar-check text-primary"></i> Фильтр по дате</h5>
+                    <p class="text-muted small mb-3">Выберите день, чтобы увидеть запланированные походы</p>
+                    <input type="text" id="inlineCalendar" style="display: none;">
+                    <button class="btn btn-sm btn-outline-danger w-100 mt-3 rounded-pill" id="clearDateFilterBtn"
+                        style="display: none;">
+                        <i class="bi bi-x"></i> Сбросить дату
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- CTA -->
+    <div class="container mb-5">
+        <div class="hero" style="margin: 0; padding: 60px 20px; background: var(--primary-gradient);">
+            <h2 class="text-white fw-bold mb-3">Готов к новым эмоциям?</h2>
+            <p class="text-white-50 mb-4 fs-5">Сотни людей в Бишкеке уже находят друзей через Find&Go.</p>
+            <a href="/create-event.html"
+                class="btn btn-light btn-lg rounded-pill px-5 fw-bold text-primary shadow">Создать свой поход</a>
+        </div>
+    </div>
+
+    <!-- Модальные окна (оставлены без изменений для JS) -->
+    <div class="modal fade" id="placeDetailTwoColumnsModal" tabindex="-1">
+        <div class="modal-dialog modal-xl modal-dialog-scrollable modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header border-0 pb-0">
+                    <h4 class="modal-title fw-bold px-2 pt-2" id="modalPlaceTitle">Место</h4><button type="button"
+                        class="btn-close bg-secondary-subtle rounded-circle p-2 me-2" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="modal-two-cards" id="modalTwoCardsContainer">
+                        <div class="modal-card border-0 shadow-sm" id="modalLeftCard"></div>
+                        <div class="modal-card border-0 shadow-sm" id="modalRightCard"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal fade" id="userProfileModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white border-0">
+                    <h5 class="modal-title"><i class="bi bi-person-circle"></i> Профиль</h5><button type="button"
+                        class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body text-center p-4" id="userProfileModalBody"></div>
+            </div>
+        </div>
+    </div>
+    <div class="modal fade" id="notificationsModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-scrollable modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white border-0">
+                    <h5 class="modal-title"><i class="bi bi-bell-fill"></i> Уведомления</h5><button type="button"
+                        class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-0" id="notificationsModalBody"></div>
+            </div>
+        </div>
+    </div>
+    <div class="modal fade" id="invitesModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-scrollable modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white border-0">
+                    <h5 class="modal-title"><i class="bi bi-envelope-paper-fill"></i> Приглашения</h5><button
+                        type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-0" id="invitesModalBody"></div>
+            </div>
+        </div>
+    </div>
+    <div class="modal fade" id="reviewsModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white border-0">
+                    <h5 class="modal-title"><i class="bi bi-star-fill"></i> Оставить отзывы</h5><button type="button"
+                        class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4" id="reviewsModalBody"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="onboardingOverlay" class="onboarding-overlay"
+        style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 10000; display: none; align-items: center; justify-content: center;">
+        <div class="onboarding-card bg-body rounded-4 p-4 text-center mx-3" id="onboardingCard"
+            style="max-width: 400px; box-shadow: 0 20px 40px rgba(0,0,0,0.3);"></div>
+    </div>
+
+    <div id="faqSection" style="display: none;"></div>
+    <button id="toggleFaqBtn" style="display:none;"></button>
+
+    <div id="toastContainer" class="position-fixed bottom-0 end-0 p-3" style="z-index: 1100;"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/places-data.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="https://npmcdn.com/flatpickr/dist/l10n/ru.js"></script>
+    <script>
+        // ========== 1. АВТОРИЗАЦИЯ ==========
+        const token = localStorage.getItem('token');
+        const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
+        if (!token) window.location.href = '/';
+
+        let currentLang = 'ru';
+        let currentCategory = 'all';
+        let currentSearch = '';
+        let sliderTimers = {};
+
+        document.getElementById('userName').innerHTML = `<i class="bi bi-person-circle"></i> ${currentUser.name || 'Пользователь'}`;
+        document.getElementById('logoutBtn').addEventListener('click', () => { localStorage.clear(); window.location.href = '/login.html'; });
+
+        const profile = JSON.parse(localStorage.getItem('profile') || '{}');
+        const headerAvatar = document.getElementById('headerAvatar');
+        if (headerAvatar) {
+            headerAvatar.src = profile.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${currentUser.name || 'default'}`;
+        }
+        document.getElementById('userProfileLink')?.addEventListener('click', () => { window.location.href = '/profile.html'; });
+
+        // ========== 2. ТЁМНАЯ ТЕМА ==========
+        function initDarkMode() {
+            const sw = document.getElementById('darkModeSwitch');
+            const html = document.documentElement;
+            const saved = localStorage.getItem('theme');
+            if (saved === 'dark') { html.setAttribute('data-bs-theme', 'dark'); if (sw) sw.checked = true; }
+            else { html.setAttribute('data-bs-theme', 'light'); if (sw) sw.checked = false; }
+            if (sw) sw.addEventListener('change', e => { html.setAttribute('data-bs-theme', e.target.checked ? 'dark' : 'light'); localStorage.setItem('theme', e.target.checked ? 'dark' : 'light'); });
+        }
+
+        // ========== 3. ТОСТЫ ==========
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = `toast align-items-center text-white bg-${type === 'success' ? 'success' : type === 'info' ? 'info' : 'danger'} border-0 mb-2`;
+            toast.setAttribute('role', 'alert');
+            toast.innerHTML = `<div class="d-flex"><div class="toast-body">${message}</div><button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button></div>`;
+            container.appendChild(toast);
+            const bsToast = new bootstrap.Toast(toast, { delay: 3000 });
+            bsToast.show();
+            toast.addEventListener('hidden.bs.toast', () => toast.remove());
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // ========== 4. БЕЙДЖИ — счётчики приглашений и уведомлений ==========
+        // ✅ БАГ 4: периодически обновляем бейджи без перезагрузки
+        async function refreshBadges() {
+            try {
+                // Приглашения
+                const invRes = await fetch('/api/invites/pending-count', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (invRes.ok) {
+                    const { count } = await invRes.json();
+                    const badge = document.getElementById('invitesBadge');
+                    const sidebarBadge = document.getElementById('sidebarInvitesBadge');
+                    if (count > 0) {
+                        badge.textContent = count > 9 ? '9+' : count;
+                        badge.style.display = 'inline-block';
+                        sidebarBadge.textContent = count > 9 ? '9+' : count;
+                        sidebarBadge.style.display = 'inline-block';
+                    } else {
+                        badge.style.display = 'none';
+                        sidebarBadge.style.display = 'none';
+                    }
+                }
+
+                // ✅ БАГ 5: уведомления из БД
+                const notifRes = await fetch('/api/notifications/unread-count', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (notifRes.ok) {
+                    const { count } = await notifRes.json();
+                    const badge = document.getElementById('notificationsBadge');
+                    if (count > 0) {
+                        badge.textContent = count > 9 ? '9+' : count;
+                        badge.style.display = 'inline-block';
+                    } else {
+                        badge.style.display = 'none';
+                    }
+                }
+            } catch (e) { /* тихо игнорируем — не ломаем интерфейс */ }
+        }
+
+        // Обновляем бейджи каждые 30 секунд
+        refreshBadges();
+        setInterval(refreshBadges, 30000);
+
+        // ========== 5. УВЕДОМЛЕНИЯ (из БД) ==========
+        // ✅ БАГ 5: уведомления берутся из реальной таблицы Notifications
+        async function showNotifications() {
+            const modalBody = document.getElementById('notificationsModalBody');
+            const modal = new bootstrap.Modal(document.getElementById('notificationsModal'));
+            modalBody.innerHTML = `<div class="text-center py-5"><div class="spinner-border text-primary"></div><p class="mt-2">Загрузка...</p></div>`;
+            modal.show();
+
+            try {
+                const res = await fetch('/api/notifications', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const notifications = await res.json();
+
+                if (!notifications.length) {
+                    modalBody.innerHTML = `<div class="text-center py-5 text-muted"><i class="bi bi-bell-slash fs-1"></i><p class="mt-2">Нет уведомлений</p></div>`;
+                } else {
+                    modalBody.innerHTML = notifications.map(n => `
+                <div class="p-3 border-bottom ${n.read ? '' : 'bg-body-tertiary'} notification-item" style="border-radius:12px; margin-bottom:4px;">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <strong class="text-primary">${escapeHtml(n.title)}</strong>
+                        <small class="text-muted">${new Date(n.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</small>
+                    </div>
+                    <p class="mb-2 small mt-1">${escapeHtml(n.message)}</p>
+                    ${n.link ? `<a href="${n.link}" class="btn btn-sm btn-primary py-0 px-3 rounded-pill" style="font-size:0.75rem;">Открыть</a>` : ''}
+                </div>
+            `).join('');
+                }
+
+                // Отмечаем как прочитанные
+                await fetch('/api/notifications/mark-read', {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                refreshBadges();
+            } catch (e) {
+                modalBody.innerHTML = `<div class="text-center py-5 text-danger"><i class="bi bi-exclamation-triangle fs-1"></i><p>Ошибка загрузки</p></div>`;
+            }
+        }
+
+        document.getElementById('notificationsBtn').addEventListener('click', showNotifications);
+
+        // ========== 6. ПРИГЛАШЕНИЯ ==========
+        async function sendInvite(toUserId, toUserName, placeName, placeId) {
+            try {
+                const response = await fetch('/api/invite', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                    body: JSON.stringify({ toUserId, placeName, placeId, eventId: null })
+                });
+                const data = await response.json();
+                if (response.ok) {
+                    showToast(`✅ Приглашение отправлено ${escapeHtml(toUserName)}!`, 'success');
+                    refreshBadges();
+                } else {
+                    showToast(data.message || 'Ошибка', 'danger');
+                }
+            } catch (error) {
+                showToast('Ошибка соединения', 'danger');
+            }
+        }
+
+        async function loadInvitesModal() {
+            const modalBody = document.getElementById('invitesModalBody');
+            const modal = new bootstrap.Modal(document.getElementById('invitesModal'));
+            modalBody.innerHTML = `<div class="text-center py-5"><div class="spinner-border text-primary"></div><p class="mt-2">Загрузка...</p></div>`;
+            modal.show();
+
+            try {
+                const response = await fetch('/api/invites', { headers: { 'Authorization': `Bearer ${token}` } });
+                const data = await response.json();
+                if (!response.ok) throw new Error(data.message);
+
+                const incoming = data.incoming || [];
+                const outgoing = data.outgoing || [];
+
+                const incomingHtml = incoming.length === 0
+                    ? `<div class="text-center py-4 text-muted"><i class="bi bi-inbox fs-3"></i><p class="mb-0">Нет входящих приглашений</p></div>`
+                    : incoming.map(inv => `
+                <div class="border-bottom pb-3 mb-3">
+                    <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
+                        <div>
+                            <strong>${escapeHtml(inv.fromUser?.name || 'Пользователь')}</strong>
+                            <p class="small text-muted mb-0 mt-1"><i class="bi bi-geo-alt"></i> "${escapeHtml(inv.placeName)}"</p>
+                        </div>
+                        <div>
+                            <button class="btn btn-sm btn-success me-1" onclick="acceptInvite(${inv.id})"><i class="bi bi-check-lg"></i> Принять</button>
+                            <button class="btn btn-sm btn-danger" onclick="rejectInvite(${inv.id})"><i class="bi bi-x-lg"></i> Отклонить</button>
+                        </div>
+                    </div>
+                    <small class="text-muted">${new Date(inv.createdAt).toLocaleString()}</small>
+                </div>
+            `).join('');
+
+                const outgoingHtml = outgoing.length === 0
+                    ? `<div class="text-center py-4 text-muted"><i class="bi bi-send fs-3"></i><p class="mb-0">Нет отправленных</p></div>`
+                    : outgoing.map(inv => `
+                <div class="border-bottom pb-3 mb-3">
+                    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+                        <div>
+                            <strong>${escapeHtml(inv.toUser?.name || 'Пользователь')}</strong>
+                            <p class="small mb-0 mt-1"><i class="bi bi-geo-alt"></i> "${escapeHtml(inv.placeName)}"</p>
+                        </div>
+                        <span class="badge ${inv.status === 'pending' ? 'bg-warning' : inv.status === 'accepted' ? 'bg-success' : 'bg-danger'}">
+                            ${inv.status === 'pending' ? '⏳ Ожидает' : inv.status === 'accepted' ? '✅ Принято' : '❌ Отклонено'}
+                        </span>
+                    </div>
+                    <small class="text-muted">${new Date(inv.createdAt).toLocaleString()}</small>
+                </div>
+            `).join('');
+
+                modalBody.innerHTML = `
+            <div class="p-3">
+                <h6 class="mb-3"><i class="bi bi-inbox-fill text-primary"></i> Входящие</h6>
+                ${incomingHtml}
+                <h6 class="mb-3 mt-4"><i class="bi bi-send-fill text-primary"></i> Отправленные</h6>
+                ${outgoingHtml}
+            </div>`;
+
+                refreshBadges();
+            } catch (error) {
+                modalBody.innerHTML = `<div class="text-center py-5 text-danger"><i class="bi bi-exclamation-triangle fs-1"></i><p>Ошибка загрузки</p><button class="btn btn-sm btn-outline-danger mt-2" onclick="loadInvitesModal()">Повторить</button></div>`;
+            }
+        }
+
+        // ✅ БАГ 3: acceptInvite открывает чат после принятия
+        async function acceptInvite(inviteId) {
+            try {
+                const response = await fetch(`/api/invite/${inviteId}/accept`, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const data = await response.json();
+
+                if (response.ok) {
+                    const invModal = bootstrap.Modal.getInstance(document.getElementById('invitesModal'));
+                    if (invModal) invModal.hide();
+
+                    refreshBadges();
+                    await loadEvents(); // обновляем список — появится кнопка 💬
+
+                    if (data.eventId) {
+                        // ✅ БАГ 3: показываем тост с кнопкой-ссылкой в чат
+                        showToast(`✅ Принято! <a href="/chat.html?eventId=${data.eventId}" class="btn btn-sm btn-light ms-2" style="color: #667eea; font-weight: bold;">💬 Открыть чат</a>`, 'success');
+                    } else {
+                        showToast('✅ Приглашение принято!', 'success');
+                    }
+                } else {
+                    showToast(data.message || '❌ Ошибка', 'danger');
+                }
+            } catch (error) {
+                showToast('❌ Ошибка соединения', 'danger');
+            }
+        }
+
+        async function rejectInvite(inviteId) {
+            try {
+                const response = await fetch(`/api/invite/${inviteId}/reject`, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (response.ok) {
+                    showToast('Приглашение отклонено', 'info');
+                    loadInvitesModal();
+                }
+            } catch (error) {
+                showToast('Ошибка соединения', 'danger');
+            }
+        }
+
+        // ========== 7. ЧАТЫ ==========
+        function filterPlaces(places) {
+            return places.filter(p => {
+                const matchesCategory = currentCategory === 'all' || p.category === currentCategory;
+                const matchesSearch = p.name.toLowerCase().includes(currentSearch.toLowerCase()) ||
+                    p.desc.toLowerCase().includes(currentSearch.toLowerCase());
+                return matchesCategory && matchesSearch;
+            });
+        }
+
+        // ========== 8. ЗАГРУЗКА ПОЛЬЗОВАТЕЛЕЙ ==========
+        let allUsersList = [];
+
+        async function loadAllUsers() {
+            try {
+                const res = await fetch('/api/auth/interests/all', { headers: { 'Authorization': `Bearer ${token}` } });
+                if (res.ok) allUsersList = await res.json();
+            } catch (e) { console.error(e); }
+        }
+
+        // ========== 9. ДАННЫЕ МЕСТ ==========
+        const placesData = { ru: BISHKEK_PLACES, ky: BISHKEK_PLACES };
+
+        const botUsers = [
+            { id: 101, name: "Айжан", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=ayjan", bio: "Люблю прогулки в парках!", interests: ["парк", "кафе"] },
+            { id: 102, name: "Эрмек", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=ermek", bio: "Ищу компанию для походов в горы!", interests: ["природа", "паб"] },
+            { id: 103, name: "Данияр", avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=daniyar", bio: "Люблю шопинг и кино!", interests: ["трц", "отель"] }
+        ];
+
+        function getInterestedUsers(category) {
+            let interested = allUsersList.filter(u => u.interests && u.interests.includes(category));
+            const userInterests = JSON.parse(localStorage.getItem('userInterests') || '[]');
+            if (userInterests.includes(category) && currentUser.id && !interested.some(u => u.id === currentUser.id)) {
+                interested.push({
+                    id: currentUser.id,
+                    name: currentUser.name,
+                    avatar: profile.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${currentUser.name}`,
+                    bio: 'Мне это интересно!',
+                    interests: userInterests
+                });
+            }
+            const bots = botUsers.filter(b => b.interests.includes(category));
+            return [...interested, ...bots];
+        }
+
+        // ========== 10. КАРТОЧКИ МЕСТ ==========
+        function startSlider(placeId, total) {
+            if (sliderTimers[placeId]) clearInterval(sliderTimers[placeId]);
+            let idx = 0;
+            sliderTimers[placeId] = setInterval(() => {
+                idx = (idx + 1) % total;
+                const track = document.querySelector(`[data-slider-id="${placeId}"] .place-slider-track`);
+                const dots = document.querySelectorAll(`[data-slider-id="${placeId}"] .place-slider-dot`);
+                if (track) track.style.transform = `translateX(-${idx * 100}%)`;
+                dots.forEach((d, i) => d.classList.toggle('active', i === idx));
+            }, 3000);
+        }
+
+        function renderPlaces(lang, isLoading = false) {
+            const container = document.getElementById('placesScroll');
+            if (!container) return;
+
+            if (isLoading) {
+                container.innerHTML = Array(4).fill(0).map(() => `
+            <div class="place-card">
+                <div class="skeleton skeleton-img"></div>
+                <div class="card-body">
+                    <div class="skeleton skeleton-text" style="width: 40%"></div>
+                    <div class="skeleton skeleton-title"></div>
+                    <div class="skeleton skeleton-text"></div>
+                </div>
+            </div>
+        `).join('');
+                return;
+            }
+
+            const allPlaces = BISHKEK_PLACES;
+            const filteredPlaces = filterPlaces(allPlaces);
+
+            Object.values(sliderTimers).forEach(t => clearInterval(t));
+            if (!filteredPlaces.length) {
+                container.innerHTML = `<div class="text-center text-muted w-100 py-5">😔 Ничего не найдено</div>`;
+                return;
+            }
+            container.innerHTML = filteredPlaces.map(place => {
+                const photos = place.photos || [place.img || ''];
+                const slides = photos.map(url => `<div class="place-slider-slide"><img src="${url}" alt="${escapeHtml(place.name)}" loading="lazy"></div>`).join('');
+                const dots = photos.map((_, i) => `<button class="place-slider-dot${i === 0 ? ' active' : ''}" onclick="event.stopPropagation()"></button>`).join('');
+                return `
+        <div class="place-card" onclick="openPlaceModal(${place.id})" data-slider-id="${place.id}">
+            <div class="place-slider">
+                <div class="place-slider-track">${slides}</div>
+                <div class="place-slider-dots">${dots}</div>
+            </div>
+            <div class="card-body">
+                <span class="place-tag">${escapeHtml(place.tag || '')}</span>
+                <h4>${escapeHtml(place.name)}</h4>
+                <p>${escapeHtml((place.desc || '').substring(0, 75))}…</p>
+            </div>
+        </div>`;
+            }).join('');
+            filteredPlaces.forEach(p => { if ((p.photos || [p.img]).length > 1) startSlider(p.id, (p.photos || [p.img]).length); });
+        }
+
+        async function openPlaceModal(placeId) {
+            window.currentPlaceModalId = placeId;
+            const place = BISHKEK_PLACES.find(p => p.id === placeId);
+            if (!place) return;
+
+            const photos = place.photos || [place.img];
+            const galleryId = `mg_${placeId}`;
+            const slides = photos.map(url => `<div class="modal-gallery-slide"><img src="${url}" alt="${escapeHtml(place.name)}" loading="lazy"></div>`).join('');
+            const mdots = photos.map((_, i) => `<button class="modal-gallery-dot${i === 0 ? ' active' : ''}" onclick="modalGalleryGo('${galleryId}',${i})"></button>`).join('');
+
+            const leftHtml = `
+        <div class="modal-gallery" id="${galleryId}">
+            <div class="modal-gallery-track" data-current-idx="0">${slides}</div>
+            ${photos.length > 1 ? `<button class="modal-gallery-nav prev" onclick="modalGalleryPrev('${galleryId}',${photos.length})">&#8249;</button><button class="modal-gallery-nav next" onclick="modalGalleryNext('${galleryId}',${photos.length})">&#8250;</button>` : ''}
+            <div class="modal-gallery-dots" id="${galleryId}_dots">${mdots}</div>
+        </div>
+        <div class="modal-info-content">
+            <div class="d-flex justify-content-between align-items-start mb-4">
+                <div>
+                    <span class="place-tag mb-2">${escapeHtml(place.tag)}</span>
+                    <h2 class="fw-bold mb-0">${escapeHtml(place.name)}</h2>
+                </div>
+                <div class="text-end">
+                    <button class="btn btn-primary rounded-pill px-4 shadow-sm py-2" onclick="goToCreate('${place.name.replace(/\\/g, '\\\\').replace(/'/g, "\\'")}')">
+                        <i class="bi bi-plus-circle me-2"></i>Создать встречу
+                    </button>
+                </div>
+            </div>
+            
+            <p class="text-secondary mb-4" style="line-height: 1.6; font-size: 0.97rem;">${escapeHtml(place.desc || 'Описание отсутствует')}</p>
+            
+            <div class="row g-3 mb-4">
+                <div class="col-sm-6">
+                    <div class="p-3 bg-body-tertiary rounded-4 border">
+                        <small class="text-muted d-block mb-1"><i class="bi bi-geo-alt"></i> Адрес</small>
+                        <span class="fw-semibold small d-block text-truncate">${escapeHtml(place.address || 'Не указан')}</span>
+                    </div>
+                </div>
+                <div class="col-sm-6">
+                    <div class="p-3 bg-body-tertiary rounded-4 border">
+                        <small class="text-muted d-block mb-1"><i class="bi bi-telephone"></i> Телефон</small>
+                        <span class="fw-semibold small d-block">${escapeHtml(place.phone || 'Не указан')}</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="d-flex gap-2">
+                <a href="${escapeHtml(place.gisLink || '#')}" target="_blank" rel="noopener" class="btn btn-light rounded-pill border px-4 btn-sm py-2">
+                    <img src="https://2gis.kg/favicon.ico" width="16" class="me-2"> 2ГИС
+                </a>
+                ${place.instagram ? `<a href="https://instagram.com/${escapeHtml(place.instagram)}" target="_blank" rel="noopener" class="btn btn-light rounded-pill border px-4 btn-sm py-2">
+                    <i class="bi bi-instagram text-danger me-2"></i>Instagram
+                </a>` : ''}
+            </div>
+        </div>
+    `;
+
+            // Load users in parallel
+            await loadAllUsers();
+            const users = getInterestedUsers(place.category);
+
+            // Safe guard — allEvents may not be loaded yet
+            const safeEvents = Array.isArray(allEvents) ? allEvents : [];
+            const placeEvents = safeEvents.filter(e => {
+                const placeId = e.placeId || e.place?.id;
+                return placeId === place.id && e.status === 'active';
+            });
+
+            const safePlaceName = place.name.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+
+            // ====== RIGHT PANEL: PRIMARY ACTIONS BLOCK ======
+            let rightHtml = `<div class="modal-actions-block">`;
+            rightHtml += `<h6>Действия</h6>`;
+
+            if (placeEvents.length > 0) {
+                // Active meetings exist → show them first
+                rightHtml += `<div class="modal-active-events">`;
+                placeEvents.slice(0, 3).forEach(ev => {
+                    const dt = new Date(ev.datetime).toLocaleString('ru-RU', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+                    const cnt = ev.participantsCount || 0;
+                    const max = ev.maxParticipants || '?';
+                    const isFull = ev.participantsCount >= ev.maxParticipants;
+                    const isParticipant = ev.participants?.includes(currentUser.id);
+                    const isCreator = ev.creatorId === currentUser.id;
+                    rightHtml += `
+                    <div class="modal-event-item has-events">
+                        <div style="min-width:0;">
+                            <div class="fw-semibold" style="font-size:0.88rem;">${escapeHtml(ev.title || 'Встреча')}</div>
+                            <div class="modal-event-meta"><i class="bi bi-calendar3"></i> ${dt} &nbsp;·&nbsp; <i class="bi bi-people"></i> ${cnt}/${max}</div>
+                        </div>
+                        <div class="flex-shrink-0">
+                        ${isCreator ? `<span class="badge bg-primary-subtle text-primary" style="font-size:0.72rem;">Ваша</span>` :
+                            isParticipant ? `<a href="/chat.html?eventId=${ev.id}" class="btn btn-sm btn-outline-success py-1 px-2" style="font-size:0.78rem;">💬 Чат</a>` :
+                            isFull ? `<span class="badge bg-secondary" style="font-size:0.72rem;">Мест нет</span>` :
+                            `<button class="btn btn-sm btn-primary py-1 px-2" style="font-size:0.78rem;" onclick="event.stopPropagation(); joinEventFromModal(${ev.id})">Войти</button>`
+                        }
+                        </div>
+                    </div>`;
+                });
+                rightHtml += `</div>`;
+                if (placeEvents.length > 3) {
+                    rightHtml += `<button class="btn btn-link btn-sm p-0 mb-2" style="font-size:0.82rem;" onclick="goToEvents()">Ещё ${placeEvents.length - 3} встреч ↓</button>`;
+                }
+                rightHtml += `
+                <div class="d-flex flex-column gap-2 mt-2">
+                    <button class="btn btn-outline-primary w-100 fw-semibold btn-sm" onclick="goToCreate('${safePlaceName}')">Создать свою встречу</button>
+                    <button class="btn btn-light w-100 border btn-sm" onclick="goToEvents()">Все встречи рядом</button>
+                </div>`;
+            } else {
+                // No meetings → show create-first state
+                rightHtml += `
+                <div class="empty-state-action mb-2">
+                    <span class="es-icon">📍</span>
+                    <p>Встреч здесь пока нет.<br>Создайте первую.</p>
+                    <button class="btn btn-primary w-100 fw-semibold" onclick="goToCreate('${safePlaceName}')">Создать встречу</button>
+                </div>
+                <div class="d-flex flex-column gap-2 mt-2">
+                    <button class="btn btn-light w-100 border btn-sm" onclick="goToEvents()">Все активные встречи</button>
+                </div>`;
+            }
+
+            rightHtml += `</div>`; // end modal-actions-block
+
+            // ====== RIGHT PANEL: SOCIAL LAYER (secondary) ======
+            if (users.length > 0) {
+                rightHtml += `<div class="modal-social-divider">Открытые намерения</div>`;
+                rightHtml += `<div class="users-list">`;
+
+                const intentTemplates = [
+                    'планирует сходить сюда',
+                    'ищет компанию на сегодня',
+                    'открыт к присоединению',
+                    'хочет посетить это место'
+                ];
+
+                users.forEach((user, index) => {
+                    const avatarUrl = user.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.id}`;
+                    const intent = intentTemplates[index % intentTemplates.length];
+                    const safeName = user.name.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+                    const isMe = user.id === currentUser.id;
+
+                    rightHtml += `
+                    <div class="user-item-compact" onclick="showProfile(${user.id})">
+                        <div class="user-info-compact">
+                            <img src="${escapeHtml(avatarUrl)}" class="user-avatar-small" alt="${escapeHtml(user.name)}">
+                            <div style="min-width:0;">
+                                <div class="user-name-compact">${escapeHtml(user.name)}</div>
+                                <div class="user-intent-text">${escapeHtml(intent)}</div>
+                            </div>
+                        </div>
+                        <div class="user-cta-btns" onclick="event.stopPropagation()">
+                            ${isMe
+                                ? `<span class="badge bg-secondary-subtle text-secondary rounded-pill" style="font-size:0.72rem;">Вы</span>`
+                                : `<button class="invite-btn-small" onclick="sendInvite(${user.id}, '${safeName}', '${safePlaceName}', ${place.id})">Пригласить</button>
+                                   <button class="write-btn-small" onclick="window.location.href='/dm.html?userId=${user.id}'">Написать</button>`
+                            }
+                        </div>
+                    </div>`;
+                });
+
+                rightHtml += `</div>`; // end users-list
+            }
+
+            document.getElementById('modalLeftCard').innerHTML = leftHtml;
+            document.getElementById('modalRightCard').innerHTML = rightHtml;
+            document.getElementById('modalPlaceTitle').innerText = place.name;
+
+            const modal = new bootstrap.Modal(document.getElementById('placeDetailTwoColumnsModal'));
+            modal.show();
+        }
+
+        // Join event directly from modal
+        window.joinEventFromModal = async (id) => {
+            try {
+                const res = await fetch(`/api/events/${id}/join`, { method: 'POST', headers: { 'Authorization': `Bearer ${token}` } });
+                if (res.ok) {
+                    confetti({ particleCount: 100, spread: 60, origin: { y: 0.6 }, colors: ['#667eea', '#764ba2', '#ffffff'] });
+                    showToast(`✅ Вы в встрече! <a href="/chat.html?eventId=${id}" class="text-white fw-bold">💬 Чат</a>`, 'success');
+                    await loadEvents();
+                    // Refresh modal right panel
+                    if (window.currentPlaceModalId) openPlaceModal(window.currentPlaceModalId);
+                } else {
+                    const err = await res.json();
+                    showToast(err.message || 'Ошибка', 'danger');
+                }
+            } catch (e) { showToast('Ошибка соединения', 'danger'); }
+        };
+
+
+
+        function showProfile(userId) {
+            if (!userId) return;
+            window.location.href = `/user.html?id=${userId}`;
+        }
+
+        function _closeModal() {
+            try {
+                const modalEl = document.getElementById('placeDetailTwoColumnsModal');
+                const m = bootstrap.Modal.getInstance(modalEl);
+                if (m) m.hide();
+            } catch(e) {}
+            // Always clean up backdrop
+            setTimeout(() => {
+                document.querySelectorAll('.modal-backdrop').forEach(el => el.remove());
+                document.body.classList.remove('modal-open');
+                document.body.style.removeProperty('overflow');
+                document.body.style.removeProperty('padding-right');
+            }, 50);
+        }
+
+        function goToCreate(placeName) {
+            _closeModal();
+            setTimeout(() => {
+                window.location.href = `/create-event.html?place=${encodeURIComponent(placeName)}`;
+            }, 150);
+        }
+
+        function goToEvents() {
+            _closeModal();
+            setTimeout(() => {
+                const el = document.getElementById('eventsList');
+                if (el) {
+                    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                } else {
+                    window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+                }
+            }, 200);
+        }
+
+        // ========== 12. ПОХОДЫ ==========
+        let allEvents = [];
+        let currentDateFilter = null;
+        let fpCalendar = null;
+
+        function renderEvents(eventsToRender) {
+            const container = document.getElementById('eventsList');
+            if (!container) return;
+
+            if (!eventsToRender.length) {
+                if (currentDateFilter) {
+                    container.innerHTML = `<div class="text-center py-5 text-muted"><i class="bi bi-calendar-x fs-1"></i><p class="mt-2">📭 Нет походов на выбранную дату.</p><a href="/create-event.html" class="btn btn-primary mt-2"><i class="bi bi-plus-circle"></i> Создать поход</a></div>`;
+                } else {
+                    container.innerHTML = `<div class="text-center py-5 text-muted"><i class="bi bi-calendar-x fs-1"></i><p class="mt-2">📭 Нет активных походов.</p><a href="/create-event.html" class="btn btn-primary mt-2"><i class="bi bi-plus-circle"></i> Создать первый поход</a></div>`;
+                }
+                return;
+            }
+
+            container.innerHTML = eventsToRender.map(ev => {
+                const isCreator = ev.creatorId === currentUser.id;
+                const isParticipant = ev.participants?.includes(currentUser.id);
+                const isFull = ev.participantsCount >= ev.maxParticipants;
+
+                let joinBtn = '';
+                if (ev.status === 'completed') {
+                    joinBtn = `<span class="badge bg-secondary mb-1">✅ Завершён</span><br>`;
+                    if (isParticipant || isCreator) {
+                        joinBtn += `<button class="btn btn-sm btn-outline-primary mt-1" onclick="openReviewsModal(${ev.id})">⭐ Оценить</button>`;
+                    }
+                } else {
+                    if (!isCreator && !isParticipant) {
+                        joinBtn = `<button class="btn btn-join btn-sm" onclick="joinEvent(${ev.id})" ${isFull ? 'disabled' : ''}>${isFull ? '🚫 Мест нет' : 'Присоединиться'}</button>`;
+                    } else if (isParticipant && !isCreator) {
+                        joinBtn = `<span class="badge bg-success mb-1">✅ Участник</span><br><button class="btn btn-sm btn-info mt-1" onclick="openChat(${ev.id})">💬 Чат</button>`;
+                    }
+                }
+
+                let creatorControls = '';
+                if (isCreator) {
+                    creatorControls = `
+                <span class="badge bg-primary mb-1">👑 Ваш</span><br>
+                ${ev.status === 'active' ? `<button class="btn btn-sm btn-success mt-1" onclick="completeEvent(${ev.id})">✅ Завершить</button>` : ''}
+                <button class="btn btn-sm btn-warning mt-1" onclick="editEvent(${ev.id})">✏️</button>
+                <button class="btn btn-sm btn-danger mt-1" onclick="deleteEvent(${ev.id})">🗑️</button>
+                <button class="btn btn-sm btn-info mt-1" onclick="openChat(${ev.id})">💬</button>
+            `;
+                }
+
+                return `
+            <div class="event-card" data-event-id="${ev.id}" style="${ev.status === 'completed' ? 'opacity: 0.8;' : ''}">
+                <div class="row align-items-center">
+                    <div class="col-7">
+                        <div class="event-title fw-bold">📍 ${escapeHtml(ev.place?.name || 'Место')}</div>
+                        <div class="event-meta text-muted small">📅 ${new Date(ev.datetime).toLocaleString('ru-RU', {day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'})} · 👥 ${ev.participantsCount || 0}/${ev.maxParticipants}</div>
+                        <button class="btn btn-sm btn-link p-0 text-decoration-none" style="font-size: 0.75rem; color: #667eea;" onclick="shareEvent(${ev.id}, '${escapeHtml(ev.place?.name || 'поход')}')"><i class="bi bi-share"></i> Поделиться ссылкой</button>
+                    </div>
+                    <div class="col-5 text-end">
+                        ${joinBtn}
+                        ${creatorControls}
+                    </div>
+                </div>
+            </div>`;
+            }).join('');
+        }
+
+        async function loadEvents() {
+            const container = document.getElementById('eventsList');
+            if (!container) return;
+
+            // Показываем скелетоны
+            container.innerHTML = Array(3).fill(0).map(() => `
+        <div class="event-card">
+            <div class="row align-items-center">
+                <div class="col-7">
+                    <div class="skeleton skeleton-title"></div>
+                    <div class="skeleton skeleton-text" style="width: 80%"></div>
+                </div>
+                <div class="col-5 text-end">
+                    <div class="skeleton skeleton-text" style="width: 100%; height: 36px; border-radius: 50px;"></div>
+                </div>
+            </div>
+        </div>
+    `).join('');
+
+            try {
+                const response = await fetch('/api/events', { headers: { 'Authorization': `Bearer ${token}` } });
+                if (!response.ok) throw new Error('Ошибка загрузки');
+                const raw = await response.json();
+                const events = Array.isArray(raw) ? raw : (raw.events || []);
+                allEvents = events;
+
+                applyDateFilter();
+                updateCalendarDots();
+
+                // ✅ Обработка прямой ссылки на ивент
+                const urlParams = new URLSearchParams(window.location.search);
+                const sharedEventId = urlParams.get('eventId');
+                if (sharedEventId) {
+                    setTimeout(() => {
+                        const card = document.querySelector(`.event-card[data-event-id="${sharedEventId}"]`);
+                        if (card) {
+                            card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                            card.style.borderColor = '#667eea';
+                            card.style.boxShadow = '0 0 20px rgba(102, 126, 234, 0.4)';
+                        }
+                    }, 500);
+                }
+            } catch (error) {
+                container.innerHTML = `<div class="text-center text-danger py-4">⚠️ Ошибка загрузки походов.</div>`;
+            }
+        }
+
+        function editEvent(id) { const dt = prompt('Новая дата (ГГГГ-ММ-ДД ЧЧ:ММ)'); const max = prompt('Новое кол-во участников'); if (!dt || !max) return; fetch(`/api/events/${id}`, { method: 'PUT', headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ datetime: dt.replace(' ', 'T') + ':00', maxParticipants: parseInt(max) }) }).then(res => res.ok ? (showToast('✅ Обновлено'), loadEvents()) : res.json().then(err => showToast(err.message, 'danger'))); }
+        function deleteEvent(id) { if (confirm('Удалить?')) fetch(`/api/events/${id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } }).then(res => res.ok ? (showToast('Удалено', 'info'), loadEvents()) : res.json().then(err => showToast(err.message, 'danger'))); }
+        function openChat(id) { window.location.href = `/chat.html?eventId=${id}`; }
+
+        window.shareEvent = async (id, placeName) => {
+            const shareData = {
+                title: 'Find&Go - Идем вместе!',
+                text: `Привет! Я собираюсь в ${placeName} через Find&Go. Присоединяйся!`,
+                url: window.location.origin + '/?eventId=' + id
+            };
+
+            try {
+                if (navigator.share) {
+                    await navigator.share(shareData);
+                } else {
+                    await navigator.clipboard.writeText(shareData.url);
+                    showToast('✅ Ссылка скопирована в буфер обмена', 'success');
+                }
+            } catch (err) {
+                console.error('Share error:', err);
+            }
+        };
+
+        window.completeEvent = async (id) => {
+            if (!confirm('Вы уверены, что хотите завершить поход? После этого можно будет оставить отзывы участникам.')) return;
+            try {
+                const res = await fetch(`/api/events/${id}/complete`, { method: 'POST', headers: { 'Authorization': `Bearer ${token}` } });
+                if (res.ok) {
+                    showToast('✅ Поход успешно завершён!', 'success');
+                    loadEvents();
+                    openReviewsModal(id);
+                } else {
+                    const err = await res.json();
+                    showToast(err.message, 'danger');
+                }
+            } catch (e) { showToast('Ошибка сервера', 'danger'); }
+        };
+
+        window.openReviewsModal = async (eventId) => {
+            const modalBody = document.getElementById('reviewsModalBody');
+            const modal = new bootstrap.Modal(document.getElementById('reviewsModal'));
+            modalBody.innerHTML = '<div class="text-center py-4"><div class="spinner-border text-primary"></div></div>';
+            modal.show();
+
+            try {
+                const res = await fetch(`/api/events/${eventId}/participants`, { headers: { 'Authorization': `Bearer ${token}` } });
+                const participants = await res.json();
+
+                // Получаем сам ивент, чтобы знать создателя
+                const eventRes = await fetch(`/api/events/${eventId}`, { headers: { 'Authorization': `Bearer ${token}` } });
+                const eventInfo = await eventRes.json();
+                if (eventInfo.creator && eventInfo.creator.id !== currentUser.id && !participants.some(p => p.id === eventInfo.creator.id)) {
+                    participants.push(eventInfo.creator);
+                }
+
+                const others = participants.filter(p => p.id !== currentUser.id);
+                if (others.length === 0) {
+                    modalBody.innerHTML = '<div class="text-center text-muted">Кроме вас в походе никого не было.</div>';
+                    return;
+                }
+
+                modalBody.innerHTML = others.map(p => `
+            <div class="card mb-3 shadow-sm border-0">
+                <div class="card-body d-flex align-items-center gap-3">
+                    <img src="${p.avatar || 'https://api.dicebear.com/7.x/avataaars/svg?seed=' + p.name}" class="rounded-circle" width="50" height="50" style="object-fit:cover">
+                    <div class="flex-grow-1">
+                        <h6 class="mb-1 fw-bold">${p.name}</h6>
+                        <div class="rating-stars mb-2" id="stars-${p.id}">
+                            <i class="bi bi-star" style="cursor:pointer; color:#f59e0b;" onclick="setRating(${p.id}, 1)"></i>
+                            <i class="bi bi-star" style="cursor:pointer; color:#f59e0b;" onclick="setRating(${p.id}, 2)"></i>
+                            <i class="bi bi-star" style="cursor:pointer; color:#f59e0b;" onclick="setRating(${p.id}, 3)"></i>
+                            <i class="bi bi-star" style="cursor:pointer; color:#f59e0b;" onclick="setRating(${p.id}, 4)"></i>
+                            <i class="bi bi-star" style="cursor:pointer; color:#f59e0b;" onclick="setRating(${p.id}, 5)"></i>
+                        </div>
+                        <input type="hidden" id="rating-val-${p.id}" value="0">
+                        <input type="text" class="form-control form-control-sm mb-2" id="comment-${p.id}" placeholder="Комментарий (необязательно)">
+                        <button class="btn btn-sm btn-primary w-100" onclick="submitReview(${eventId}, ${p.id})">Отправить отзыв</button>
+                    </div>
+                </div>
+            </div>
+        `).join('');
+            } catch (e) {
+                modalBody.innerHTML = '<div class="text-danger text-center">Ошибка загрузки участников</div>';
+            }
+        };
+
+        window.setRating = (userId, rating) => {
+            document.getElementById(`rating-val-${userId}`).value = rating;
+            const stars = document.getElementById(`stars-${userId}`).querySelectorAll('i');
+            stars.forEach((star, index) => {
+                if (index < rating) {
+                    star.classList.replace('bi-star', 'bi-star-fill');
+                } else {
+                    star.classList.replace('bi-star-fill', 'bi-star');
+                }
+            });
+        };
+
+        window.submitReview = async (eventId, toUserId) => {
+            const rating = document.getElementById(`rating-val-${toUserId}`).value;
+            const comment = document.getElementById(`comment-${toUserId}`).value;
+
+            if (rating == 0) {
+                showToast('Пожалуйста, выберите оценку', 'warning');
+                return;
+            }
+
+            try {
+                const res = await fetch('/api/reviews', {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ eventId, toUserId, rating: parseInt(rating), comment })
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    showToast('✅ Отзыв успешно сохранен', 'success');
+                    // Убираем форму
+                    const card = document.getElementById(`comment-${toUserId}`).closest('.card');
+                    card.innerHTML = `<div class="card-body text-center text-success"><i class="bi bi-check-circle-fill"></i> Спасибо за отзыв!</div>`;
+                } else {
+                    showToast(data.message, 'danger');
+                }
+            } catch (e) {
+                showToast('Ошибка при отправке', 'danger');
+            }
+        };
+
+        window.joinEvent = async (id) => {
+            try {
+                const res = await fetch(`/api/events/${id}/join`, { method: 'POST', headers: { 'Authorization': `Bearer ${token}` } });
+                if (res.ok) {
+                    confetti({
+                        particleCount: 150,
+                        spread: 70,
+                        origin: { y: 0.6 },
+                        colors: ['#667eea', '#764ba2', '#ffffff']
+                    });
+                    showToast('✅ Вы присоединились! <a href="/chat.html?eventId=' + id + '" class="text-white fw-bold">💬 Открыть чат</a>', 'success');
+                    loadEvents();
+                } else {
+                    const err = await res.json();
+                    showToast(err.message, 'danger');
+                }
+            } catch (e) { showToast('Ошибка', 'danger'); }
+        };
+
+        function applyDateFilter() {
+            if (!currentDateFilter) {
+                renderEvents(allEvents);
+                document.getElementById('clearDateFilterBtn').style.display = 'none';
+                return;
+            }
+            const filterDateStr = new Date(currentDateFilter).toDateString();
+            const filtered = allEvents.filter(ev => new Date(ev.datetime).toDateString() === filterDateStr);
+            renderEvents(filtered);
+            document.getElementById('clearDateFilterBtn').style.display = 'inline-block';
+        }
+
+        function initCalendar() {
+            const fpEl = document.getElementById('inlineCalendar');
+            if (!fpEl) return;
+
+            fpCalendar = flatpickr(fpEl, {
+                inline: true,
+                locale: "ru",
+                onChange: function (selectedDates, dateStr, instance) {
+                    if (selectedDates.length > 0) {
+                        currentDateFilter = selectedDates[0];
+                        applyDateFilter();
+                    }
+                }
+            });
+
+            document.getElementById('clearDateFilterBtn')?.addEventListener('click', () => {
+                currentDateFilter = null;
+                fpCalendar.clear();
+                applyDateFilter();
+            });
+        }
+
+        function updateCalendarDots() {
+            // Эта функция может быть расширена для добавления точек на дни с событиями
+            // Для этого потребуется кастомный рендер в flatpickr
+        }
+
+        // ========== 13. ФИЛЬТРЫ ==========
+        function initFilters() {
+            document.querySelectorAll('.filter-btn').forEach(btn => btn.addEventListener('click', () => { document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active')); btn.classList.add('active'); currentCategory = btn.dataset.category; renderPlaces(currentLang); }));
+            document.getElementById('searchInput')?.addEventListener('input', e => { currentSearch = e.target.value; renderPlaces(currentLang); });
+        }
+
+        // ========== 14. АНИМАЦИЯ СКРОЛЛА ==========
+        function checkVisibility() { document.querySelectorAll('.info-section, .category-cards, .category-filters, .section-header, .events-grid').forEach(el => { if (el.getBoundingClientRect().top < window.innerHeight - 100) el.classList.add('visible'); }); }
+        window.addEventListener('scroll', checkVisibility);
+        window.addEventListener('load', checkVisibility);
+        window.addEventListener('scroll', () => { const hero = document.querySelector('.hero'); if (hero) hero.style.backgroundPosition = `center ${window.pageYOffset * 0.3}px`; });
+
+        // ========== 15. ЯЗЫК ==========
+        window.switchLanguage = (lang) => { currentLang = lang; localStorage.setItem('lang', lang); renderPlaces(lang); loadEvents(); };
+
+        // ========== 16. ОНБОРДИНГ ==========
+        let step = 0;
+        const steps = [
+            { title: "Нажми на карточку места", text: "Чтобы посмотреть информацию и пригласить друзей." },
+            { title: "Нажми «Присоединиться»", text: "Чтобы стать участником похода и попасть в чат." },
+            { title: "Приглашай друзей", text: "В карточке места есть кнопка «Пригласить»." }
+        ];
+        function startOnboarding() { step = 0; showStep(); document.getElementById('onboardingOverlay').style.display = 'flex'; }
+        function showStep() { const card = document.getElementById('onboardingCard'); card.innerHTML = `<h4>📌 ${steps[step].title}</h4><p>${steps[step].text}</p><div class="onboarding-step-buttons">${step < steps.length - 1 ? '<button class="btn btn-primary" id="onbNext">Далее</button>' : '<button class="btn btn-success" id="onbFinish">Понятно</button>'}<button class="btn btn-secondary" id="onbSkip">Пропустить</button></div>`; document.getElementById('onbNext')?.addEventListener('click', () => { step++; showStep(); }); document.getElementById('onbSkip')?.addEventListener('click', finishOnboarding); document.getElementById('onbFinish')?.addEventListener('click', finishOnboarding); }
+        function finishOnboarding() { document.getElementById('onboardingOverlay').style.display = 'none'; localStorage.setItem('onboardingShown', 'true'); }
+        if (!localStorage.getItem('onboardingShown')) setTimeout(startOnboarding, 1000);
+
+        // ========== 17. FAQ ==========
+        function toggleFaqSection() { const fs = document.getElementById('faqSection'); const btn = document.getElementById('toggleFaqBtn'); if (fs.style.display === 'none') { fs.style.display = 'block'; btn.innerHTML = '<i class="bi bi-x-circle"></i> Скрыть'; } else { fs.style.display = 'none'; btn.innerHTML = '<i class="bi bi-question-circle"></i> Вопросы'; } }
+        function toggleFaqAnswer(el) { el.classList.toggle('active'); el.nextElementSibling.classList.toggle('show'); }
+
+        // ========== 18. WELCOME BANNER ==========
+        function checkAndShowWelcomeBanner() {
+            if (!token) return;
+            fetch('/api/events/user', { headers: { 'Authorization': `Bearer ${token}` } })
+                .then(r => r.json())
+                .then(events => { if (events.length === 0) { const b = document.getElementById('welcomeBanner'); if (b) b.style.display = 'block'; } })
+                .catch(() => { });
+        }
+        function closeWelcomeBanner() { document.getElementById('welcomeBanner').style.display = 'none'; }
+
+        // ========== 19. ЗАПУСК ==========
+        document.querySelectorAll('.category-card').forEach(card => card.addEventListener('click', () => {
+            const place = placesData[currentLang].find(p => p.category === card.dataset.category);
+            if (place) openPlaceModal(place.id);
+        }));
+
+        initDarkMode();
+        initFilters();
+        initCalendar();
+
+        const savedLang = localStorage.getItem('lang') || 'ru';
+        currentLang = savedLang;
+        renderPlaces(currentLang, true); // Показываем скелетоны
+        setTimeout(() => renderPlaces(currentLang), 500); // Загружаем данные с небольшой задержкой для демонстрации эффекта или сразу если данные локальные
+
+        loadEvents();
+        loadAllUsers();
+        checkAndShowWelcomeBanner();
+
+    </script>
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        // ========== 20. REAL-TIME UPDATES ==========
+        const socket = io();
+        socket.on('connect', () => {
+            console.log('📡 Соединение установлено');
+        });
+
+        socket.on('eventParticipantUpdated', (data) => {
+            // Находим карточку ивента и добавляем эффект пульсации
+            const card = document.querySelector(`.event-card[data-event-id="${data.eventId}"]`);
+            if (card) {
+                card.classList.add('pulse-update');
+                setTimeout(() => card.classList.remove('pulse-update'), 600);
+
+                // Обновляем текст счетчика без полной перезагрузки если возможно
+                const meta = card.querySelector('.event-meta');
+                if (meta) {
+                    // Находим часть с 👥
+                    const parts = meta.innerHTML.split('·');
+                    const participantsPart = parts.find(p => p.includes('👥'));
+                    if (participantsPart) {
+                        // В идеале мы бы получили новое число из сокета, но для простоты просто обновим список
+                        loadEvents();
+                    }
+                }
+            } else {
+                loadEvents(); // Если карточка не в DOM (например отфильтрована), просто грузим заново
+            }
+        });
+
+        // Экспорты для inline-обработчиков
+        window.sendInvite = sendInvite;
+        window.acceptInvite = acceptInvite;
+        window.rejectInvite = rejectInvite;
+        window.loadInvitesModal = loadInvitesModal;
+
+        window.openPlaceModal = openPlaceModal;
+        window.showProfile = showProfile;
+        window.goToCreate = goToCreate;
+        window.openChat = openChat;
+        window.joinEvent = joinEvent;
+        window.editEvent = editEvent;
+        window.deleteEvent = deleteEvent;
+        window.toggleFaqAnswer = toggleFaqAnswer;
+        window.toggleFaqSection = toggleFaqSection;
+        window.closeWelcomeBanner = closeWelcomeBanner;
+
+        // ========== 21. КАРТА (LEAFLET) ==========
+        let map = null;
+        let mapMarkers = [];
+
+        window.toggleMap = () => {
+            const container = document.getElementById('mapContainer');
+            const text = document.getElementById('mapToggleText');
+            if (container.style.display === 'none') {
+                container.style.display = 'block';
+                text.textContent = 'Скрыть карту';
+                if (!map) initMap();
+                else map.invalidateSize();
+            } else {
+                container.style.display = 'none';
+                text.textContent = 'Показать карту';
+            }
+        };
+
+        function initMap() {
+            // Центр Бишкека
+            map = L.map('map').setView([42.87, 74.59], 13);
+
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; OpenStreetMap contributors'
+            }).addTo(map);
+
+            // Добавляем маркеры мест
+            BISHKEK_PLACES.forEach(place => {
+                if (place.lat && place.lng) {
+                    const marker = L.marker([place.lat, place.lng]).addTo(map);
+                    marker.bindPopup(`
+                <div style="min-width: 150px;">
+                    <img src="${place.photos[0]}" style="width:100%; border-radius:8px; margin-bottom:8px;">
+                    <h6 class="fw-bold mb-1">${place.name}</h6>
+                    <p class="small text-muted mb-2">${place.tag}</p>
+                    <button class="btn btn-primary btn-sm w-100 rounded-pill" onclick="openPlaceModal(${place.id})">Посмотреть</button>
+                </div>
+            `);
+                    mapMarkers.push(marker);
+                }
+            });
+        }
+
+        // ========== 22. PUSH-УВЕДОМЛЕНИЯ ==========
+        async function requestNotificationPermission() {
+            if (!('Notification' in window)) return;
+            if (Notification.permission === 'default') {
+                const permission = await Notification.requestPermission();
+                if (permission === 'granted') {
+                    console.log('🔔 Уведомления разрешены');
+                }
+            }
+        }
+
+        window.showPushNotification = (title, body, link = '/') => {
+            if (!('Notification' in window) || Notification.permission !== 'granted') return;
+
+            // Показываем только если вкладка неактивна
+            if (document.visibilityState === 'visible') return;
+
+            const options = {
+                body: body,
+                icon: '/favicon.ico',
+                badge: '/favicon.ico',
+                vibrate: [200, 100, 200],
+                data: { url: link }
+            };
+
+            const notification = new Notification(title, options);
+            notification.onclick = (e) => {
+                e.preventDefault();
+                window.open(e.target.data.url, '_blank');
+                notification.close();
+            };
+        };
+
+        // Запрашиваем права при первом клике на странице (многие браузеры блокируют автоматический запрос)
+        document.addEventListener('click', () => {
+            requestNotificationPermission();
+        }, { once: true });
+
+        // ========== ФУНКЦИИ ГАЛЕРЕИ ==========
+        const _mgIdx = {};
+        function _mgSet(id, idx, total) {
+            _mgIdx[id] = idx;
+            const el = document.getElementById(id);
+            if (!el) return;
+            el.querySelector('.modal-gallery-track').style.transform = `translateX(-${idx * 100}%)`;
+            document.querySelectorAll(`#${id}_dots .modal-gallery-dot`).forEach((d, i) => d.classList.toggle('active', i === idx));
+        }
+        function modalGalleryPrev(id, total) { _mgSet(id, ((_mgIdx[id] || 0) - 1 + total) % total, total); }
+        function modalGalleryNext(id, total) { _mgSet(id, ((_mgIdx[id] || 0) + 1) % total, total); }
+        function modalGalleryGo(id, idx) { _mgSet(id, idx); }
+        window.modalGalleryPrev = modalGalleryPrev;
+        window.modalGalleryNext = modalGalleryNext;
+        window.modalGalleryGo = modalGalleryGo;
+    </script>
+</body>
+
+</html>

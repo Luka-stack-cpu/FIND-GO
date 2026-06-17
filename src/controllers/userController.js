@@ -4,10 +4,18 @@ const { User } = require('../models');
 const { createClient } = require('@supabase/supabase-js');
 const { v4: uuidv4 } = require('uuid');
 
-const supabase = createClient(
-    process.env.SUPABASE_URL,
-    process.env.SUPABASE_SERVICE_ROLE_KEY
-);
+let supabase = null;
+function getSupabaseClient() {
+    if (!supabase) {
+        const supabaseUrl = process.env.SUPABASE_URL;
+        const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+        if (!supabaseUrl || !supabaseKey) {
+            throw new Error('Supabase credentials (SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY) are missing from environment variables');
+        }
+        supabase = createClient(supabaseUrl, supabaseKey);
+    }
+    return supabase;
+}
 
 // ============================================================
 // Multer — загрузка аватаров
@@ -47,8 +55,10 @@ exports.uploadAvatar = async (req, res) => {
             const ext = path.extname(req.file.originalname).toLowerCase();
             const fileName = `${uuidv4()}${ext}`;
 
+            const supabaseClient = getSupabaseClient();
+            
             // Загружаем файл в Supabase Storage
-            const { data, error } = await supabase.storage
+            const { data, error } = await supabaseClient.storage
                 .from('avatars')
                 .upload(fileName, req.file.buffer, {
                     contentType: req.file.mimetype,
@@ -61,7 +71,7 @@ exports.uploadAvatar = async (req, res) => {
             }
 
             // Получаем публичный URL загруженного файла
-            const { data: publicUrlData } = supabase.storage
+            const { data: publicUrlData } = supabaseClient.storage
                 .from('avatars')
                 .getPublicUrl(fileName);
 
