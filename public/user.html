@@ -97,7 +97,7 @@
     const userId = urlParams.get('id');
 
     if (!token) window.location.href = '/login.html';
-    if (!userId) window.location.href = '/';
+    if (!userId) window.location.href = '/app.html';
 
     async function loadUserProfile() {
         try {

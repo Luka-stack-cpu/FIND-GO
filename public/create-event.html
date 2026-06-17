@@ -313,7 +313,7 @@
             if (response.ok) {
                 showToast('🎉 Встреча успешно создана!', 'success');
                 setTimeout(() => {
-                    window.location.href = '/';
+                    window.location.href = '/app.html';
                 }, 1500);
             } else {
                 const error = await response.json();

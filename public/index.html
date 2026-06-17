@@ -1186,19 +1186,13 @@
 
         if (token) {
             // User is authenticated
-            headerAuthButtons.innerHTML = `
-                <a href="/app.html" class="btn-header-app">В приложение</a>
-            `;
-            if (ctaSecondaryRegister) {
-                ctaSecondaryRegister.innerHTML = 'Открыть приложение';
-                ctaSecondaryRegister.href = '/app.html';
-            }
-            
             // Check for redirect_after_auth
             const redirectUrl = localStorage.getItem('redirect_after_auth');
             if (redirectUrl) {
                 localStorage.removeItem('redirect_after_auth');
                 window.location.href = redirectUrl;
+            } else {
+                window.location.href = '/app.html';
             }
         }
 
