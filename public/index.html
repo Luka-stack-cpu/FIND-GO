@@ -266,6 +266,276 @@
             margin-bottom: 40px;
         }
 
+        /* Active Hikes Slider Styles */
+        .slider-section {
+            position: relative;
+            background: rgba(255, 255, 255, 0.005);
+            border-bottom: 1px solid var(--card-border);
+            padding: 100px 0;
+        }
+
+        .slider-container {
+            position: relative;
+            overflow: hidden;
+            width: 100%;
+            border-radius: 24px;
+        }
+
+        .slider-track {
+            display: flex;
+            gap: 24px;
+            transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .slider-card {
+            flex: 0 0 calc(33.333% - 16px);
+            min-width: 300px;
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 24px;
+            overflow: hidden;
+            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            display: flex;
+            flex-direction: column;
+            cursor: pointer;
+        }
+
+        @media (max-width: 1200px) {
+            .slider-card {
+                flex: 0 0 calc(50% - 12px);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .slider-card {
+                flex: 0 0 100%;
+            }
+        }
+
+        .slider-card:hover {
+            transform: translateY(-8px);
+            border-color: rgba(99, 102, 241, 0.4);
+            box-shadow: 0 20px 40px rgba(99, 102, 241, 0.12);
+        }
+
+        .slider-card-img-wrapper {
+            position: relative;
+            height: 200px;
+            overflow: hidden;
+        }
+
+        .slider-card-img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .slider-card:hover .slider-card-img {
+            transform: scale(1.08);
+        }
+
+        .slider-badge {
+            position: absolute;
+            top: 16px;
+            left: 16px;
+            background: rgba(13, 15, 18, 0.8);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #10b981;
+            padding: 6px 14px;
+            border-radius: 50px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .slider-badge.full {
+            color: #ef4444;
+        }
+
+        .slider-badge-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: currentColor;
+            display: inline-block;
+        }
+
+        .slider-card-body {
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            flex-grow: 1;
+        }
+
+        .slider-card-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            margin-bottom: 12px;
+            line-height: 1.3;
+            color: var(--text-primary);
+        }
+
+        .slider-card-meta {
+            font-size: 0.88rem;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .slider-card-meta i {
+            color: var(--accent-primary);
+        }
+
+        .slider-card-desc {
+            font-size: 0.92rem;
+            color: var(--text-secondary);
+            line-height: 1.5;
+            margin-top: 8px;
+            margin-bottom: 20px;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            height: 2.76rem;
+        }
+
+        .slider-card-organizer {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding-top: 16px;
+            border-top: 1px solid var(--card-border);
+            margin-top: auto;
+        }
+
+        .organizer-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 1px solid var(--card-border);
+        }
+
+        .organizer-name {
+            font-size: 0.88rem;
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        .slider-card-btn {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            color: var(--text-primary);
+            padding: 10px 20px;
+            border-radius: 12px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            text-align: center;
+            width: 100%;
+            margin-top: 16px;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            display: block;
+        }
+
+        .slider-card-btn:hover {
+            background: var(--accent-gradient);
+            border-color: transparent;
+            color: white;
+        }
+
+        /* Arrows */
+        .slider-controls {
+            display: flex;
+            gap: 12px;
+            justify-content: flex-end;
+            margin-bottom: 24px;
+        }
+
+        .slider-arrow {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            user-select: none;
+        }
+
+        .slider-arrow:hover {
+            background: var(--text-primary);
+            color: var(--bg-color);
+        }
+
+        /* Stats & Trust Block */
+        .slider-trust-block {
+            border-top: 1px solid var(--card-border);
+            padding-top: 48px;
+            margin-top: 48px;
+            text-align: center;
+        }
+
+        .trust-stat-wrapper {
+            margin-bottom: 24px;
+        }
+
+        .trust-stat-text {
+            font-size: 1.15rem;
+            color: var(--text-secondary);
+        }
+
+        .trust-stat-number {
+            font-family: var(--font-display);
+            font-weight: 800;
+            color: var(--text-primary);
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.15) 0%, rgba(168, 85, 247, 0.15) 100%);
+            border: 1px solid rgba(99, 102, 241, 0.2);
+            padding: 6px 18px;
+            border-radius: 50px;
+            margin-left: 8px;
+            display: inline-block;
+        }
+
+        .trust-action-text {
+            font-size: 1.1rem;
+            color: var(--text-secondary);
+            margin-bottom: 20px;
+        }
+
+        .btn-trust-create {
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-primary);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            font-family: var(--font-display);
+            font-weight: 600;
+            padding: 12px 30px;
+            border-radius: 12px;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s ease;
+        }
+
+        .btn-trust-create:hover {
+            background: var(--accent-gradient);
+            border-color: transparent;
+            color: white;
+            transform: translateY(-1px);
+        }
+
         /* Problem Section */
         .problem-text-block {
             font-size: 1.35rem;
@@ -569,6 +839,58 @@
         </div>
     </header>
 
+    <!-- Active Hikes Section (Slider) -->
+    <section class="slider-section" id="active-hikes-section">
+        <div class="container">
+            <div class="row align-items-end mb-4 reveal">
+                <div class="col-md-8">
+                    <span class="section-tag">Живое сообщество</span>
+                    <h2 class="section-title-large mb-2">Кто уже собирается в поход</h2>
+                    <p class="text-secondary mb-0" style="font-size: 1.1rem;">
+                        Это реальные походы, созданные пользователями FindGo. Возможно, среди них есть тот, который ты искал.
+                    </p>
+                </div>
+                <div class="col-md-4 mt-3 mt-md-0">
+                    <div class="slider-controls">
+                        <div class="slider-arrow" id="sliderPrev" title="Назад">
+                            <i class="bi bi-chevron-left"></i>
+                        </div>
+                        <div class="slider-arrow" id="sliderNext" title="Вперед">
+                            <i class="bi bi-chevron-right"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Carousel Slider Container -->
+            <div class="slider-container reveal" id="sliderContainer">
+                <div class="slider-track" id="sliderTrack">
+                    <!-- Cards injected dynamically from backend -->
+                    <div class="text-center text-muted w-100 py-5">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Загрузка...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Trust block -->
+            <div class="slider-trust-block reveal">
+                <div class="trust-stat-wrapper">
+                    <span class="trust-stat-text">
+                        Уже опубликовано походов: 
+                        <span class="trust-stat-number" id="trustStatCount">...</span>
+                    </span>
+                </div>
+                <p class="trust-action-text">Если ничего подходящего не нашлось, можно создать свой поход за пару минут.</p>
+                <a href="#" onclick="handleCreateHikeClick(event)" class="btn-trust-create">
+                    <i class="bi bi-plus-lg"></i>
+                    Создать свой поход
+                </a>
+            </div>
+        </div>
+    </section>
+
     <!-- Problem Section -->
     <section id="problem">
         <div class="container">
@@ -871,6 +1193,13 @@
                 ctaSecondaryRegister.innerHTML = 'Открыть приложение';
                 ctaSecondaryRegister.href = '/app.html';
             }
+            
+            // Check for redirect_after_auth
+            const redirectUrl = localStorage.getItem('redirect_after_auth');
+            if (redirectUrl) {
+                localStorage.removeItem('redirect_after_auth');
+                window.location.href = redirectUrl;
+            }
         }
 
         // CTA buttons action
@@ -879,6 +1208,16 @@
             if (token) {
                 window.location.href = '/app.html';
             } else {
+                window.location.href = '/register.html';
+            }
+        }
+
+        function handleCreateHikeClick(e) {
+            e.preventDefault();
+            if (token) {
+                window.location.href = '/create-event.html';
+            } else {
+                localStorage.setItem('redirect_after_auth', '/create-event.html');
                 window.location.href = '/register.html';
             }
         }
@@ -949,6 +1288,200 @@
                 });
             }
         });
+
+        // ================= SLIDER AND DATA HANDLING =================
+        function formatDate(dateStr) {
+            try {
+                const date = new Date(dateStr);
+                const options = { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' };
+                return date.toLocaleDateString('ru-RU', options);
+            } catch (e) {
+                return dateStr;
+            }
+        }
+        
+        function getPluralWord(count) {
+            const mod10 = count % 10;
+            const mod100 = count % 100;
+            if (mod100 >= 11 && mod100 <= 19) return 'ов';
+            if (mod10 === 1) return '';
+            if (mod10 >= 2 && mod10 <= 4) return 'а';
+            return 'ов';
+        }
+
+        function handleCardClick(eventId) {
+            if (token) {
+                window.location.href = `/app.html?eventId=${eventId}`;
+            } else {
+                localStorage.setItem('redirect_after_auth', `/app.html?eventId=${eventId}`);
+                window.location.href = '/register.html';
+            }
+        }
+
+        function handleCardButtonClick(e, eventId) {
+            e.stopPropagation();
+            e.preventDefault();
+            handleCardClick(eventId);
+        }
+
+        // Fetch events for landing page slider
+        async function loadLandingEvents() {
+            try {
+                const res = await fetch('/api/events/landing');
+                if (!res.ok) throw new Error('Failed to fetch');
+                const data = await res.json();
+                
+                const totalCountEl = document.getElementById('trustStatCount');
+                if (totalCountEl) {
+                    totalCountEl.textContent = `${data.totalCount} поход${getPluralWord(data.totalCount)}`;
+                }
+                
+                const track = document.getElementById('sliderTrack');
+                if (!track) return;
+                
+                if (!data.events || data.events.length === 0) {
+                    track.innerHTML = `
+                        <div class="text-center text-muted w-100 py-5">
+                            <i class="bi bi-compass fs-1 d-block mb-3"></i>
+                            Пока нет активных походов. Стань первым — создай свой!
+                        </div>
+                    `;
+                    return;
+                }
+                
+                track.innerHTML = data.events.map(event => {
+                    const placePhoto = event.place && event.place.photos && event.place.photos.length > 0 
+                        ? event.place.photos[0] 
+                        : 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=800&q=80';
+                    const title = event.title || (event.place ? event.place.name : 'Поход');
+                    const location = event.place ? event.place.name : 'Локация не указана';
+                    const dateFormatted = formatDate(event.datetime);
+                    const isFull = event.participantsCount >= event.maxParticipants;
+                    
+                    const badgeText = isFull ? '● Группа набрана' : (Math.random() > 0.5 ? '● Сейчас набирается группа' : '● Есть свободные места');
+                    const badgeClass = isFull ? 'full' : '';
+                    
+                    const creatorAvatar = event.creator && event.creator.avatar 
+                        ? event.creator.avatar 
+                        : `https://api.dicebear.com/7.x/avataaars/svg?seed=${event.creator ? event.creator.name : 'default'}`;
+                    const creatorName = event.creator ? event.creator.name : 'Организатор';
+                    const desc = event.description || 'Приглашаем всех желающих присоединиться к нашему увлекательному маршруту!';
+                    
+                    return `
+                        <div class="slider-card" onclick="handleCardClick(${event.id})">
+                            <div class="slider-card-img-wrapper">
+                                <img src="${placePhoto}" alt="${title}" class="slider-card-img">
+                                <div class="slider-badge ${badgeClass}">
+                                    <span class="slider-badge-dot"></span>
+                                    <span>${badgeText}</span>
+                                </div>
+                            </div>
+                            <div class="slider-card-body">
+                                <h3 class="slider-card-title">${title}</h3>
+                                <div class="slider-card-meta">
+                                    <i class="bi bi-calendar3"></i>
+                                    <span>${dateFormatted}</span>
+                                </div>
+                                <div class="slider-card-meta">
+                                    <i class="bi bi-geo-alt-fill"></i>
+                                    <span>${location}</span>
+                                </div>
+                                <div class="slider-card-meta">
+                                    <i class="bi bi-people-fill"></i>
+                                    <span>👥 ${event.participantsCount} из ${event.maxParticipants} участников</span>
+                                </div>
+                                <p class="slider-card-desc">${desc}</p>
+                                <div class="slider-card-organizer">
+                                    <img src="${creatorAvatar}" alt="${creatorName}" class="organizer-avatar">
+                                    <div>
+                                        <div class="text-muted small">Организатор</div>
+                                        <div class="organizer-name">${creatorName}</div>
+                                    </div>
+                                </div>
+                                <a href="#" onclick="handleCardButtonClick(event, ${event.id})" class="slider-card-btn">Подробнее</a>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+                
+                initSliderControls();
+            } catch (err) {
+                console.error('Error loading landing events:', err);
+                const track = document.getElementById('sliderTrack');
+                if (track) {
+                    track.innerHTML = `<div class="text-center text-danger py-4">⚠️ Не удалось загрузить походы.</div>`;
+                }
+            }
+        }
+
+        let currentOffset = 0;
+        let autoplayInterval = null;
+        
+        function initSliderControls() {
+            const track = document.getElementById('sliderTrack');
+            const container = document.getElementById('sliderContainer');
+            const prevBtn = document.getElementById('sliderPrev');
+            const nextBtn = document.getElementById('sliderNext');
+            if (!track || !container) return;
+            
+            const getSlideWidth = () => {
+                const card = track.querySelector('.slider-card');
+                if (!card) return 0;
+                return card.offsetWidth + 24; // Card width + gap
+            };
+            
+            const getMaxOffset = () => {
+                const totalWidth = track.scrollWidth;
+                const containerWidth = container.offsetWidth;
+                return Math.max(0, totalWidth - containerWidth);
+            };
+            
+            const moveSlider = (direction) => {
+                const slideWidth = getSlideWidth();
+                const maxOffset = getMaxOffset();
+                
+                if (direction === 'next') {
+                    currentOffset += slideWidth;
+                    if (currentOffset > maxOffset) {
+                        currentOffset = 0; // Loop to start
+                    }
+                } else if (direction === 'prev') {
+                    currentOffset -= slideWidth;
+                    if (currentOffset < 0) {
+                        currentOffset = maxOffset; // Loop to end
+                    }
+                }
+                track.style.transform = `translateX(-${currentOffset}px)`;
+            };
+            
+            // Event listeners
+            if (nextBtn) nextBtn.addEventListener('click', () => moveSlider('next'));
+            if (prevBtn) prevBtn.addEventListener('click', () => moveSlider('prev'));
+            
+            // Autoplay
+            const startAutoplay = () => {
+                autoplayInterval = setInterval(() => {
+                    moveSlider('next');
+                }, 3500);
+            };
+            const stopAutoplay = () => {
+                if (autoplayInterval) clearInterval(autoplayInterval);
+            };
+            
+            startAutoplay();
+            
+            container.addEventListener('mouseenter', stopAutoplay);
+            container.addEventListener('mouseleave', startAutoplay);
+            
+            // Recalculate on window resize
+            window.addEventListener('resize', () => {
+                currentOffset = 0;
+                track.style.transform = 'translateX(0)';
+            });
+        }
+
+        // Load active hikes on page load
+        window.addEventListener('DOMContentLoaded', loadLandingEvents);
     </script>
 </body>
 </html>

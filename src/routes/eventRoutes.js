@@ -9,12 +9,14 @@ const {
   getEventMessages, 
   getEventParticipants,
   getMyEvents,
-  completeEvent
+  completeEvent,
+  getLandingEvents
 } = require('../controllers/eventController');
 const authMiddleware = require('../middleware/authMiddleware');
 
 const router = express.Router();
 
+router.get('/events/landing', getLandingEvents); // Public landing page events route
 router.post('/events', authMiddleware, createEvent);
 router.get('/events', authMiddleware, getActiveEvents);
 router.get('/events/user', authMiddleware, getMyEvents);

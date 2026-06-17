@@ -272,3 +272,37 @@ exports.completeEvent = async (req, res) => {
     res.status(500).json({ message: 'Ошибка при завершении похода' });
   }
 };
+
+// ========== ПОХОДЫ ДЛЯ LANDING PAGE (СЛУЧАЙНЫЕ АКТИВНЫЕ + ОБЩЕЕ КОЛИЧЕСТВО) ==========
+exports.getLandingEvents = async (req, res) => {
+  try {
+    const totalEvents = await Event.count();
+    
+    const events = await Event.findAll({
+      where: { status: 'active' },
+      include: [
+        { model: Place, as: 'place' },
+        { model: User, as: 'creator', attributes: ['id', 'name', 'avatar'] }
+      ]
+    });
+    
+    // Перемешиваем и берем 8 штук
+    const shuffled = events.sort(() => 0.5 - Math.random()).slice(0, 8);
+    
+    const eventsWithDetails = await Promise.all(shuffled.map(async (event) => {
+      const participants = await event.getParticipants();
+      return {
+        ...event.toJSON(),
+        participantsCount: participants.length
+      };
+    }));
+    
+    res.json({
+      totalCount: totalEvents,
+      events: eventsWithDetails
+    });
+  } catch (error) {
+    console.error('❌ Ошибка getLandingEvents:', error);
+    res.status(500).json({ message: 'Ошибка загрузки событий для лендинга: ' + error.message });
+  }
+};
