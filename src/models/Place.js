@@ -26,6 +26,26 @@ const Place = sequelize.define('Place', {
   address: {
     type: DataTypes.STRING,
     defaultValue: ''
+  },
+  safetyScore: {
+    type: DataTypes.FLOAT,
+    allowNull: false,
+    defaultValue: 8.9
+  },
+  safetyVotes: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    defaultValue: 1
+  },
+  safetyHistory: {
+    type: DataTypes.TEXT,
+    allowNull: false,
+    defaultValue: '[]'
+  },
+  isDangerous: {
+    type: DataTypes.BOOLEAN,
+    allowNull: false,
+    defaultValue: false
   }
 });
 

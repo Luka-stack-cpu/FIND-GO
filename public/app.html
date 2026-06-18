@@ -1006,6 +1006,103 @@
         .pulse-update {
             animation: pulse-highlight 0.6s ease-out;
         }
+
+        /* Safety Badges and Tooltips */
+        .safety-badge {
+            display: inline-flex;
+            align-items: center;
+            background: var(--bs-secondary-bg);
+            border-radius: 12px;
+            padding: 4px 10px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            border: 1px solid var(--bs-border-color);
+            transition: all 0.2s;
+        }
+        .safety-emoji {
+            cursor: pointer;
+            transition: transform 0.2s;
+            display: inline-block;
+        }
+        .safety-emoji:hover {
+            transform: scale(1.25);
+        }
+        .safety-score-value {
+            margin-left: 4px;
+            color: var(--bs-body-color);
+        }
+        
+        /* Tooltip style */
+        .safety-tooltip-el {
+            position: fixed;
+            z-index: 10000;
+            background: rgba(15, 23, 42, 0.92);
+            backdrop-filter: blur(8px);
+            color: #ffffff;
+            padding: 8px 14px;
+            border-radius: 12px;
+            font-size: 0.82rem;
+            font-weight: 500;
+            max-width: 250px;
+            text-align: center;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3), 0 8px 10px -6px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            pointer-events: none;
+            opacity: 0;
+            transform: translateY(8px);
+            transition: opacity 0.2s ease, transform 0.2s ease;
+        }
+        .safety-tooltip-el.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* Dangerous Place Card specific styling */
+        .dangerous-place-card {
+            border: 1px solid rgba(239, 68, 68, 0.2) !important;
+            box-shadow: 0 10px 20px rgba(239, 68, 68, 0.03) !important;
+            position: relative;
+        }
+        .dangerous-place-card:hover {
+            box-shadow: 0 15px 35px rgba(239, 68, 68, 0.2) !important;
+            border-color: rgba(239, 68, 68, 0.6) !important;
+            transform: translateY(-12px) scale(1.01);
+        }
+        .dangerous-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(to top, rgba(0, 0, 0, 0.85), rgba(0, 0, 0, 0.3)), rgba(239, 68, 68, 0.08);
+            pointer-events: none;
+            z-index: 2;
+        }
+        .dangerous-title {
+            color: var(--bs-body-color);
+            font-weight: 900 !important;
+        }
+        .dangerous-tag {
+            background: rgba(239, 68, 68, 0.1) !important;
+            color: #ef4444 !important;
+        }
+        .warning-badge-icon {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            background: #ef4444;
+            color: white;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 0.9rem;
+            z-index: 5;
+            box-shadow: 0 4px 10px rgba(239, 68, 68, 0.4);
+        }
     </style>
 </head>
 
@@ -1174,6 +1271,18 @@
             <button class="filter-btn" data-category="трц">🛍️ ТРЦ</button>
             <button class="filter-btn" data-category="отель">🏨 Отели</button>
         </div>
+        <div class="safety-filters mt-4 d-flex justify-content-center gap-4 flex-wrap">
+            <span class="fw-bold align-self-center"><i class="bi bi-shield-exclamation text-primary"></i> Риск безопасности:</span>
+            <label class="form-check-label d-flex align-items-center gap-2" style="cursor: pointer;">
+                <input type="checkbox" id="filterLowRisk" class="form-check-input safety-filter-checkbox" checked style="cursor: pointer;"> 🟢 Низкий
+            </label>
+            <label class="form-check-label d-flex align-items-center gap-2" style="cursor: pointer;">
+                <input type="checkbox" id="filterMediumRisk" class="form-check-input safety-filter-checkbox" checked style="cursor: pointer;"> 🟠 Средний
+            </label>
+            <label class="form-check-label d-flex align-items-center gap-2" style="cursor: pointer;">
+                <input type="checkbox" id="filterHighRisk" class="form-check-input safety-filter-checkbox" checked style="cursor: pointer;"> 🔴 Высокий
+            </label>
+        </div>
     </div>
 
     <!-- Интерактивная карта -->
@@ -1189,7 +1298,6 @@
         </div>
     </div>
 
-    <!-- Скролл мест -->
     <div class="container-fluid px-0" id="placesGrid">
         <div class="section-header">
             <div class="section-title"><i class="bi bi-star text-warning"></i> Популярные места</div>
@@ -1197,6 +1305,16 @@
                     class="bi bi-arrow-right"></i></div>
         </div>
         <div class="places-scroll" id="placesScroll"></div>
+    </div>
+
+    <!-- Опасные места Бишкека -->
+    <div class="container-fluid px-0 mt-5" id="dangerousPlacesGrid">
+        <div class="section-header">
+            <div class="section-title"><i class="bi bi-exclamation-triangle-fill text-danger"></i> Опасные места Бишкека</div>
+            <div class="text-muted small fw-medium bg-secondary-subtle px-3 py-1 rounded-pill">листай вправо <i
+                    class="bi bi-arrow-right"></i></div>
+        </div>
+        <div class="places-scroll" id="dangerousPlacesScroll"></div>
     </div>
 
     <!-- Активные походы и календарь -->
@@ -1307,6 +1425,104 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="/places-data.js"></script>
+    <script>
+        // ========== SAFETY TOOLTIP ==========
+        const SafetyTooltip = {
+            activeTooltip: null,
+            attach(element, text) {
+                element.style.position = 'relative';
+                element.style.cursor = 'pointer';
+                const showTooltip = () => {
+                    this.removeActive();
+                    const tooltip = document.createElement('div');
+                    tooltip.className = 'safety-tooltip-el';
+                    tooltip.textContent = text;
+                    tooltip.style.position = 'fixed';
+                    document.body.appendChild(tooltip);
+                    this.activeTooltip = tooltip;
+                    const rect = element.getBoundingClientRect();
+                    const tooltipRect = tooltip.getBoundingClientRect();
+                    let top = rect.top - tooltipRect.height - 10;
+                    let left = rect.left + (rect.width / 2) - (tooltipRect.width / 2);
+                    if (top < 10) top = rect.bottom + 8;
+                    if (left < 10) left = 10;
+                    if (left + tooltipRect.width > window.innerWidth - 10) left = window.innerWidth - tooltipRect.width - 10;
+                    tooltip.style.top = top + 'px';
+                    tooltip.style.left = left + 'px';
+                    requestAnimationFrame(() => tooltip.classList.add('visible'));
+                };
+                const hideTooltip = () => this.removeActive();
+                element.addEventListener('mouseenter', showTooltip);
+                element.addEventListener('mouseleave', hideTooltip);
+                element.addEventListener('touchstart', showTooltip, { passive: true });
+                element.addEventListener('touchend', hideTooltip, { passive: true });
+            },
+            removeActive() {
+                if (this.activeTooltip) {
+                    const t = this.activeTooltip;
+                    t.classList.remove('visible');
+                    setTimeout(() => { if (t.parentNode) t.parentNode.removeChild(t); }, 200);
+                    this.activeTooltip = null;
+                }
+            }
+        };
+        window.SafetyTooltip = SafetyTooltip;
+
+        // ========== SAFETY BADGE ==========
+        const SafetyBadge = {
+            getInfo(score) {
+                if (score >= 7.1) return { emoji: '🟢', text: 'Низкий уровень риска. Обычно считается безопасным для посещения.', colorClass: 'safety-low' };
+                if (score >= 4.1) return { emoji: '🟠', text: 'Средний уровень риска. В целом место посещаемое, но стоит сохранять внимательность.', colorClass: 'safety-medium' };
+                return { emoji: '🔴', text: 'Высокий уровень риска. Рекомендуется соблюдать повышенную осторожность.', colorClass: 'safety-high' };
+            },
+            getHtml(score, showScore = true) {
+                const info = this.getInfo(score);
+                const scoreStr = showScore ? ` <span class="safety-score-value">${score.toFixed(1)}/10</span>` : '';
+                return `<span class="safety-badge ${info.colorClass}" data-safety-score="${score}"><span class="safety-emoji" data-tooltip-text="${info.text}">${info.emoji}</span>${scoreStr}</span>`;
+            }
+        };
+        window.SafetyBadge = SafetyBadge;
+
+        // ========== DANGEROUS PLACES SLIDER ==========
+        const DangerousPlacesSlider = {
+            render(places, containerId, onPlaceClick) {
+                const container = document.getElementById(containerId);
+                if (!container) return;
+                const dangerousNames = ['Арча-Бешик', 'Asia Mall', 'Торговый центр Азия Молл', 'Рабочий городок', 'Ынтымак', 'Парк Ынтымак', 'Аламедин-1', 'Кызыл-Аскер'];
+                const filtered = places.filter(p => dangerousNames.some(name => p.name.toLowerCase().includes(name.toLowerCase())));
+                if (!filtered.length) {
+                    container.innerHTML = `<div class="text-center text-muted w-100 py-5">😔 Нет опасных мест</div>`;
+                    return;
+                }
+                container.innerHTML = filtered.map(place => {
+                    const photos = place.photos || [place.img || ''];
+                    const slides = photos.map(url => `<div class="place-slider-slide"><div class="dangerous-overlay"></div><img src="${url}" alt="${place.name}" loading="lazy"></div>`).join('');
+                    const dots = photos.map((_, i) => `<button class="place-slider-dot${i === 0 ? ' active' : ''}" onclick="event.stopPropagation()"></button>`).join('');
+                    const badgeHtml = SafetyBadge.getHtml(place.safetyScore || 3.4, true);
+                    return `<div class="place-card dangerous-place-card" data-place-id="${place.id}" data-slider-id="danger_${place.id}">
+                      <div class="place-slider">
+                        <div class="warning-badge-icon">⚠️</div>
+                        <div class="place-slider-track">${slides}</div>
+                        <div class="place-slider-dots">${dots}</div>
+                      </div>
+                      <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                          <span class="place-tag dangerous-tag">${place.tag || 'Опасная зона'}</span>
+                          ${badgeHtml}
+                        </div>
+                        <h4 class="dangerous-title">${place.name}</h4>
+                        <p>${(place.desc || '').substring(0, 75)}…</p>
+                      </div>
+                    </div>`;
+                }).join('');
+                filtered.forEach(place => {
+                    const card = container.querySelector(`[data-place-id="${place.id}"]`);
+                    if (card) card.addEventListener('click', () => onPlaceClick(place.id));
+                });
+            }
+        };
+        window.DangerousPlacesSlider = DangerousPlacesSlider;
+    </script>
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <script src="https://npmcdn.com/flatpickr/dist/l10n/ru.js"></script>
     <script>
@@ -1575,13 +1791,122 @@
 
         // ========== 7. ЧАТЫ ==========
         function filterPlaces(places) {
+            const lowChecked = document.getElementById('filterLowRisk')?.checked ?? true;
+            const mediumChecked = document.getElementById('filterMediumRisk')?.checked ?? true;
+            const highChecked = document.getElementById('filterHighRisk')?.checked ?? true;
+
             return places.filter(p => {
+                // If it's a dangerous place, only show it if it's not specifically filtered out
+                // Note: we can show dangerous places in both sliders or keep them separate.
+                // The main "Популярные места" slider usually lists all places matching filters (excluding the ones specifically excluded).
                 const matchesCategory = currentCategory === 'all' || p.category === currentCategory;
                 const matchesSearch = p.name.toLowerCase().includes(currentSearch.toLowerCase()) ||
                     p.desc.toLowerCase().includes(currentSearch.toLowerCase());
-                return matchesCategory && matchesSearch;
+                
+                const score = p.safetyScore ?? 8.9;
+                let riskLevel = 'low';
+                if (score <= 4.0) riskLevel = 'high';
+                else if (score <= 7.0) riskLevel = 'medium';
+
+                let matchesSafety = true;
+                if (riskLevel === 'low' && !lowChecked) matchesSafety = false;
+                if (riskLevel === 'medium' && !mediumChecked) matchesSafety = false;
+                if (riskLevel === 'high' && !highChecked) matchesSafety = false;
+
+                return matchesCategory && matchesSearch && matchesSafety;
             });
         }
+
+        function initTooltips() {
+            document.querySelectorAll('.safety-badge .safety-emoji').forEach(el => {
+                const text = el.getAttribute('data-tooltip-text');
+                if (text && window.SafetyTooltip) {
+                    window.SafetyTooltip.attach(el, text);
+                }
+            });
+        }
+
+        function renderDangerousPlaces() {
+            if (window.DangerousPlacesSlider) {
+                // Get all places and render them
+                window.DangerousPlacesSlider.render(
+                    BISHKEK_PLACES,
+                    'dangerousPlacesScroll',
+                    (placeId) => openPlaceModal(placeId)
+                );
+                
+                const dangerousPlaces = BISHKEK_PLACES.filter(p => {
+                    const dangerousNames = ['Арча-Бешик', 'Asia Mall', 'Торговый центр Азия Молл', 'Рабочий городок', 'Ынтымак', 'Парк Ынтымак', 'Аламедин-1', 'Кызыл-Аскер'];
+                    return dangerousNames.some(name => p.name.toLowerCase().includes(name.toLowerCase()));
+                });
+
+                dangerousPlaces.forEach(p => {
+                    const photos = p.photos || [p.img];
+                    if (photos.length > 1) {
+                        startSlider(`danger_${p.id}`, photos.length);
+                    }
+                });
+                
+                initTooltips();
+            } else {
+                setTimeout(renderDangerousPlaces, 50);
+            }
+        }
+
+        async function fetchPlacesAndSync() {
+            try {
+                const response = await fetch('/api/places', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (response.ok) {
+                    const dbPlaces = await response.json();
+                    dbPlaces.forEach(dbPlace => {
+                        const localPlace = BISHKEK_PLACES.find(p => p.id === dbPlace.id);
+                        if (localPlace) {
+                            localPlace.safetyScore = dbPlace.safetyScore;
+                            localPlace.safetyVotes = dbPlace.safetyVotes;
+                            localPlace.isDangerous = dbPlace.isDangerous;
+                            localPlace.name = dbPlace.name;
+                            localPlace.desc = dbPlace.description;
+                            localPlace.category = dbPlace.category;
+                        }
+                    });
+                }
+            } catch (err) {
+                console.error('Ошибка синхронизации мест с сервером:', err);
+            }
+        }
+
+        window.submitSafetyVote = async (placeId, score) => {
+            try {
+                const response = await fetch(`/api/places/${placeId}/vote`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ rating: score })
+                });
+                const data = await response.json();
+                if (response.ok) {
+                    showToast('✅ Спасибо за вашу оценку!', 'success');
+                    
+                    const idx = BISHKEK_PLACES.findIndex(p => p.id === placeId);
+                    if (idx !== -1) {
+                        BISHKEK_PLACES[idx].safetyScore = data.safetyScore;
+                        BISHKEK_PLACES[idx].safetyVotes = data.safetyVotes;
+                    }
+                    
+                    renderPlaces(currentLang);
+                    renderDangerousPlaces();
+                    openPlaceModal(placeId);
+                } else {
+                    showToast(data.message || 'Ошибка при сохранении оценки', 'danger');
+                }
+            } catch (err) {
+                showToast('Ошибка соединения при оценке безопасности', 'danger');
+            }
+        };
 
         // ========== 8. ЗАГРУЗКА ПОЛЬЗОВАТЕЛЕЙ ==========
         let allUsersList = [];
@@ -1661,6 +1986,9 @@
                 const photos = place.photos || [place.img || ''];
                 const slides = photos.map(url => `<div class="place-slider-slide"><img src="${url}" alt="${escapeHtml(place.name)}" loading="lazy"></div>`).join('');
                 const dots = photos.map((_, i) => `<button class="place-slider-dot${i === 0 ? ' active' : ''}" onclick="event.stopPropagation()"></button>`).join('');
+                
+                const badgeHtml = window.SafetyBadge ? window.SafetyBadge.getHtml(place.safetyScore || 8.9, true) : '';
+
                 return `
         <div class="place-card" onclick="openPlaceModal(${place.id})" data-slider-id="${place.id}">
             <div class="place-slider">
@@ -1668,13 +1996,17 @@
                 <div class="place-slider-dots">${dots}</div>
             </div>
             <div class="card-body">
-                <span class="place-tag">${escapeHtml(place.tag || '')}</span>
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span class="place-tag">${escapeHtml(place.tag || '')}</span>
+                    ${badgeHtml}
+                </div>
                 <h4>${escapeHtml(place.name)}</h4>
                 <p>${escapeHtml((place.desc || '').substring(0, 75))}…</p>
             </div>
         </div>`;
             }).join('');
             filteredPlaces.forEach(p => { if ((p.photos || [p.img]).length > 1) startSlider(p.id, (p.photos || [p.img]).length); });
+            initTooltips();
         }
 
         async function openPlaceModal(placeId) {
@@ -1687,6 +2019,8 @@
             const slides = photos.map(url => `<div class="modal-gallery-slide"><img src="${url}" alt="${escapeHtml(place.name)}" loading="lazy"></div>`).join('');
             const mdots = photos.map((_, i) => `<button class="modal-gallery-dot${i === 0 ? ' active' : ''}" onclick="modalGalleryGo('${galleryId}',${i})"></button>`).join('');
 
+            const modalBadgeHtml = window.SafetyBadge ? window.SafetyBadge.getHtml(place.safetyScore || 8.9, true) : '';
+
             const leftHtml = `
         <div class="modal-gallery" id="${galleryId}">
             <div class="modal-gallery-track" data-current-idx="0">${slides}</div>
@@ -1694,9 +2028,12 @@
             <div class="modal-gallery-dots" id="${galleryId}_dots">${mdots}</div>
         </div>
         <div class="modal-info-content">
-            <div class="d-flex justify-content-between align-items-start mb-4">
+            <div class="d-flex justify-content-between align-items-start mb-4 flex-wrap gap-3">
                 <div>
-                    <span class="place-tag mb-2">${escapeHtml(place.tag)}</span>
+                    <div class="d-flex align-items-center gap-2 mb-2">
+                        <span class="place-tag m-0">${escapeHtml(place.tag)}</span>
+                        ${modalBadgeHtml}
+                    </div>
                     <h2 class="fw-bold mb-0">${escapeHtml(place.name)}</h2>
                 </div>
                 <div class="text-end">
@@ -1708,6 +2045,20 @@
             
             <p class="text-secondary mb-4" style="line-height: 1.6; font-size: 0.97rem;">${escapeHtml(place.desc || 'Описание отсутствует')}</p>
             
+            <!-- Оценка безопасности -->
+            <div class="p-3 bg-body-tertiary rounded-4 border mb-4">
+                <div class="d-flex justify-content-between align-items-center mb-2 flex-wrap gap-2">
+                    <h6 class="fw-bold m-0"><i class="bi bi-shield-check text-success"></i> Оценка безопасности пользователями</h6>
+                    <span class="badge bg-secondary-subtle text-secondary-emphasis">Голосов: ${place.safetyVotes || 0}</span>
+                </div>
+                <p class="text-muted small mb-3">После посещения вы можете оценить уровень безопасности места от 1 (очень опасно) до 10 (очень безопасно).</p>
+                <div class="d-flex flex-wrap gap-1 safety-vote-buttons">
+                    ${[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(val => `
+                        <button class="btn btn-sm btn-outline-secondary rounded-3 px-2 py-1" onclick="submitSafetyVote(${place.id}, ${val})">${val}</button>
+                    `).join('')}
+                </div>
+            </div>
+
             <div class="row g-3 mb-4">
                 <div class="col-sm-6">
                     <div class="p-3 bg-body-tertiary rounded-4 border">
@@ -2207,6 +2558,11 @@
         function initFilters() {
             document.querySelectorAll('.filter-btn').forEach(btn => btn.addEventListener('click', () => { document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active')); btn.classList.add('active'); currentCategory = btn.dataset.category; renderPlaces(currentLang); }));
             document.getElementById('searchInput')?.addEventListener('input', e => { currentSearch = e.target.value; renderPlaces(currentLang); });
+            document.querySelectorAll('.safety-filter-checkbox').forEach(chk => {
+                chk.addEventListener('change', () => {
+                    renderPlaces(currentLang);
+                });
+            });
         }
 
         // ========== 14. АНИМАЦИЯ СКРОЛЛА ==========
@@ -2256,8 +2612,14 @@
 
         const savedLang = localStorage.getItem('lang') || 'ru';
         currentLang = savedLang;
-        renderPlaces(currentLang, true); // Показываем скелетоны
-        setTimeout(() => renderPlaces(currentLang), 500); // Загружаем данные с небольшой задержкой для демонстрации эффекта или сразу если данные локальные
+        
+        async function startApp() {
+            renderPlaces(currentLang, true); // Show skeletons
+            await fetchPlacesAndSync();
+            renderPlaces(currentLang);
+            renderDangerousPlaces();
+        }
+        startApp();
 
         loadEvents();
         loadAllUsers();

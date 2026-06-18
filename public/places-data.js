@@ -17,7 +17,10 @@ const BISHKEK_PLACES = [
         "gisLink": "https://2gis.kg/bishkek/geo/15763234351059920",
         "instagram": "bishkek_city",
         "lat": 42.875,
-        "lng": 74.6065
+        "lng": 74.6065,
+        "safetyScore": 8.9,
+        "safetyVotes": 150,
+        "isDangerous": false
     },
     {
         "id": 2,
@@ -37,7 +40,10 @@ const BISHKEK_PLACES = [
         "gisLink": "https://2gis.kg/bishkek/search/bishkek park",
         "instagram": "bishkekpark",
         "lat": 42.874,
-        "lng": 74.59
+        "lng": 74.59,
+        "safetyScore": 8.9,
+        "safetyVotes": 120,
+        "isDangerous": false
     },
     {
         "id": 3,
@@ -57,7 +63,10 @@ const BISHKEK_PLACES = [
         "gisLink": "https://2gis.kg/bishkek/geo/15763234351061234",
         "instagram": "alaarcha_nationalpark",
         "lat": 42.5975,
-        "lng": 74.4842
+        "lng": 74.4842,
+        "safetyScore": 6.2,
+        "safetyVotes": 95,
+        "isDangerous": false
     },
     {
         "id": 4,
@@ -77,27 +86,10 @@ const BISHKEK_PLACES = [
         "gisLink": "https://2gis.kg/bishkek/geo/15763234351059918",
         "instagram": "bishkek_parks",
         "lat": 42.8789,
-        "lng": 74.6075
-    },
-    {
-        "id": 5,
-        "name": "Озеро Иссык-Куль",
-        "tag": "Жемчужина Азии",
-        "category": "природа",
-        "desc": "Высокогорное озеро, одно из крупнейших и глубочайших в мире. Идеальное место для летнего отдыха и туризма.",
-        "img": "/img/place_5_1.jpg",
-        "photos": [
-            "/img/place_5_1.jpg",
-            "/img/place_5_2.jpg",
-            "/img/place_5_3.jpg",
-            "/img/place_5_4.jpg",
-            "/img/place_5_5.jpg"
-        ],
-        "address": "Иссык-Кульская область",
-        "gisLink": "https://2gis.kg/bishkek/search/иссык-куль",
-        "instagram": "issyk_kul_kg",
-        "lat": 42.6167,
-        "lng": 77.2
+        "lng": 74.6075,
+        "safetyScore": 6.2,
+        "safetyVotes": 78,
+        "isDangerous": false
     },
     {
         "id": 6,
@@ -117,7 +109,10 @@ const BISHKEK_PLACES = [
         "gisLink": "https://2gis.kg/bishkek/search/бублик",
         "instagram": "bublik_kg",
         "lat": 42.8742,
-        "lng": 74.6068
+        "lng": 74.6068,
+        "safetyScore": 8.9,
+        "safetyVotes": 110,
+        "isDangerous": false
     },
     {
         "id": 7,
@@ -137,7 +132,10 @@ const BISHKEK_PLACES = [
         "gisLink": "https://2gis.kg/bishkek/search/евразия",
         "instagram": "bishkek_parks",
         "lat": 42.825,
-        "lng": 74.6
+        "lng": 74.6,
+        "safetyScore": 8.9,
+        "safetyVotes": 65,
+        "isDangerous": false
     },
     {
         "id": 8,
@@ -157,7 +155,10 @@ const BISHKEK_PLACES = [
         "gisLink": "https://2gis.kg/bishkek/search/ынтымак",
         "instagram": "yntymak_park",
         "lat": 42.821,
-        "lng": 74.587
+        "lng": 74.587,
+        "safetyScore": 6.2,
+        "safetyVotes": 130,
+        "isDangerous": true
     },
     {
         "id": 9,
@@ -177,7 +178,10 @@ const BISHKEK_PLACES = [
         "gisLink": "https://2gis.kg/bishkek/geo/70030076150117070",
         "instagram": "bishkek_city",
         "lat": 42.8765,
-        "lng": 74.6037
+        "lng": 74.6037,
+        "safetyScore": 8.9,
+        "safetyVotes": 210,
+        "isDangerous": false
     },
     {
         "id": 10,
@@ -197,7 +201,10 @@ const BISHKEK_PLACES = [
         "gisLink": "https://2gis.kg/bishkek/geo/15763234351061235",
         "instagram": "chunkurchak_resort",
         "lat": 42.6333,
-        "lng": 74.6167
+        "lng": 74.6167,
+        "safetyScore": 6.2,
+        "safetyVotes": 40,
+        "isDangerous": false
     },
     {
         "id": 11,
@@ -217,7 +224,10 @@ const BISHKEK_PLACES = [
         "gisLink": "https://2gis.kg/bishkek/search/asia mall",
         "instagram": "asiamall.kg",
         "lat": 42.8645,
-        "lng": 74.5875
+        "lng": 74.5875,
+        "safetyScore": 6.2,
+        "safetyVotes": 145,
+        "isDangerous": true
     },
     {
         "id": 12,
@@ -237,7 +247,10 @@ const BISHKEK_PLACES = [
         "gisLink": "https://2gis.kg/bishkek/search/дордой плаза кино",
         "instagram": "dordoiplaza",
         "lat": 42.8755,
-        "lng": 74.615
+        "lng": 74.615,
+        "safetyScore": 8.9,
+        "safetyVotes": 88,
+        "isDangerous": false
     },
     {
         "id": 13,
@@ -257,7 +270,10 @@ const BISHKEK_PLACES = [
         "gisLink": "https://2gis.kg/bishkek/search/navat",
         "instagram": "navat_kg",
         "lat": 42.8815,
-        "lng": 74.5915
+        "lng": 74.5915,
+        "safetyScore": 8.9,
+        "safetyVotes": 105,
+        "isDangerous": false
     },
     {
         "id": 14,
@@ -277,7 +293,10 @@ const BISHKEK_PLACES = [
         "gisLink": "https://2gis.kg/bishkek/search/promzona",
         "instagram": "promzonaclub",
         "lat": 42.8745,
-        "lng": 74.6735
+        "lng": 74.6735,
+        "safetyScore": 6.2,
+        "safetyVotes": 72,
+        "isDangerous": false
     },
     {
         "id": 15,
@@ -297,7 +316,74 @@ const BISHKEK_PLACES = [
         "gisLink": "https://2gis.kg/bishkek/search/capito",
         "instagram": "capito_coffee",
         "lat": 42.8725,
-        "lng": 74.594
+        "lng": 74.594,
+        "safetyScore": 8.9,
+        "safetyVotes": 50,
+        "isDangerous": false
+    },
+    {
+        "id": 16,
+        "name": "Арча-Бешик",
+        "tag": "Опасная зона",
+        "category": "природа",
+        "desc": "Жилой массив на окраине города. Рекомендуется соблюдать повышенную осторожность в темное время суток.",
+        "img": "/img/place_danger_1.jpg",
+        "photos": ["/img/place_danger_1.jpg"],
+        "address": "жилмассив Арча-Бешик",
+        "gisLink": "https://2gis.kg/bishkek/search/арча-бешик",
+        "lat": 42.829,
+        "lng": 74.555,
+        "safetyScore": 3.4,
+        "safetyVotes": 154,
+        "isDangerous": true
+    },
+    {
+        "id": 17,
+        "name": "Рабочий городок",
+        "tag": "Опасная зона",
+        "category": "природа",
+        "desc": "Исторический район с частной застройкой. Стоит проявлять бдительность при посещении.",
+        "img": "/img/place_danger_2.jpg",
+        "photos": ["/img/place_danger_2.jpg"],
+        "address": "Рабочий городок",
+        "gisLink": "https://2gis.kg/bishkek/search/рабочий городок",
+        "lat": 42.861,
+        "lng": 74.571,
+        "safetyScore": 3.1,
+        "safetyVotes": 132,
+        "isDangerous": true
+    },
+    {
+        "id": 18,
+        "name": "Аламедин-1",
+        "tag": "Опасная зона",
+        "category": "природа",
+        "desc": "Спальный микрорайон на востоке города. В вечернее время рекомендуется избегать неосвещенных мест.",
+        "img": "/img/place_danger_3.jpg",
+        "photos": ["/img/place_danger_3.jpg"],
+        "address": "мкр. Аламедин-1",
+        "gisLink": "https://2gis.kg/bishkek/search/аламедин-1",
+        "lat": 42.887,
+        "lng": 74.659,
+        "safetyScore": 3.2,
+        "safetyVotes": 142,
+        "isDangerous": true
+    },
+    {
+        "id": 19,
+        "name": "Кызыл-Аскер",
+        "tag": "Опасная зона",
+        "category": "природа",
+        "desc": "Промышленно-жилой район. Характеризуется повышенным уровнем риска в темное время суток.",
+        "img": "/img/place_danger_4.jpg",
+        "photos": ["/img/place_danger_4.jpg"],
+        "address": "Кызыл-Аскер",
+        "gisLink": "https://2gis.kg/bishkek/search/кызыл-аскер",
+        "lat": 42.883,
+        "lng": 74.542,
+        "safetyScore": 2.9,
+        "safetyVotes": 168,
+        "isDangerous": true
     }
 ];
 
