@@ -2,10 +2,20 @@ const { Place, User } = require('../models');
 
 exports.getPlaces = async (req, res) => {
   try {
-    const places = await Place.findAll({
-      attributes: ['id', 'name', 'description', 'category', 'image', 'address', 'safetyScore', 'safetyVotes', 'isDangerous']
-    });
-    res.json(places);
+    const places = await Place.findAll();
+    // Возвращаем данные с fallback-значениями для safety-полей
+    const result = places.map(p => ({
+      id: p.id,
+      name: p.name,
+      description: p.description,
+      category: p.category,
+      image: p.image,
+      address: p.address,
+      safetyScore: p.safetyScore ?? 8.9,
+      safetyVotes: p.safetyVotes ?? 0,
+      isDangerous: p.isDangerous ?? false
+    }));
+    res.json(result);
   } catch (error) {
     console.error('Ошибка загрузки мест:', error);
     res.status(500).json({ message: 'Ошибка загрузки мест' });

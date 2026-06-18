@@ -35,7 +35,11 @@ exports.getActiveEvents = async (req, res) => {
     const events = await Event.findAll({
       where: { status: 'active' },
       include: [
-        { model: Place, as: 'place' },
+        {
+          model: Place,
+          as: 'place',
+          attributes: ['id', 'name', 'description', 'image', 'category', 'address']
+        },
         { model: User, as: 'creator', attributes: ['id', 'name', 'avatar'] }
       ],
       order: [['datetime', 'ASC']]
@@ -119,7 +123,7 @@ exports.getMyEvents = async (req, res) => {
   try {
     const events = await Event.findAll({
       where: { creatorId: req.user.id },
-      include: [{ model: Place, as: 'place' }],
+      include: [{ model: Place, as: 'place', attributes: ['id', 'name', 'description', 'image', 'category', 'address'] }],
       order: [['datetime', 'ASC']]
     });
     const eventsWithDetails = await Promise.all(events.map(async (event) => {
@@ -144,7 +148,7 @@ exports.getEventById = async (req, res) => {
   try {
     const event = await Event.findByPk(req.params.id, {
       include: [
-        { model: Place, as: 'place' },
+        { model: Place, as: 'place', attributes: ['id', 'name', 'description', 'image', 'category', 'address'] },
         { model: User, as: 'creator', attributes: ['id', 'name', 'avatar'] }
       ]
     });
@@ -281,7 +285,7 @@ exports.getLandingEvents = async (req, res) => {
     const events = await Event.findAll({
       where: { status: 'active' },
       include: [
-        { model: Place, as: 'place' },
+        { model: Place, as: 'place', attributes: ['id', 'name', 'description', 'image', 'category', 'address'] },
         { model: User, as: 'creator', attributes: ['id', 'name', 'avatar'] }
       ]
     });
