@@ -595,11 +595,14 @@
             background: var(--primary-gradient);
             border: none;
             border-radius: 50px;
-            padding: 10px 24px;
+            padding: 8px 16px;
             color: white;
             font-weight: 600;
             width: 100%;
             transition: 0.3s;
+            white-space: normal;
+            word-wrap: break-word;
+            font-size: 0.9rem;
         }
 
         .btn-join:hover {
@@ -1695,11 +1698,16 @@
         }
 
         async function loadInvitesModal() {
-            const modalBody = document.getElementById('invitesModalBody');
-            const modal = new bootstrap.Modal(document.getElementById('invitesModal'));
-            modalBody.innerHTML = `<div class="text-center py-5"><div class="spinner-border text-primary"></div><p class="mt-2">Загрузка...</p></div>`;
-            modal.show();
+            const modalEl = document.getElementById('invitesModal');
+            let modal = bootstrap.Modal.getInstance(modalEl);
+            if (!modal) modal = new bootstrap.Modal(modalEl);
 
+            const modalBody = document.getElementById('invitesModalBody');
+            
+            if (!modalEl.classList.contains('show')) {
+                modalBody.innerHTML = `<div class="text-center py-5"><div class="spinner-border text-primary"></div><p class="mt-2">Загрузка...</p></div>`;
+                modal.show();
+            }
             try {
                 const response = await fetch('/api/invites', { headers: { 'Authorization': `Bearer ${token}` } });
                 const data = await response.json();
@@ -2754,8 +2762,11 @@
             if (container.style.display === 'none') {
                 container.style.display = 'block';
                 text.textContent = 'Скрыть карту';
-                if (!map) initMap();
-                else map.invalidateSize();
+                if (!map) {
+                    setTimeout(() => initMap(), 10);
+                } else {
+                    setTimeout(() => map.invalidateSize(), 10);
+                }
             } else {
                 container.style.display = 'none';
                 text.textContent = 'Показать карту';

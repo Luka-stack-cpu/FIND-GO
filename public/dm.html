@@ -59,6 +59,41 @@
             .sidebar.hidden { transform: translateX(-100%); }
             .chat-main { width: 100%; }
         }
+        
+        /* Offcanvas & Menu Button */
+        .btn-menu {
+            background: none;
+            border: none;
+            font-size: 1.8rem;
+            color: #667eea;
+            margin-right: 10px;
+        }
+
+        .offcanvas-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .offcanvas-body .nav-link {
+            padding: 14px 16px;
+            color: var(--bs-body-color);
+            font-weight: 500;
+            border-radius: 12px;
+            transition: 0.2s;
+            margin-bottom: 4px;
+        }
+
+        .offcanvas-body .nav-link:hover {
+            background: var(--bs-secondary-bg);
+            padding-left: 20px;
+            color: #667eea;
+        }
+
+        .offcanvas-body .nav-link i {
+            margin-right: 14px;
+            width: 24px;
+            font-size: 1.2rem;
+        }
     </style>
 </head>
 <body>

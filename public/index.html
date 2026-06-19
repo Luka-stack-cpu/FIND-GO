@@ -1264,8 +1264,7 @@
         const headerAuthButtons = document.getElementById('headerAuthButtons');
         const ctaSecondaryRegister = document.getElementById('ctaSecondaryRegister');
 
-        const hashTargets = ['#how-it-works', '#about', '#faq'];
-        if (token && !hashTargets.includes(window.location.hash)) {
+        if (token) {
             // User is authenticated
             // Check for redirect_after_auth
             const redirectUrl = localStorage.getItem('redirect_after_auth');
