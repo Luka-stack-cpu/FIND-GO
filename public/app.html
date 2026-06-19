@@ -1514,7 +1514,7 @@
                           ${badgeHtml}
                         </div>
                         <h4 class="dangerous-title">${place.name}</h4>
-                        <p>${(place.desc || '').substring(0, 75)}…</p>
+                        <p class="line-clamp-2">${place.desc || ''}</p>
                       </div>
                     </div>`;
                 }).join('');
@@ -2004,7 +2004,7 @@
                     ${badgeHtml}
                 </div>
                 <h4>${escapeHtml(place.name)}</h4>
-                <p>${escapeHtml((place.desc || '').substring(0, 75))}…</p>
+                <p class="line-clamp-2">${escapeHtml(place.desc || '')}</p>
             </div>
         </div>`;
             }).join('');
