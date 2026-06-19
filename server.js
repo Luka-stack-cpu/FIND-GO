@@ -235,6 +235,22 @@ io.on('connection', (socket) => {
 
 const start = async () => {
     try {
+        // Синхронизируем схему БД — создаём таблицы если их нет
+        // Используем { alter: true } только для PostgreSQL (prod), для SQLite — простой sync
+        const isProduction = !!process.env.DATABASE_URL;
+        try {
+            if (isProduction) {
+                await db.sequelize.sync({ alter: true });
+            } else {
+                await db.sequelize.sync();
+            }
+            console.log('🗄️ База данных синхронизирована');
+        } catch (syncErr) {
+            console.warn('⚠️ sync с alter не удался, пробуем базовый sync:', syncErr.message);
+            await db.sequelize.sync();
+            console.log('🗄️ База данных синхронизирована (базовый режим)');
+        }
+
         server.listen(PORT, '0.0.0.0', () => {
             console.log(`✅ Сервер запущен на http://localhost:${PORT}`);
             console.log(`📍 Регистрация: http://localhost:${PORT}/register.html`);
@@ -243,6 +259,7 @@ const start = async () => {
         });
     } catch (error) {
         console.error('❌ Ошибка при запуске:', error);
+        process.exit(1);
     }
 };
 

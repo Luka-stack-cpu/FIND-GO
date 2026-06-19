@@ -45,8 +45,7 @@ const User = sequelize.define('User', {
   },
   telegramId: {
     type: DataTypes.STRING,
-    allowNull: true,
-    unique: true
+    allowNull: true
   }
 }, {
   hooks: {
