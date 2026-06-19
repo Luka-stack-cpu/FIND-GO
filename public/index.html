@@ -4,6 +4,26 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>FindGo — Найти людей в поход сложнее, чем маршрут</title>
+    <meta name="description" content="FindGo — сервис для поиска компании в Бишкеке. Присоединяйся к походам, знакомься с новыми людьми и исследуй красоты Кыргызстана вместе!">
+    <meta name="theme-color" content="#7C3AED">
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://find-go.onrender.com/">
+    <meta property="og:title" content="FindGo — Найти людей в поход сложнее, чем маршрут">
+    <meta property="og:description" content="Сервис для поиска компании в Бишкеке. Присоединяйся к походам, знакомься с новыми людьми и исследуй красоты Кыргызстана!">
+    <meta property="og:image" content="https://find-go.onrender.com/img/logo.png">
+    <meta property="og:locale" content="ru_RU">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="FindGo — Найти людей в поход сложнее, чем маршрут">
+    <meta name="twitter:description" content="Сервис для поиска компании в Бишкеке. Присоединяйся к походам!">
+    <meta name="twitter:image" content="https://find-go.onrender.com/img/logo.png">
+
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="/manifest.json">
+
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -1244,7 +1264,8 @@
         const headerAuthButtons = document.getElementById('headerAuthButtons');
         const ctaSecondaryRegister = document.getElementById('ctaSecondaryRegister');
 
-        if (token) {
+        const hashTargets = ['#how-it-works', '#about', '#faq'];
+        if (token && !hashTargets.includes(window.location.hash)) {
             // User is authenticated
             // Check for redirect_after_auth
             const redirectUrl = localStorage.getItem('redirect_after_auth');
@@ -1255,6 +1276,17 @@
                 window.location.href = '/app.html';
             }
         }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            if (window.location.hash) {
+                const target = document.querySelector(window.location.hash);
+                if (target) {
+                    setTimeout(() => {
+                        target.scrollIntoView({ behavior: 'smooth' });
+                    }, 300);
+                }
+            }
+        });
 
         // CTA buttons action
         function handleCtaClick(e) {
@@ -1589,6 +1621,14 @@
 
         // Load active hikes on page load
         window.addEventListener('DOMContentLoaded', loadLandingEvents);
+    </script>
+    <script>
+        // Register Service Worker
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js').catch(() => {});
+            });
+        }
     </script>
 </body>
 </html>
