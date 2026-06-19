@@ -12,8 +12,11 @@
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
         integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.Default.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
         integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <script src="https://unpkg.com/leaflet.markercluster@1.4.1/dist/leaflet.markercluster.js"></script>
     <link rel="icon" type="image/png" href="/img/logo.png">
     <style>
         :root {
@@ -2723,21 +2726,35 @@
                 attribution: '&copy; OpenStreetMap contributors'
             }).addTo(map);
 
-            // Добавляем маркеры мест
+            // Добавляем маркеры мест через Cluster Group
+            const clusterGroup = L.markerClusterGroup({
+                maxClusterRadius: 50,
+                iconCreateFunction: function(cluster) {
+                    const childCount = cluster.getChildCount();
+                    return new L.DivIcon({ 
+                        html: `<div style="background: linear-gradient(135deg, #7C3AED, #38BDF8); width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; border: 3px solid rgba(255,255,255,0.7); box-shadow: 0 4px 10px rgba(0,0,0,0.3); font-size: 0.9rem;">${childCount}</div>`, 
+                        className: 'custom-marker-cluster', 
+                        iconSize: new L.Point(40, 40) 
+                    });
+                }
+            });
+
             BISHKEK_PLACES.forEach(place => {
                 if (place.lat && place.lng) {
-                    const marker = L.marker([place.lat, place.lng]).addTo(map);
+                    const marker = L.marker([place.lat, place.lng]);
                     marker.bindPopup(`
-                <div style="min-width: 150px;">
-                    <img src="${place.photos[0]}" style="width:100%; border-radius:8px; margin-bottom:8px;">
-                    <h6 class="fw-bold mb-1">${place.name}</h6>
-                    <p class="small text-muted mb-2">${place.tag}</p>
-                    <button class="btn btn-primary btn-sm w-100 rounded-pill" onclick="openPlaceModal(${place.id})">Посмотреть</button>
-                </div>
-            `);
+                        <div style="min-width: 150px; color: var(--bs-body-color);">
+                            <img src="${place.photos[0]}" style="width:100%; border-radius:8px; margin-bottom:8px; max-height: 100px; object-fit: cover;">
+                            <h6 class="fw-bold mb-1" style="font-size: 0.9rem; color: #0F172A;">${place.name}</h6>
+                            <p class="small text-muted mb-2" style="font-size: 0.75rem;">${place.tag}</p>
+                            <button class="btn btn-primary btn-sm w-100 rounded-pill" onclick="openPlaceModal(${place.id})">Посмотреть</button>
+                        </div>
+                    `);
+                    clusterGroup.addLayer(marker);
                     mapMarkers.push(marker);
                 }
             });
+            map.addLayer(clusterGroup);
         }
 
         // ========== 22. PUSH-УВЕДОМЛЕНИЯ ==========
