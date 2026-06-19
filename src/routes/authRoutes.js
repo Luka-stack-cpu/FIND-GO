@@ -5,7 +5,8 @@ const {
     getProfile,
     updateInterests,
     getInterests,
-    getUserById      // ← НОВЫЙ маршрут
+    getUserById,      // ← НОВЫЙ маршрут
+    telegramAuth
 } = require('../controllers/authController');
 const authMiddleware = require('../middleware/authMiddleware');
 
@@ -14,6 +15,7 @@ const router = express.Router();
 // Публичные маршруты
 router.post('/register', register);
 router.post('/login',    login);
+router.get('/telegram',  telegramAuth); // <-- TELEGRAM AUTH GET ROUTE
 
 // Приватные маршруты (требуют токен)
 router.get('/profile',           authMiddleware, getProfile);

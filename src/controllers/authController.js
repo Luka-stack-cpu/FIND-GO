@@ -257,3 +257,99 @@ exports.getUserById = async (req, res) => {
         res.status(500).json({ message: 'Ошибка загрузки профиля' });
     }
 };
+
+const crypto = require('crypto');
+
+// ============================================================
+// Telegram Auth (GET) - widget redirects here
+// ============================================================
+exports.telegramAuth = async (req, res) => {
+    try {
+        const data = req.query;
+        // Verify Telegram Auth
+        // The data should contain id, first_name, last_name, username, photo_url, auth_date and hash
+        const botToken = process.env.TELEGRAM_BOT_TOKEN;
+        
+        if (!botToken) {
+            console.error('Telegram Bot Token not configured!');
+            return res.redirect('/login.html?error=Telegram+not+configured');
+        }
+
+        const { hash, ...userData } = data;
+        
+        // Check auth_date to prevent replay attacks (e.g. 24 hours)
+        if (!userData.auth_date || (Date.now() / 1000 - userData.auth_date) > 86400) {
+            return res.redirect('/login.html?error=Auth+expired');
+        }
+
+        // Verify hash
+        const dataCheckArr = [];
+        for (const key in userData) {
+            dataCheckArr.push(`${key}=${userData[key]}`);
+        }
+        dataCheckArr.sort();
+        const dataCheckString = dataCheckArr.join('\n');
+
+        const secretKey = crypto.createHash('sha256').update(botToken).digest();
+        const generatedHash = crypto.createHmac('sha256', secretKey).update(dataCheckString).digest('hex');
+
+        if (generatedHash !== hash) {
+            console.error('Telegram Auth hash mismatch!');
+            return res.redirect('/login.html?error=Invalid+Telegram+Hash');
+        }
+
+        // Auth successful, find or create user
+        const tgId = userData.id;
+        const name = `${userData.first_name || ''} ${userData.last_name || ''}`.trim() || userData.username || 'Telegram User';
+        const avatar = userData.photo_url || '';
+        
+        // We might not have email from Telegram widget. Generate a fake one for DB constraint
+        const generatedEmail = `tg_${tgId}@find-go.local`;
+
+        let user = await User.findOne({ where: { telegramId: tgId } });
+
+        if (!user) {
+            // Check if there is a user with generated email
+            user = await User.findOne({ where: { email: generatedEmail } });
+            if(user) {
+                 await user.update({ telegramId: tgId, avatar: avatar || user.avatar });
+            } else {
+                 user = await User.create({
+                    name,
+                    email: generatedEmail,
+                    password: crypto.randomBytes(16).toString('hex'), // random secure password
+                    telegramId: tgId,
+                    avatar
+                 });
+            }
+        } else {
+            // Update avatar if changed
+            if (avatar && user.avatar !== avatar) {
+                await user.update({ avatar });
+            }
+        }
+
+        const token = generateToken(user.id);
+        const userDataFormatted = formatUser(user, token);
+        
+        // Pass data back to client via HTML injection 
+        // since we are redirecting from the telegram widget
+        res.send(`
+            <!DOCTYPE html>
+            <html>
+            <head><title>Авторизация...</title></head>
+            <body>
+                <script>
+                    localStorage.setItem('token', '${token}');
+                    localStorage.setItem('user', JSON.stringify(${JSON.stringify(userDataFormatted)}));
+                    window.location.href = '/app.html';
+                </script>
+            </body>
+            </html>
+        `);
+
+    } catch (error) {
+        console.error('❌ telegramAuth:', error.message);
+        res.redirect('/login.html?error=Server+Error');
+    }
+};

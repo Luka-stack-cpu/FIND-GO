@@ -42,6 +42,11 @@ const User = sequelize.define('User', {
     set(value) {
         this.setDataValue('interests', JSON.stringify(value));
     }
+  },
+  telegramId: {
+    type: DataTypes.STRING,
+    allowNull: true,
+    unique: true
   }
 }, {
   hooks: {
