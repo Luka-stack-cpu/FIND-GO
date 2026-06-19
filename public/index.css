@@ -542,3 +542,29 @@ span.flatpickr-weekday {
         font-size: 0.8rem;
     }
 }
+
+/* Flatpickr touch friendly sizing */
+.flatpickr-calendar {
+    width: 322px !important;
+}
+.flatpickr-innerContainer {
+    justify-content: center;
+}
+.flatpickr-rwd {
+    max-width: 322px !important;
+}
+.flatpickr-days {
+    width: 308px !important;
+}
+.dayContainer {
+    width: 308px !important;
+    min-width: 308px !important;
+    max-width: 308px !important;
+}
+.flatpickr-day {
+    max-width: 44px !important;
+    height: 44px !important;
+    line-height: 44px !important;
+    font-size: 0.95rem !important;
+    border-radius: 50% !important;
+}
