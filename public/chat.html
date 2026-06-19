@@ -410,15 +410,26 @@
 
     <!-- Основной чат -->
     <div class="chat-main">
-        <div class="chat-header">
-            <h5 class="mb-0" id="eventInfo">Загрузка...</h5>
-            <small class="text-muted" id="eventPlace"></small>
+        <div class="chat-header d-flex justify-content-between align-items-center">
+            <div class="d-flex align-items-center gap-2">
+                <a href="/chats.html" class="btn btn-link text-decoration-none p-0 me-2" title="Назад к чатам">
+                    <i class="bi bi-chevron-left fs-4"></i>
+                </a>
+                <div>
+                    <h5 class="mb-0 fw-bold" id="eventInfo">Загрузка...</h5>
+                    <small class="text-muted" id="eventPlace"></small>
+                </div>
+            </div>
+            <!-- Настройки чата -->
+            <button class="btn btn-outline-secondary btn-sm rounded-pill px-3 shadow-sm" id="chatSettingsBtn" style="display: none;" onclick="openChatSettings()">
+                <i class="bi bi-gear-fill me-1"></i> Настройки
+            </button>
         </div>
 
         <div class="messages-area" id="messagesArea">
-            <div class="text-center text-muted py-5">
-                <i class="bi bi-chat-dots fs-1"></i>
-                <p>Загрузка сообщений...</p>
+            <div class="text-center text-muted py-5" id="messagesLoadingState">
+                <div class="spinner-border text-primary spinner-border-sm me-2" role="status"></div>
+                <span>Загрузка сообщений...</span>
             </div>
         </div>
 
@@ -455,12 +466,49 @@
     </div>
 </div>
 
+<!-- Модальное окно настроек чата -->
+<div class="modal fade" id="chatSettingsModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 24px;">
+            <div class="modal-header border-0 pb-0 pt-3 px-3 d-flex justify-content-between align-items-center">
+                <h5 class="modal-title fw-bold m-0">Настройки чата</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div class="mb-3">
+                    <label class="form-label small text-muted">Название чата</label>
+                    <input type="text" id="chatTitleInput" class="form-control rounded-3" placeholder="Введите название...">
+                </div>
+                <button class="btn btn-primary w-100 rounded-pill py-2" onclick="saveChatTitle()">
+                    Сохранить
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Контейнер для тостов -->
+<div class="toast-container position-fixed bottom-0 end-0 p-3" id="toastContainer" style="z-index: 1050;"></div>
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
     // ========== АВТОРИЗАЦИЯ ==========
     const token = localStorage.getItem('token');
     const user = JSON.parse(localStorage.getItem('user') || '{}');
     if (!token) window.location.href = '/login.html';
+
+    function showToast(message, type = 'success') {
+        const container = document.getElementById('toastContainer');
+        if (!container) return;
+        const toast = document.createElement('div');
+        toast.className = `toast align-items-center text-white bg-${type === 'success' ? 'success' : type === 'info' ? 'info' : 'danger'} border-0 mb-2`;
+        toast.setAttribute('role', 'alert');
+        toast.innerHTML = `<div class="d-flex"><div class="toast-body">${message}</div><button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button></div>`;
+        container.appendChild(toast);
+        const bsToast = new bootstrap.Toast(toast, { delay: 3000 });
+        bsToast.show();
+        toast.addEventListener('hidden.bs.toast', () => toast.remove());
+    }
     
     document.getElementById('userName').innerHTML = `<i class="bi bi-person-circle"></i> ${user.name || 'Пользователь'}`;
     document.getElementById('logoutBtn').addEventListener('click', () => {
@@ -500,12 +548,17 @@ document.getElementById('userProfileLink')?.addEventListener('click', () => {
             const response = await fetch(`/api/events/${eventId}/messages`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
+            // Hide loading spinner
+            const loadingState = document.getElementById('messagesLoadingState');
+            if (loadingState) loadingState.remove();
             if (response.ok) {
                 const messages = await response.json();
                 renderMessages(messages);
             }
         } catch (error) {
             console.error('Ошибка загрузки сообщений:', error);
+            const loadingState = document.getElementById('messagesLoadingState');
+            if (loadingState) loadingState.remove();
         }
     }
     
@@ -525,6 +578,8 @@ document.getElementById('userProfileLink')?.addEventListener('click', () => {
         }
     }
     
+    let currentEvent = null;
+
     // Загрузка информации о походе
     async function loadEventInfo() {
         try {
@@ -533,13 +588,64 @@ document.getElementById('userProfileLink')?.addEventListener('click', () => {
             });
             if (response.ok) {
                 const event = await response.json();
-                document.getElementById('eventInfo').innerHTML = `<i class="bi bi-calendar3"></i> ${new Date(event.datetime).toLocaleString()}`;
-                document.getElementById('eventPlace').innerHTML = `<i class="bi bi-geo-alt"></i> ${event.place?.name || 'Место'}`;
+                currentEvent = event;
+                
+                // Настройки доступны создателю или обоим участникам личной встречи
+                const isCreator = event.creatorId === user.id;
+                const isParticipant = event.participants && event.participants.includes(user.id);
+                if (isCreator || (event.isPersonal && isParticipant)) {
+                    document.getElementById('chatSettingsBtn').style.display = 'block';
+                    document.getElementById('chatTitleInput').value = event.title || '';
+                }
+
+                if (event.isPersonal) {
+                    // Личный чат: скрываем дату, показываем название (если есть) или место
+                    document.getElementById('eventInfo').innerHTML = `<i class="bi bi-chat-heart text-purple"></i> ${escapeHtml(event.title || event.place?.name || 'Личная встреча')}`;
+                    document.getElementById('eventPlace').innerHTML = `<i class="bi bi-geo-alt"></i> ${event.place?.name || 'Место'}`;
+                } else {
+                    // Обычный чат: показываем кастомный title или дефолтную дату
+                    const titleText = event.title && event.title !== 'Встреча' ? event.title : `Поход: ${new Date(event.datetime).toLocaleString([], {month: 'short', day: 'numeric', hour: '2-digit', minute:'2-digit'})}`;
+                    document.getElementById('eventInfo').innerHTML = `<i class="bi bi-compass text-primary"></i> ${escapeHtml(titleText)}`;
+                    document.getElementById('eventPlace').innerHTML = `<i class="bi bi-geo-alt"></i> ${event.place?.name || 'Место'}`;
+                }
             }
         } catch (error) {
             console.error(error);
         }
     }
+
+    window.openChatSettings = () => {
+        const modal = new bootstrap.Modal(document.getElementById('chatSettingsModal'));
+        modal.show();
+    };
+
+    window.saveChatTitle = async () => {
+        const newTitle = document.getElementById('chatTitleInput').value.trim();
+        if (!newTitle) return;
+        
+        try {
+            const response = await fetch(`/api/events/${eventId}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ title: newTitle })
+            });
+            if (response.ok) {
+                const modalEl = document.getElementById('chatSettingsModal');
+                const modal = bootstrap.Modal.getInstance(modalEl);
+                if (modal) modal.hide();
+                await loadEventInfo();
+                showToast('✅ Название чата успешно изменено!', 'success');
+            } else {
+                const err = await response.json();
+                showToast(err.message || 'Ошибка обновления названия', 'danger');
+            }
+        } catch (err) {
+            showToast('Ошибка сети при обновлении названия', 'danger');
+        }
+    };
     
     // Отрисовка сообщений
     function renderMessages(messages) {

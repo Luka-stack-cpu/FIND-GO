@@ -1,4 +1,4 @@
-const { Place, User } = require('../models');
+const { Place, User, Event } = require('../models');
 
 exports.getPlaces = async (req, res) => {
   try {
@@ -37,15 +37,62 @@ exports.getPlacesByCategory = async (req, res) => {
   }
 };
 
+// Проверка, может ли пользователь голосовать за безопасность места
+exports.checkCanVote = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user.id;
+
+    const hasCompletedEvent = await Event.findOne({
+      where: {
+        placeId: id,
+        status: 'completed'
+      },
+      include: [{
+        model: User,
+        as: 'participants',
+        where: { id: userId },
+        required: true,
+        attributes: ['id']
+      }]
+    });
+
+    res.json({ canVote: !!hasCompletedEvent });
+  } catch (error) {
+    console.error('Ошибка проверки возможности голосования:', error);
+    res.status(500).json({ message: 'Ошибка проверки голосования' });
+  }
+};
+
 // Голосование за безопасность места
 exports.voteSafety = async (req, res) => {
   try {
     const { id } = req.params;
     const { rating } = req.body;
+    const userId = req.user.id;
     
     const parsedRating = parseFloat(rating);
     if (isNaN(parsedRating) || parsedRating < 1 || parsedRating > 10) {
       return res.status(400).json({ message: 'Оценка должна быть числом от 1 до 10' });
+    }
+
+    // Проверяем наличие завершенного похода
+    const hasCompletedEvent = await Event.findOne({
+      where: {
+        placeId: id,
+        status: 'completed'
+      },
+      include: [{
+        model: User,
+        as: 'participants',
+        where: { id: userId },
+        required: true,
+        attributes: ['id']
+      }]
+    });
+
+    if (!hasCompletedEvent) {
+      return res.status(403).json({ message: 'Вы можете оценить безопасность этого места только после того, как примете участие в завершенном походе туда.' });
     }
 
     const place = await Place.findByPk(id);

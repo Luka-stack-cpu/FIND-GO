@@ -328,7 +328,13 @@ const BISHKEK_PLACES = [
         "category": "природа",
         "desc": "Жилой массив на окраине города. Рекомендуется соблюдать повышенную осторожность в темное время суток.",
         "img": "/img/place_danger_1.jpg",
-        "photos": ["/img/place_danger_1.jpg"],
+        "photos": [
+            "/img/place_danger_1.jpg",
+            "/img/place_3_1.jpg",
+            "/img/place_3_2.jpg",
+            "/img/place_7_1.jpg",
+            "/img/place_7_2.jpg"
+        ],
         "address": "жилмассив Арча-Бешик",
         "gisLink": "https://2gis.kg/bishkek/search/арча-бешик",
         "lat": 42.829,
@@ -344,7 +350,13 @@ const BISHKEK_PLACES = [
         "category": "природа",
         "desc": "Исторический район с частной застройкой. Стоит проявлять бдительность при посещении.",
         "img": "/img/place_danger_2.jpg",
-        "photos": ["/img/place_danger_2.jpg"],
+        "photos": [
+            "/img/place_danger_2.jpg",
+            "/img/place_5_1.jpg",
+            "/img/place_5_2.jpg",
+            "/img/place_9_1.jpg",
+            "/img/place_9_2.jpg"
+        ],
         "address": "Рабочий городок",
         "gisLink": "https://2gis.kg/bishkek/search/рабочий городок",
         "lat": 42.861,
@@ -360,7 +372,13 @@ const BISHKEK_PLACES = [
         "category": "природа",
         "desc": "Спальный микрорайон на востоке города. В вечернее время рекомендуется избегать неосвещенных мест.",
         "img": "/img/place_danger_3.jpg",
-        "photos": ["/img/place_danger_3.jpg"],
+        "photos": [
+            "/img/place_danger_3.jpg",
+            "/img/place_10_1.jpg",
+            "/img/place_10_2.jpg",
+            "/img/place_12_1.jpg",
+            "/img/place_12_2.jpg"
+        ],
         "address": "мкр. Аламедин-1",
         "gisLink": "https://2gis.kg/bishkek/search/аламедин-1",
         "lat": 42.887,
@@ -376,7 +394,13 @@ const BISHKEK_PLACES = [
         "category": "природа",
         "desc": "Промышленно-жилой район. Характеризуется повышенным уровнем риска в темное время суток.",
         "img": "/img/place_danger_4.jpg",
-        "photos": ["/img/place_danger_4.jpg"],
+        "photos": [
+            "/img/place_danger_4.jpg",
+            "/img/place_14_1.jpg",
+            "/img/place_14_2.jpg",
+            "/img/place_4_1.jpg",
+            "/img/place_4_2.jpg"
+        ],
         "address": "Кызыл-Аскер",
         "gisLink": "https://2gis.kg/bishkek/search/кызыл-аскер",
         "lat": 42.883,

@@ -1070,11 +1070,11 @@
         }
         .dangerous-overlay {
             position: absolute;
-            top: 0;
+            bottom: 0;
             left: 0;
             width: 100%;
-            height: 100%;
-            background: linear-gradient(to top, rgba(0, 0, 0, 0.85), rgba(0, 0, 0, 0.3)), rgba(239, 68, 68, 0.08);
+            height: 40%;
+            background: linear-gradient(to top, rgba(220, 38, 38, 0.18), transparent);
             pointer-events: none;
             z-index: 2;
         }
@@ -2046,16 +2046,13 @@
             <p class="text-secondary mb-4" style="line-height: 1.6; font-size: 0.97rem;">${escapeHtml(place.desc || 'Описание отсутствует')}</p>
             
             <!-- Оценка безопасности -->
-            <div class="p-3 bg-body-tertiary rounded-4 border mb-4">
+            <div class="p-3 bg-body-tertiary rounded-4 border mb-4" id="safetyVoteSection">
                 <div class="d-flex justify-content-between align-items-center mb-2 flex-wrap gap-2">
                     <h6 class="fw-bold m-0"><i class="bi bi-shield-check text-success"></i> Оценка безопасности пользователями</h6>
                     <span class="badge bg-secondary-subtle text-secondary-emphasis">Голосов: ${place.safetyVotes || 0}</span>
                 </div>
-                <p class="text-muted small mb-3">После посещения вы можете оценить уровень безопасности места от 1 (очень опасно) до 10 (очень безопасно).</p>
-                <div class="d-flex flex-wrap gap-1 safety-vote-buttons">
-                    ${[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(val => `
-                        <button class="btn btn-sm btn-outline-secondary rounded-3 px-2 py-1" onclick="submitSafetyVote(${place.id}, ${val})">${val}</button>
-                    `).join('')}
+                <div id="safetyVoteContent">
+                    <p class="text-muted small mb-0"><span class="spinner-border spinner-border-sm me-2" role="status"></span>Проверка возможности голосования...</p>
                 </div>
             </div>
 
@@ -2197,6 +2194,32 @@
 
             const modal = new bootstrap.Modal(document.getElementById('placeDetailTwoColumnsModal'));
             modal.show();
+
+            // Проверяем возможность голосовать
+            fetch(`/api/places/${placeId}/can-vote`, { headers: { 'Authorization': `Bearer ${token}` } })
+                .then(r => r.json())
+                .then(data => {
+                    const contentDiv = document.getElementById('safetyVoteContent');
+                    if (!contentDiv) return;
+                    if (data.canVote) {
+                        contentDiv.innerHTML = `
+                            <p class="text-muted small mb-3">После посещения вы можете оценить уровень безопасности места от 1 (очень опасно) до 10 (очень безопасно).</p>
+                            <div class="d-flex flex-wrap gap-1 safety-vote-buttons">
+                                ${[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(val => `
+                                    <button class="btn btn-sm btn-outline-secondary rounded-3 px-2 py-1" onclick="submitSafetyVote(${place.id}, ${val})">${val}</button>
+                                `).join('')}
+                            </div>
+                        `;
+                    } else {
+                        contentDiv.innerHTML = `
+                            <p class="text-warning small mb-0"><i class="bi bi-exclamation-triangle-fill text-warning me-1"></i> Вы можете оценить безопасность этого места только после того, как примете участие в завершенном походе туда.</p>
+                        `;
+                    }
+                })
+                .catch(() => {
+                    const contentDiv = document.getElementById('safetyVoteContent');
+                    if (contentDiv) contentDiv.innerHTML = `<p class="text-danger small mb-0">Не удалось загрузить статус голосования</p>`;
+                });
         }
 
         // Join event directly from modal

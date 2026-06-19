@@ -211,7 +211,17 @@ exports.updateEvent = async (req, res) => {
     
     const event = await Event.findByPk(eventId);
     if (!event) return res.status(404).json({ message: 'Поход не найден' });
-    if (event.creatorId !== userId) return res.status(403).json({ message: 'Только создатель может редактировать' });
+    
+    // Разрешаем создателю, либо любому участнику личной встречи
+    let isAllowed = event.creatorId === userId;
+    if (!isAllowed && event.isPersonal) {
+      const participants = await event.getParticipants();
+      isAllowed = participants.some(p => p.id === userId);
+    }
+    
+    if (!isAllowed) {
+      return res.status(403).json({ message: 'Только создатель или участник личного чата может редактировать' });
+    }
     
     await event.update({ datetime, maxParticipants, description, title, category, ageGroup });
     res.json(event);
