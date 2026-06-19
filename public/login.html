@@ -57,6 +57,15 @@
         </div>
     </div>
     <script>
+        // Check for telegram auth errors in URL
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.has('error')) {
+            const errorMsg = urlParams.get('error').replace(/\+/g, ' ');
+            alert('Ошибка авторизации Telegram: ' + errorMsg);
+            // Clean URL
+            window.history.replaceState({}, document.title, window.location.pathname);
+        }
+
         document.getElementById('loginForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const email = document.getElementById('email').value;
