@@ -26,6 +26,7 @@
         .btn-action:hover { transform: translateY(-3px); box-shadow: 0 10px 20px rgba(0,0,0,0.1); }
         .fact-item { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 16px; padding: 16px; background: var(--bs-tertiary-bg); border-radius: 16px; border: 1px solid var(--bs-border-color); }
         .fact-icon { color: #667eea; font-size: 1.2rem; }
+        .organizer-badge { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 8px 20px; border-radius: 50px; font-weight: 700; font-size: 0.9rem; display: inline-flex; align-items: center; gap: 8px; margin-top: 10px; box-shadow: 0 4px 12px rgba(102,126,234,0.3); }
     </style>
 </head>
 <body>
@@ -57,7 +58,8 @@
                     <img id="userAvatar" src="https://api.dicebear.com/7.x/avataaars/svg?seed=loading" class="avatar-img" alt="Аватар">
                 </div>
                 <h2 id="userName" class="fw-bold mb-1">Загрузка...</h2>
-                <div id="userRating" class="mb-4"></div>
+                <div id="userRating" class="mb-2"></div>
+                <div id="organizerBadge" class="mb-4"></div>
                 
                 <h6 class="text-uppercase text-muted small fw-bold mb-3">Интересы</h6>
                 <div id="userInterests" class="mb-4"></div>
@@ -124,6 +126,18 @@
             } else {
                 document.getElementById('userRating').innerHTML = '<div class="badge bg-secondary-subtle text-secondary px-3 py-2 rounded-pill mt-2">Нет оценок</div>';
                 document.getElementById('totalReviews').textContent = '0';
+            }
+
+            // Бейдж организатора
+            if (u.organizedEventsCount > 0) {
+                document.getElementById('organizerBadge').innerHTML = `
+                    <div class="organizer-badge">
+                        <i class="bi bi-trophy-fill"></i>
+                        ${u.organizedEventsCount} ${u.organizedEventsCount === 1 ? 'поход организован' : u.organizedEventsCount < 5 ? 'похода организовано' : 'походов организовано'}
+                    </div>
+                `;
+            } else {
+                document.getElementById('organizerBadge').innerHTML = '';
             }
 
             // Интересы

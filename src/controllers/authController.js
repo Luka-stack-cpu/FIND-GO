@@ -228,6 +228,11 @@ exports.getUserById = async (req, res) => {
 
         const interests = safeParseJSON(user.interests);
 
+        // Получаем количество организованных походов
+        const organizedEventsCount = await db.Event.count({
+            where: { creatorId: req.params.id }
+        });
+
         res.json({
             id: user.id,
             name: user.name,
@@ -238,6 +243,7 @@ exports.getUserById = async (req, res) => {
             bio: user.bio || '',
             avgRating: ratingResult ? parseFloat(ratingResult.getDataValue('avgRating') || 0).toFixed(1) : null,
             totalReviews: ratingResult ? ratingResult.getDataValue('totalReviews') : 0,
+            organizedEventsCount,
             reviews: reviews.map(r => ({
                 id: r.id,
                 rating: r.rating,
