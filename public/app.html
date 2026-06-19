@@ -2347,7 +2347,8 @@
                     <div class="col-7">
                         <div class="event-title fw-bold">📍 ${escapeHtml(ev.place?.name || 'Место')}</div>
                         <div class="event-meta text-muted small">📅 ${new Date(ev.datetime).toLocaleString('ru-RU', {day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'})} · 👥 ${ev.participantsCount || 0}/${ev.maxParticipants}</div>
-                        <button class="btn btn-sm btn-link p-0 text-decoration-none" style="font-size: 0.75rem; color: #667eea;" onclick="shareEvent(${ev.id}, '${escapeHtml(ev.place?.name || 'поход')}')"><i class="bi bi-share"></i> Поделиться ссылкой</button>
+                        <button class="btn btn-sm btn-link p-0 text-decoration-none" style="font-size: 0.75rem; color: #667eea;" onclick="shareEvent(${ev.id}, '${escapeHtml(ev.place?.name || 'поход')}')"><i class="bi bi-share"></i> Поделиться</button>
+                        <button class="btn btn-sm btn-link p-0 text-decoration-none ms-2" style="font-size: 0.75rem; color: #38BDF8;" onclick="exportEventICS(${ev.id}, '${escapeHtml(ev.place?.name || 'Поход')}', '${ev.datetime}')"><i class="bi bi-calendar-plus"></i> В календарь</button>
                     </div>
                     <div class="col-5 text-end">
                         ${joinBtn}
@@ -2426,6 +2427,39 @@
             } catch (err) {
                 console.error('Share error:', err);
             }
+        };
+
+        window.exportEventICS = (id, placeName, datetime) => {
+            const startDate = new Date(datetime);
+            const endDate = new Date(startDate.getTime() + 2 * 60 * 60 * 1000); // Assume 2 hours duration
+
+            const formatICSDate = (date) => {
+                return date.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+            };
+
+            const icsContent = [
+                'BEGIN:VCALENDAR',
+                'VERSION:2.0',
+                'PRODID:-//Find&Go//Bishkek//RU',
+                'BEGIN:VEVENT',
+                `UID:findgo-event-${id}@find-go.onrender.com`,
+                `DTSTAMP:${formatICSDate(new Date())}`,
+                `DTSTART:${formatICSDate(startDate)}`,
+                `DTEND:${formatICSDate(endDate)}`,
+                `SUMMARY:Поход: ${placeName}`,
+                `DESCRIPTION:Запланирован поход через Find&Go. Подробности: https://find-go.onrender.com/?eventId=${id}`,
+                'END:VEVENT',
+                'END:VCALENDAR'
+            ].join('\\n');
+
+            const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
+            const link = document.createElement('a');
+            link.href = window.URL.createObjectURL(blob);
+            link.setAttribute('download', `findgo_event_${id}.ics`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            showToast('✅ Событие скачано в формате ICS', 'success');
         };
 
         window.completeEvent = async (id) => {
