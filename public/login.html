@@ -56,6 +56,11 @@
             e.preventDefault();
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
+            
+            const submitBtn = document.querySelector('button[type="submit"]');
+            const originalText = submitBtn.innerHTML;
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Вход...';
 
             try {
                 const response = await fetch('/api/auth/login', {
@@ -70,24 +75,16 @@
                     window.location.href = '/app.html';
                 } else {
                     alert(data.message);
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = originalText;
                 }
             } catch (error) {
                 console.error(error);
                 alert('Ошибка при входе');
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalText;
             }
         });
-document.getElementById('loginForm').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const submitBtn = document.querySelector('button[type="submit"]');
-    const originalText = submitBtn.innerHTML;
-    submitBtn.disabled = true;
-    submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Вход...';
-    
-    // ... fetch ...
-    
-    submitBtn.disabled = false;
-    submitBtn.innerHTML = originalText;
-});
     </script>
 </body>
 </html>
