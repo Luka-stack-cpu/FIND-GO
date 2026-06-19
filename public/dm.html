@@ -143,6 +143,17 @@
         const convs = await res.json();
         const list = document.getElementById('convList');
         
+        if (!convs || convs.length === 0) {
+            list.innerHTML = `
+                <div class="text-center py-5 px-3 animate-fade-in" style="margin-top: 2rem;">
+                    <i class="bi bi-chat-heart-fill display-4 text-primary opacity-50 mb-3 d-inline-block"></i>
+                    <h5 class="fw-bold mb-2">Личных сообщений нет</h5>
+                    <p class="text-muted small">Они появятся, когда вы начнете переписку с кем-то из участников походов.</p>
+                </div>
+            `;
+            return;
+        }
+        
         list.innerHTML = convs.map(c => `
             <div class="conv-item ${c.partner.id == activeTargetId ? 'active' : ''}" onclick="openChat(${c.partner.id}, '${c.partner.name}', '${c.partner.avatar}')">
                 <img src="${c.partner.avatar}" class="avatar">
