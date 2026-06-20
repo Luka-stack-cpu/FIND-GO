@@ -187,18 +187,23 @@ exports.getEventParticipants = async (req, res) => {
 // ========== ИСТОРИЯ ЧАТА (С АВАТАРКАМИ) ==========
 exports.getEventMessages = async (req, res) => {
   try {
+    const eventId = parseInt(req.params.id, 10);
+    if (isNaN(eventId)) {
+      return res.status(400).json({ message: 'Неверный формат ID чата' });
+    }
+
     const messages = await db.sequelize.query(
       `SELECT Messages.*, Users.avatar as userAvatar, Users.name as userName 
        FROM Messages 
        JOIN Users ON Messages.userId = Users.id 
        WHERE Messages.eventId = ? 
        ORDER BY Messages.createdAt ASC`,
-      { replacements: [req.params.id], type: db.sequelize.QueryTypes.SELECT }
+      { replacements: [eventId], type: db.sequelize.QueryTypes.SELECT }
     );
     res.json(messages);
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: 'Ошибка загрузки сообщений' });
+    console.error('Ошибка в getEventMessages:', error);
+    res.status(500).json({ message: 'Ошибка загрузки сообщений. Подробности: ' + error.message });
   }
 };
 

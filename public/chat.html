@@ -437,7 +437,7 @@
     </div>
     <div class="offcanvas-body">
         <ul class="nav flex-column mb-auto">
-            <li class="nav-item"><a class="nav-link" href="/"><i class="bi bi-house-door"></i> Главная</a></li>
+            <li class="nav-item"><a class="nav-link" href="/app.html"><i class="bi bi-house-door"></i> Главная</a></li>
 
             <li class="nav-item"><a class="nav-link" href="/create-event.html"><i class="bi bi-plus-circle"></i> Создать поход</a></li>
             <li class="nav-item"><a class="nav-link" href="/profile.html"><i class="bi bi-person"></i> Мой профиль</a></li>
@@ -623,8 +623,15 @@ document.getElementById('userProfileLink')?.addEventListener('click', () => {
     
     socket.emit('joinEvent', { eventId, userId: user.id, userName: user.name });
     
+    let messagesAbortController = null;
+    
     // Загрузка истории сообщений
     async function loadMessages() {
+        if (messagesAbortController) {
+            messagesAbortController.abort();
+        }
+        messagesAbortController = new AbortController();
+        
         const loadingState = document.getElementById('messagesLoadingState');
         const errorState = document.getElementById('messagesErrorState');
         if (errorState) errorState.remove();
@@ -641,7 +648,8 @@ document.getElementById('userProfileLink')?.addEventListener('click', () => {
 
         try {
             const response = await fetch(`/api/events/${eventId}/messages`, {
-                headers: { 'Authorization': `Bearer ${token}` }
+                headers: { 'Authorization': `Bearer ${token}` },
+                signal: messagesAbortController.signal
             });
             
             const currentLoadingState = document.getElementById('messagesLoadingState');
@@ -651,18 +659,36 @@ document.getElementById('userProfileLink')?.addEventListener('click', () => {
                 const messages = await response.json();
                 renderMessages(messages);
             } else {
-                throw new Error('Server returned non-ok status');
+                let errorMsg = 'Неизвестная ошибка сервера';
+                try {
+                    const errData = await response.json();
+                    if (errData.message) errorMsg = errData.message;
+                } catch(e) {}
+                
+                if (response.status === 404) errorMsg = 'Чат не найден';
+                if (response.status === 401 || response.status === 403) errorMsg = 'Нет доступа к чату';
+                
+                throw new Error(`[${response.status}] ${errorMsg}`);
             }
         } catch (error) {
-            console.error('Ошибка загрузки сообщений:', error);
+            if (error.name === 'AbortError') {
+                console.log('Загрузка сообщений отменена');
+                return;
+            }
+            
+            console.error('Детали ошибки загрузки сообщений:', error);
+            
             const currentLoadingState = document.getElementById('messagesLoadingState');
             if (currentLoadingState) currentLoadingState.remove();
+            
+            const isNetworkError = error instanceof TypeError;
+            const displayError = isNetworkError ? 'Нет соединения с интернетом' : error.message;
             
             const container = document.getElementById('messagesArea');
             container.innerHTML = `
                 <div class="text-center py-5 text-danger" id="messagesErrorState">
                     <p><i class="bi bi-exclamation-triangle fs-2"></i></p>
-                    <p class="mb-3">Не удалось загрузить сообщения</p>
+                    <p class="mb-3">Ошибка: ${escapeHtml(displayError)}</p>
                     <button class="btn btn-sm btn-outline-danger px-4 rounded-pill" onclick="window.loadMessages()"><i class="bi bi-arrow-clockwise"></i> Повторить</button>
                 </div>
             `;
