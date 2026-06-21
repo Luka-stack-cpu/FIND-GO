@@ -264,6 +264,9 @@ async function seedIfEmpty() {
 
 const start = async () => {
     try {
+        await db.sequelize.sync();
+        console.log('✅ База данных синхронизирована');
+
         await db.sequelize.query(`
             CREATE TABLE IF NOT EXISTS EventParticipants (
                 EventId INTEGER NOT NULL REFERENCES Events(id) ON DELETE CASCADE,
@@ -288,9 +291,6 @@ const start = async () => {
             await db.sequelize.query("ALTER TABLE Events ADD COLUMN ageGroup VARCHAR(255) DEFAULT '18-21';");
             console.log('✅ Добавлена колонка ageGroup в Events');
         } catch (e) {}
-
-        await db.sequelize.sync();
-        console.log('✅ База данных синхронизирована');
 
         await seedIfEmpty();
 
