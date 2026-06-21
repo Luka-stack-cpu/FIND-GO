@@ -279,7 +279,7 @@
         /* Область ввода */
         .input-area {
             padding: 16px 24px;
-            padding-bottom: env(safe-area-inset-bottom, 16px);
+            padding-bottom: calc(env(safe-area-inset-bottom, 16px) + 24px);
             border-top: 1px solid #e9ecef;
             background: white;
             display: flex;
@@ -465,7 +465,7 @@
             <button class="btn btn-link text-dark text-decoration-none d-md-none me-2 p-0 animate-fade-in" id="toggleSidebarBtn" style="color: var(--bs-body-color) !important;">
                 <i class="bi bi-people fs-4"></i>
             </button>
-            <a class="navbar-brand fw-bold d-flex align-items-center" href="/">
+            <a class="navbar-brand fw-bold d-flex align-items-center" href="/app.html">
                 <img src="/img/logo.png" alt="Find&Go" width="45" height="45" class="d-inline-block align-top me-2" style="border-radius: 6px;"> Find&Go
             </a>
         </div>
