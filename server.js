@@ -268,8 +268,8 @@ const start = async () => {
             CREATE TABLE IF NOT EXISTS EventParticipants (
                 EventId INTEGER NOT NULL REFERENCES Events(id) ON DELETE CASCADE,
                 UserId INTEGER NOT NULL REFERENCES Users(id) ON DELETE CASCADE,
-               createdAt: DataTypes.DATE
-               updatedAt: DataTypes.DATE
+                createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 PRIMARY KEY (EventId, UserId)
             );
         `);
