@@ -267,17 +267,6 @@ const start = async () => {
         await db.sequelize.sync();
         console.log('✅ База данных синхронизирована');
 
-        await db.sequelize.query(`
-            CREATE TABLE IF NOT EXISTS EventParticipants (
-                EventId INTEGER NOT NULL REFERENCES Events(id) ON DELETE CASCADE,
-                UserId INTEGER NOT NULL REFERENCES Users(id) ON DELETE CASCADE,
-                createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                PRIMARY KEY (EventId, UserId)
-            );
-        `);
-        console.log('✅ Таблица EventParticipants создана/проверена');
-
         // Safe SQLite migrations for new columns
         try {
             await db.sequelize.query("ALTER TABLE Events ADD COLUMN title VARCHAR(255) DEFAULT 'Встреча';");
