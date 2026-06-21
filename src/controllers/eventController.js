@@ -193,11 +193,11 @@ exports.getEventMessages = async (req, res) => {
     }
 
     const messages = await db.sequelize.query(
-      `SELECT Messages.*, Users.avatar as userAvatar, Users.name as userName 
-       FROM Messages 
-       JOIN Users ON Messages.userId = Users.id 
-       WHERE Messages.eventId = ? 
-       ORDER BY Messages.createdAt ASC`,
+      `SELECT "Messages".*, "Users".avatar as "userAvatar", "Users".name as "userName" 
+       FROM "Messages" 
+       JOIN "Users" ON "Messages"."userId" = "Users".id 
+       WHERE "Messages"."eventId" = ? 
+       ORDER BY "Messages"."createdAt" ASC`,
       { replacements: [eventId], type: db.sequelize.QueryTypes.SELECT }
     );
     res.json(messages);

@@ -174,7 +174,7 @@ exports.getInterests = async (req, res) => {
 
         // Получаем рейтинги всех пользователей
         const ratings = await db.sequelize.query(
-            'SELECT toUserId, AVG(rating) as avgRating FROM Reviews GROUP BY toUserId',
+            'SELECT "toUserId", AVG(rating) as "avgRating" FROM "Reviews" GROUP BY "toUserId"',
             { type: db.sequelize.QueryTypes.SELECT }
         ).catch(() => []); // Игнорируем ошибку, если таблица еще не создана
         
