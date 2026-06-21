@@ -5,7 +5,7 @@ const express = require('express');
 const cors = require('cors');
 const path = require('path');
 const http = require('http');
-const socketIo = require('socket.io');
+const { Server } = require('socket.io');
 const fs = require('fs');
 
 const app = express();
@@ -39,10 +39,6 @@ app.use('/img', express.static(path.join(__dirname, 'img')));
 // ========== ОСНОВНЫЕ МАРШРУТЫ ==========
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
-});
-
-app.get('/app.html', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'app.html'));
 });
 
 app.get('/login.html', (req, res) => {
@@ -131,7 +127,7 @@ const server = http.createServer(app);
 console.log("DATABASE_URL =", process.env.DATABASE_URL);
 
 // ========== CORS ДЛЯ SOCKET.IO ПОЛНОСТЬЮ ОТКЛЮЧЁН ==========
-const io = socketIo(server, {
+const io = new Server(server, {
     cors: {
         origin: '*',
         methods: ['*'],
@@ -140,6 +136,9 @@ const io = socketIo(server, {
     allowEIO3: true,
     transports: ['websocket', 'polling']
 });
+
+// Делаем экземпляр io доступным в обработчиках Express через req.app.get('io')
+app.set('io', io);
 
 const roomUsers = new Map();
 
@@ -233,23 +232,67 @@ io.on('connection', (socket) => {
     });
 });
 
+async function seedIfEmpty() {
+    try {
+        const count = await db.Place.count();
+        if (count === 0) {
+            await db.Place.bulkCreate([
+                { id: 1, name: "Бульвар Эркиндик", description: "Самый любимый бульвар горожан. Идеальное место для неспешных прогулок под тенью деревьев.", category: "парк", image: "/img/place_1_1.jpg" },
+                { id: 2, name: "Бишкек Парк", description: "Популярный торговый центр в самом сердце города с магазинами, фуд-кортом и развлечениями.", category: "трц", image: "/img/place_2_1.jpg" },
+                { id: 3, name: "Нацпарк Ала-Арча", description: "Национальный природный парк всего в 40 минутах от города. Величественные горы, водопады и свежий воздух.", category: "природа", image: "/img/place_3_1.jpg" },
+                { id: 4, name: "Дубовый парк", description: "Старейший парк города. Здесь расположена галерея скульптур под открытым небом и вековые дубы.", category: "парк", image: "/img/place_4_1.jpg" },
+                { id: 5, name: "Озеро Иссык-Куль", description: "Высокогорное озеро, одно из крупнейших и глубочайших в мире. Идеальное место для летнего отдыха и туризма.", category: "природа", image: "/img/place_5_1.jpg" },
+                { id: 6, name: "Кафе Бублик", description: "Уютное место для завтраков и душевных встреч. Свежая выпечка и отличный кофе в центре Бишкека.", category: "кафе", image: "/img/place_6_1.jpg" },
+                { id: 7, name: "Парк Евразия", description: "Новый современный парк с красивыми аллеями, зонами для отдыха и красивой вечерней подсветкой.", category: "парк", image: "/img/place_7_1.jpg" },
+                { id: 8, name: "Парк Ынтымак", description: "Отличное место для активного отдыха, скейтбординга и семейных прогулок в южной части города.", category: "парк", image: "/img/place_8_1.jpg" },
+                { id: 9, name: "Площадь Ала-Тоо", description: "Центральная площадь Бишкека, сердце города. Здесь проходят все главные праздники, военные парады и народные гуляния.", category: "парк", image: "/img/place_9_1.jpg" },
+                { id: 10, name: "Ущелье Чункурчак", description: "Живописное ущелье с альпийскими лугами и современными горнолыжными базами. Отлично подходит для отдыха в любой сезон.", category: "природа", image: "/img/place_10_1.jpg" },
+                { id: 11, name: "Торговый центр Азия Молл", description: "Самый современный ТРЦ города. Брендовые магазины, фуд-корт с кухнями мира и отличный кинотеатр.", category: "трц", image: "/img/place_11_1.jpg" },
+                { id: 12, name: "Кинотеатр Дордой Плаза", description: "Один из лучших кинотеатров в Бишкеке, расположенный в крупном торговом комплексе Dordoi Plaza. IMAX и комфортные залы.", category: "трц", image: "/img/place_12_1.jpg" },
+                { id: 13, name: "Чайхана Navat", description: "Традиционная кыргызская кухня в богатом национальном интерьере. Отличное место для знакомства с культурой.", category: "кафе", image: "/img/place_13_1.jpg" },
+                { id: 14, name: "Promzona Club", description: "Легендарный рок-клуб Бишкека. Живой звук, отличная кухня и неповторимая атмосфера свободы.", category: "паб", image: "/img/place_14_1.jpg" },
+                { id: 15, name: "Кофейня Capito", description: "Стильная и современная кофейня для работы и встреч. Прекрасный интерьер, спешалти кофе и авторские десерты.", category: "кафе", image: "/img/place_15_1.jpg" }
+            ]);
+            console.log('✅ База данных заполнена начальными местами');
+        } else {
+            console.log(`✅ В базе уже ${count} мест`);
+        }
+    } catch (err) {
+        console.error('❌ Ошибка при заполнении мест:', err.message);
+    }
+}
+
 const start = async () => {
     try {
-        // Синхронизируем схему БД — создаём таблицы если их нет
-        // Используем { alter: true } только для PostgreSQL (prod), для SQLite — простой sync
-        const isProduction = !!process.env.DATABASE_URL;
+        await db.sequelize.query(`
+            CREATE TABLE IF NOT EXISTS EventParticipants (
+                EventId INTEGER NOT NULL REFERENCES Events(id) ON DELETE CASCADE,
+                UserId INTEGER NOT NULL REFERENCES Users(id) ON DELETE CASCADE,
+               createdAt: DataTypes.DATE
+               updatedAt: DataTypes.DATE
+                PRIMARY KEY (EventId, UserId)
+            );
+        `);
+        console.log('✅ Таблица EventParticipants создана/проверена');
+
+        // Safe SQLite migrations for new columns
         try {
-            if (isProduction) {
-                await db.sequelize.sync({ alter: true });
-            } else {
-                await db.sequelize.sync();
-            }
-            console.log('🗄️ База данных синхронизирована');
-        } catch (syncErr) {
-            console.warn('⚠️ sync с alter не удался, пробуем базовый sync:', syncErr.message);
-            await db.sequelize.sync();
-            console.log('🗄️ База данных синхронизирована (базовый режим)');
-        }
+            await db.sequelize.query("ALTER TABLE Events ADD COLUMN title VARCHAR(255) DEFAULT 'Встреча';");
+            console.log('✅ Добавлена колонка title в Events');
+        } catch (e) {}
+        try {
+            await db.sequelize.query("ALTER TABLE Events ADD COLUMN category VARCHAR(255) DEFAULT 'другое';");
+            console.log('✅ Добавлена колонка category в Events');
+        } catch (e) {}
+        try {
+            await db.sequelize.query("ALTER TABLE Events ADD COLUMN ageGroup VARCHAR(255) DEFAULT '18-21';");
+            console.log('✅ Добавлена колонка ageGroup в Events');
+        } catch (e) {}
+
+        await db.sequelize.sync();
+        console.log('✅ База данных синхронизирована');
+
+        await seedIfEmpty();
 
         server.listen(PORT, '0.0.0.0', () => {
             console.log(`✅ Сервер запущен на http://localhost:${PORT}`);
@@ -259,7 +302,6 @@ const start = async () => {
         });
     } catch (error) {
         console.error('❌ Ошибка при запуске:', error);
-        process.exit(1);
     }
 };
 
