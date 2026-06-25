@@ -327,13 +327,9 @@ const BISHKEK_PLACES = [
         "tag": "Опасная зона",
         "category": "природа",
         "desc": "Жилой массив на окраине города. Рекомендуется соблюдать повышенную осторожность в темное время суток.",
-        "img": "/img/place_danger_1.jpg",
+        "img": "/img/978479.5d5651f819e3a06104d9608477a3d41e.jpg",
         "photos": [
-            "/img/place_danger_1.jpg",
-            "/img/place_3_1.jpg",
-            "/img/place_3_2.jpg",
-            "/img/place_7_1.jpg",
-            "/img/place_7_2.jpg"
+            "/img/978479.5d5651f819e3a06104d9608477a3d41e.jpg"
         ],
         "address": "жилмассив Арча-Бешик",
         "gisLink": "https://2gis.kg/bishkek/search/арча-бешик",
