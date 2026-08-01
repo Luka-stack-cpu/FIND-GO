@@ -87,14 +87,22 @@ exports.uploadAvatar = async (req, res) => {
     });
 };
 
+const { parseAndValidateBirthday, calculateAge, determineAgeGroup } = require('../utils/ageUtils');
+
 // ============================================================
 // PUT /api/user/profile — обновление bio и других полей профиля
-// НОВЫЙ МАРШРУТ — нужен для сохранения фактов о себе
+// (Запрещено изменять birthday и ageGroup)
 // ============================================================
 exports.updateProfile = async (req, res) => {
     try {
         const { bio } = req.body;
         const updateData = {};
+
+        // ЗАЩИТА: Пользователь НЕ может самостоятельно изменить дату рождения или ageGroup
+        delete req.body.birthday;
+        delete req.body.ageGroup;
+        delete req.body.isAgeVerified;
+        delete req.body.verificationStatus;
 
         if (bio !== undefined && bio !== null) {
             // Если bio - объект (например JSON-строка с фактами), то преобразуем его безопасно
@@ -103,7 +111,7 @@ exports.updateProfile = async (req, res) => {
         }
 
         if (Object.keys(updateData).length === 0) {
-            return res.status(400).json({ message: 'Нет данных для обновления' });
+            return res.status(400).json({ message: 'Нет разрешённых данных для обновления' });
         }
 
         await User.update(updateData, { where: { id: req.user.id } });
@@ -111,5 +119,51 @@ exports.updateProfile = async (req, res) => {
     } catch (error) {
         console.error('❌ updateProfile:', error.message);
         res.status(500).json({ message: 'Ошибка обновления профиля' });
+    }
+};
+
+// ============================================================
+// PUT /api/admin/users/:id/birthday — изменение возраста только администратором
+// ============================================================
+exports.adminUpdateUserAge = async (req, res) => {
+    try {
+        const userId = req.params.id;
+        const { day, month, year } = req.body;
+
+        // Только администраторы могут менять возраст
+        const requestingUser = await User.findByPk(req.user.id);
+        if (!requestingUser || (requestingUser.role !== 'admin' && !requestingUser.isAdmin)) {
+            return res.status(403).json({ message: 'Доступ запрещён. Изменять дату рождения может только администратор.' });
+        }
+
+        const dateValidation = parseAndValidateBirthday(day, month, year);
+        if (!dateValidation.valid) {
+            return res.status(400).json({ message: dateValidation.error });
+        }
+
+        const age = calculateAge(dateValidation.birthday);
+        const ageGroupResult = determineAgeGroup(age);
+        if (!ageGroupResult.valid) {
+            return res.status(400).json({ message: ageGroupResult.error });
+        }
+
+        const targetUser = await User.findByPk(userId);
+        if (!targetUser) {
+            return res.status(404).json({ message: 'Пользователь не найден' });
+        }
+
+        await targetUser.update({
+            birthday: dateValidation.dateString,
+            ageGroup: ageGroupResult.ageGroup
+        });
+
+        res.json({
+            message: 'Дата рождения и возрастная группа успешно обновлены администратором',
+            birthday: dateValidation.dateString,
+            ageGroup: ageGroupResult.ageGroup
+        });
+    } catch (error) {
+        console.error('❌ adminUpdateUserAge:', error.message);
+        res.status(500).json({ message: 'Ошибка обновления возраста' });
     }
 };

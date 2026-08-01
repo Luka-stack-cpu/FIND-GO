@@ -46,6 +46,23 @@ const User = sequelize.define('User', {
   telegramId: {
     type: DataTypes.STRING,
     allowNull: true
+  },
+  birthday: {
+    type: DataTypes.DATEONLY,
+    allowNull: true
+  },
+  ageGroup: {
+    type: DataTypes.STRING,
+    allowNull: false,
+    defaultValue: 'adult'
+  },
+  isAgeVerified: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false
+  },
+  verificationStatus: {
+    type: DataTypes.STRING,
+    defaultValue: 'unverified'
   }
 }, {
   hooks: {

@@ -20,6 +20,10 @@ module.exports = {
       avatar: { type: Sequelize.STRING, defaultValue: '' },
       bio: { type: Sequelize.TEXT, defaultValue: '' },
       interests: { type: Sequelize.TEXT, defaultValue: '[]' },
+      birthday: { type: Sequelize.DATEONLY, allowNull: true },
+      ageGroup: { type: Sequelize.STRING, allowNull: false, defaultValue: 'adult' },
+      isAgeVerified: { type: Sequelize.BOOLEAN, defaultValue: false },
+      verificationStatus: { type: Sequelize.STRING, defaultValue: 'unverified' },
       createdAt: { type: Sequelize.DATE, allowNull: false },
       updatedAt: { type: Sequelize.DATE, allowNull: false }
     });

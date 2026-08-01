@@ -94,7 +94,12 @@
     </div>
     
     <h2 id="userFullName" class="mb-2"></h2>
-    <p class="text-muted"><i class="bi bi-envelope"></i> <span id="userEmail"></span></p>
+    <p class="text-muted mb-2"><i class="bi bi-envelope"></i> <span id="userEmail"></span></p>
+    <div id="ageGroupContainer" class="mt-2 mb-1">
+        <span id="ageGroupBadge" class="badge rounded-pill bg-success px-3 py-2 fs-6">
+            <i class="bi bi-shield-check me-1"></i> <span id="ageGroupText">18+ лет (Взрослый)</span>
+        </span>
+    </div>
 </div>
             
             <!-- Категории интересов (синхронизированы с index.html) -->
@@ -185,6 +190,20 @@
             // Обновляем имя и email
             document.getElementById('userFullName').innerText = serverData.name || user.name;
             document.getElementById('userEmail').innerText = serverData.email || user.email;
+
+            // Возрастная группа из БД
+            const ageGroup = serverData.ageGroup || user.ageGroup || 'adult';
+            const ageBadge = document.getElementById('ageGroupBadge');
+            const ageText = document.getElementById('ageGroupText');
+            if (ageBadge && ageText) {
+                if (ageGroup === 'teenager') {
+                    ageText.innerText = '14–17 лет (Подросток)';
+                    ageBadge.className = 'badge rounded-pill bg-warning text-dark px-3 py-2 fs-6';
+                } else {
+                    ageText.innerText = '18+ лет (Взрослый)';
+                    ageBadge.className = 'badge rounded-pill bg-success px-3 py-2 fs-6';
+                }
+            }
 
             // Аватар из БД
             if (serverData.avatar && (serverData.avatar.startsWith('http') || serverData.avatar.startsWith('/uploads/'))) {

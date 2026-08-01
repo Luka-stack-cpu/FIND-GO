@@ -280,6 +280,22 @@ const start = async () => {
             await db.sequelize.query("ALTER TABLE Events ADD COLUMN ageGroup VARCHAR(255) DEFAULT '18-21';");
             console.log('✅ Добавлена колонка ageGroup в Events');
         } catch (e) {}
+        try {
+            await db.sequelize.query("ALTER TABLE Users ADD COLUMN birthday DATE;");
+            console.log('✅ Добавлена колонка birthday в Users');
+        } catch (e) {}
+        try {
+            await db.sequelize.query("ALTER TABLE Users ADD COLUMN ageGroup VARCHAR(255) DEFAULT 'adult';");
+            console.log('✅ Добавлена колонка ageGroup в Users');
+        } catch (e) {}
+        try {
+            await db.sequelize.query("ALTER TABLE Users ADD COLUMN isAgeVerified BOOLEAN DEFAULT 0;");
+            console.log('✅ Добавлена колонка isAgeVerified в Users');
+        } catch (e) {}
+        try {
+            await db.sequelize.query("ALTER TABLE Users ADD COLUMN verificationStatus VARCHAR(255) DEFAULT 'unverified';");
+            console.log('✅ Добавлена колонка verificationStatus в Users');
+        } catch (e) {}
 
         await seedIfEmpty();
 

@@ -1,6 +1,7 @@
 const jwt = require('jsonwebtoken');
 const db = require('../models');
 const { User, Review } = require('../models');
+const { parseAndValidateBirthday, calculateAge, determineAgeGroup, getVerificationStatus } = require('../utils/ageUtils');
 
 // Генерация JWT токена
 const generateToken = (id) => {
@@ -44,6 +45,10 @@ function formatUser(user, token) {
             ? user.avatar
             : `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(user.name)}`,
         interests,
+        birthday: user.birthday || null,
+        ageGroup: user.ageGroup || 'adult',
+        isAgeVerified: Boolean(user.isAgeVerified),
+        verificationStatus: user.verificationStatus || 'unverified',
         token
     };
 }
@@ -56,8 +61,9 @@ exports.register = async (req, res) => {
         const name     = sanitizeString(req.body.name);
         const email    = sanitizeString(req.body.email).toLowerCase();
         const password = req.body.password;
+        const { day, month, year } = req.body;
 
-        // Валидация
+        // Валидация базовых полей
         if (!name || name.length < 2) {
             return res.status(400).json({ message: 'Имя должно содержать минимум 2 символа' });
         }
@@ -68,12 +74,37 @@ exports.register = async (req, res) => {
             return res.status(400).json({ message: 'Пароль должен быть минимум 6 символов' });
         }
 
+        // 1. Обязательное указание даты рождения
+        if (day === undefined || month === undefined || year === undefined) {
+            return res.status(400).json({ message: 'Укажите дату рождения (день, месяц, год)' });
+        }
+
+        // 2. Серверная валидация корректности даты
+        const dateValidation = parseAndValidateBirthday(day, month, year);
+        if (!dateValidation.valid) {
+            return res.status(400).json({ message: dateValidation.error });
+        }
+
+        // 3. Серверный вычисление возраста и определение ageGroup
+        const age = calculateAge(dateValidation.birthday);
+        const ageGroupResult = determineAgeGroup(age);
+        if (!ageGroupResult.valid) {
+            return res.status(400).json({ message: ageGroupResult.error });
+        }
+
         const userExists = await User.findOne({ where: { email } });
         if (userExists) {
             return res.status(400).json({ message: 'Пользователь с таким email уже существует' });
         }
 
-        const user = await User.create({ name, email, password });
+        // 4. Сохранение пользователя с birthday и ageGroup
+        const user = await User.create({
+            name,
+            email,
+            password,
+            birthday: dateValidation.dateString,
+            ageGroup: ageGroupResult.ageGroup
+        });
         res.status(201).json(formatUser(user, generateToken(user.id)));
     } catch (error) {
         console.error('❌ register:', error.message);
@@ -208,7 +239,7 @@ exports.getUserById = async (req, res) => {
     try {
         const user = await User.findByPk(req.params.id, {
             // email не отдаём — приватность
-            attributes: ['id', 'name', 'avatar', 'interests', 'bio']
+            attributes: ['id', 'name', 'avatar', 'interests', 'bio', 'ageGroup', 'isAgeVerified']
         });
         if (!user) return res.status(404).json({ message: 'Пользователь не найден' });
 
@@ -241,6 +272,8 @@ exports.getUserById = async (req, res) => {
                 : `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(user.name)}`,
             interests,
             bio: user.bio || '',
+            ageGroup: user.ageGroup || 'adult',
+            isAgeVerified: Boolean(user.isAgeVerified),
             avgRating: ratingResult ? parseFloat(ratingResult.getDataValue('avgRating') || 0).toFixed(1) : null,
             totalReviews: ratingResult ? ratingResult.getDataValue('totalReviews') : 0,
             organizedEventsCount,
