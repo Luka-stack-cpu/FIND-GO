@@ -1,0 +1,959 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FindGo — Найти людей в поход сложнее, чем маршрут</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <link rel="icon" type="image/png" href="/img/logo.png">
+    
+    <style>
+        :root {
+            --font-display: 'Outfit', -apple-system, sans-serif;
+            --font-body: 'Inter', -apple-system, sans-serif;
+            --bg-color: #0d0f12;
+            --card-bg: rgba(22, 26, 33, 0.7);
+            --card-border: rgba(255, 255, 255, 0.08);
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --accent-primary: #6366f1; /* Indigo */
+            --accent-gradient: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+            --accent-hover: #4f46e5;
+            --glass-bg: rgba(13, 15, 18, 0.7);
+            --glass-border: rgba(255, 255, 255, 0.05);
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            font-family: var(--font-body);
+            overflow-x: hidden;
+            letter-spacing: -0.01em;
+        }
+
+        h1, h2, h3, h4, h5, h6 {
+            font-family: var(--font-display);
+            font-weight: 700;
+        }
+
+        /* Smooth scroll */
+        html {
+            scroll-behavior: smooth;
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: var(--bg-color);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        /* Fixed Header */
+        .navbar {
+            background: var(--glass-bg);
+            backdrop-filter: blur(16px) saturate(180%);
+            border-bottom: 1px solid var(--glass-border);
+            padding: 18px 0;
+            transition: all 0.3s ease;
+            z-index: 1000;
+        }
+
+        .navbar-brand {
+            font-family: var(--font-display);
+            font-weight: 800;
+            font-size: 1.5rem;
+            color: var(--text-primary) !important;
+            letter-spacing: -0.02em;
+        }
+
+        .navbar-brand img {
+            border-radius: 8px;
+            transition: transform 0.3s ease;
+        }
+
+        .navbar-brand:hover img {
+            transform: rotate(-5deg) scale(1.05);
+        }
+
+        .btn-header-login {
+            color: var(--text-secondary);
+            font-weight: 500;
+            padding: 10px 20px;
+            border-radius: 12px;
+            transition: all 0.2s ease;
+            text-decoration: none;
+        }
+
+        .btn-header-login:hover {
+            color: var(--text-primary);
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .btn-header-register {
+            background: var(--text-primary);
+            color: var(--bg-color) !important;
+            font-weight: 600;
+            padding: 10px 22px;
+            border-radius: 12px;
+            border: 1px solid transparent;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            box-shadow: 0 4px 12px rgba(255, 255, 255, 0.1);
+        }
+
+        .btn-header-register:hover {
+            background: rgba(255, 255, 255, 0.9);
+            transform: translateY(-1px);
+        }
+
+        .btn-header-app {
+            background: var(--accent-gradient);
+            color: white !important;
+            font-weight: 600;
+            padding: 10px 22px;
+            border-radius: 12px;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3);
+        }
+
+        .btn-header-app:hover {
+            opacity: 0.95;
+            transform: translateY(-1px);
+        }
+
+        /* Hero Section */
+        .hero {
+            position: relative;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-image: url('https://images.unsplash.com/photo-1501555088652-021faa106b9b?auto=format&fit=crop&w=1920&q=80');
+            background-size: cover;
+            background-position: center;
+            padding-top: 100px;
+            padding-bottom: 80px;
+        }
+
+        .hero-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(
+                to bottom,
+                rgba(13, 15, 18, 0.6) 0%,
+                rgba(13, 15, 18, 0.85) 60%,
+                rgba(13, 15, 18, 1) 100%
+            );
+            z-index: 1;
+        }
+
+        .hero-content {
+            position: relative;
+            z-index: 2;
+            max-width: 800px;
+            text-align: center;
+        }
+
+        .hero h1 {
+            font-size: 4rem;
+            font-weight: 900;
+            line-height: 1.1;
+            letter-spacing: -0.04em;
+            margin-bottom: 24px;
+            background: linear-gradient(to right, #ffffff, #e2e8f0);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .hero-subtitle {
+            font-size: 1.25rem;
+            line-height: 1.7;
+            color: var(--text-secondary);
+            margin-bottom: 40px;
+            text-align: center;
+        }
+
+        .hero-list {
+            display: inline-block;
+            text-align: left;
+            margin: 0 auto 40px;
+            padding-left: 0;
+            list-style: none;
+        }
+
+        .hero-list li {
+            font-size: 1.2rem;
+            color: #e2e8f0;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+        }
+
+        .hero-list li i {
+            color: #ef4444; /* Red for emphasis */
+            margin-right: 12px;
+            font-size: 1.3rem;
+        }
+
+        .btn-cta {
+            background: var(--accent-gradient);
+            color: white;
+            font-family: var(--font-display);
+            font-weight: 700;
+            font-size: 1.25rem;
+            padding: 16px 40px;
+            border-radius: 16px;
+            border: none;
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            box-shadow: 0 8px 30px rgba(99, 102, 241, 0.4);
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            text-decoration: none;
+        }
+
+        .btn-cta:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 40px rgba(99, 102, 241, 0.5);
+            color: white;
+        }
+
+        .cta-caption {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            margin-top: 16px;
+        }
+
+        /* Section Layouts */
+        section {
+            padding: 120px 0;
+            position: relative;
+        }
+
+        .section-tag {
+            text-transform: uppercase;
+            font-size: 0.85rem;
+            font-weight: 700;
+            letter-spacing: 0.15em;
+            color: var(--accent-primary);
+            margin-bottom: 16px;
+            display: block;
+        }
+
+        .section-title-large {
+            font-size: 3rem;
+            font-weight: 800;
+            letter-spacing: -0.03em;
+            margin-bottom: 40px;
+        }
+
+        /* Problem Section */
+        .problem-text-block {
+            font-size: 1.35rem;
+            line-height: 1.8;
+            color: #cbd5e1;
+            font-weight: 400;
+        }
+
+        .problem-line {
+            margin-bottom: 14px;
+            opacity: 0.5;
+            transition: opacity 0.5s ease;
+        }
+
+        .problem-line.highlight {
+            opacity: 1;
+            color: var(--text-primary);
+            font-weight: 500;
+        }
+
+        /* What is FindGo Section */
+        .card-feature {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 24px;
+            padding: 40px;
+            transition: all 0.3s ease;
+            height: 100%;
+        }
+
+        .card-feature:hover {
+            transform: translateY(-4px);
+            border-color: rgba(255, 255, 255, 0.15);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        .feature-icon-wrapper {
+            width: 56px;
+            height: 56px;
+            border-radius: 16px;
+            background: rgba(99, 102, 241, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            color: var(--accent-primary);
+            margin-bottom: 24px;
+        }
+
+        /* How it works */
+        .step-num {
+            font-family: var(--font-display);
+            font-weight: 900;
+            font-size: 3.5rem;
+            background: linear-gradient(135deg, rgba(255,255,255,0.15) 0%, rgba(255,255,255,0.02) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            line-height: 1;
+            margin-bottom: 16px;
+        }
+
+        .step-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            margin-bottom: 12px;
+        }
+
+        .step-desc {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            line-height: 1.6;
+        }
+
+        /* FAQ */
+        .faq-item {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 20px;
+            margin-bottom: 16px;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .faq-question {
+            padding: 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 1.1rem;
+            user-select: none;
+        }
+
+        .faq-answer {
+            padding: 0 24px;
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out, padding 0.3s ease;
+            color: var(--text-secondary);
+            line-height: 1.6;
+        }
+
+        .faq-item.active {
+            border-color: rgba(99, 102, 241, 0.3);
+        }
+
+        .faq-item.active .faq-answer {
+            padding-bottom: 24px;
+        }
+
+        .faq-icon {
+            transition: transform 0.3s ease;
+            color: var(--text-secondary);
+        }
+
+        .faq-item.active .faq-icon {
+            transform: rotate(45deg);
+            color: var(--accent-primary);
+        }
+
+        /* Final CTA Block */
+        .cta-block {
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.15) 0%, rgba(168, 85, 247, 0.05) 100%);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 36px;
+            padding: 80px 40px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .cta-block::before {
+            content: '';
+            position: absolute;
+            top: -20%;
+            left: -20%;
+            width: 140%;
+            height: 140%;
+            background: radial-gradient(circle, rgba(99, 102, 241, 0.1) 0%, transparent 60%);
+            pointer-events: none;
+        }
+
+        .cta-block h2 {
+            font-size: 3.2rem;
+            font-weight: 800;
+            margin-bottom: 20px;
+            letter-spacing: -0.03em;
+        }
+
+        .cta-block p {
+            font-size: 1.2rem;
+            color: var(--text-secondary);
+            margin-bottom: 40px;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .btn-cta-secondary {
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-primary);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            font-family: var(--font-display);
+            font-weight: 600;
+            font-size: 1.1rem;
+            padding: 16px 36px;
+            border-radius: 16px;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+        }
+
+        .btn-cta-secondary:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--text-primary);
+            transform: translateY(-1px);
+        }
+
+        /* Footer */
+        footer {
+            background: #090a0f;
+            border-top: 1px solid var(--card-border);
+            padding: 80px 0 40px;
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+        }
+
+        .footer-logo {
+            font-family: var(--font-display);
+            font-weight: 800;
+            font-size: 1.5rem;
+            color: var(--text-primary);
+            margin-bottom: 16px;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            text-decoration: none;
+        }
+
+        .footer-logo img {
+            border-radius: 8px;
+        }
+
+        .footer-links {
+            list-style: none;
+            padding-left: 0;
+            margin-bottom: 0;
+        }
+
+        .footer-links li {
+            margin-bottom: 12px;
+        }
+
+        .footer-links a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            transition: color 0.2s ease;
+        }
+
+        .footer-links a:hover {
+            color: var(--text-primary);
+        }
+
+        /* Animations */
+        .reveal {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: all 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .reveal.active {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        @media (max-width: 768px) {
+
+           .reveal.active {
+            margin-top: 55px;
+           }
+
+            .hero h1 {
+                font-size: 2.5rem;
+            }
+            .hero-subtitle {
+                font-size: 1.1rem;
+            }
+            .section-title-large {
+                font-size: 2.2rem;
+            }
+            .cta-block h2 {
+                font-size: 2.2rem;
+            }
+            section {
+                padding: 80px 0;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header / Navbar -->
+    <nav class="navbar navbar-expand-lg fixed-top">
+        <div class="container px-3 px-md-4">
+            <a class="navbar-brand d-flex align-items-center" href="/">
+                <img src="/img/logo.png" alt="FindGo" width="36" height="36" class="me-2">
+                <span>FindGo</span>
+            </a>
+            
+            <div class="ms-auto d-flex align-items-center gap-2" id="headerAuthButtons">
+                <!-- Buttons injected dynamically based on auth status -->
+                <a href="/login.html" class="btn-header-login">Войти</a>
+                <a href="/register.html" class="btn-header-register">Регистрация</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <header class="hero">
+        <div class="hero-overlay"></div>
+        <div class="container hero-content">
+            <h1 class="reveal">Найти людей сложнее,<br>чем найти маршрут.</h1>
+            
+            <div class="d-flex justify-content-center reveal">
+                <ul class="hero-list">
+                    <li><i class="bi bi-x-circle-fill"></i> Маршрут можно найти за несколько минут.</li>
+                    <li><i class="bi bi-x-circle-fill"></i> Сложнее найти людей, которые действительно готовы пойти.</li>
+                    <li><i class="bi bi-x-circle-fill"></i> Кому интересен такой же маршрут.</li>
+                    <li><i class="bi bi-x-circle-fill"></i> Кто свободен в эти даты и не передумает в последний момент.</li>
+                </ul>
+            </div>
+
+            <p class="hero-subtitle reveal" style="max-width: 600px; margin-left: auto; margin-right: auto;">
+                Из-за этого многие походы так и остаются просто идеей.
+            </p>
+
+            <div class="reveal">
+                <a href="#" onclick="handleCtaClick(event)" class="btn-cta">
+                    Кто куда идёт?
+                    <i class="bi bi-arrow-right-short fs-4"></i>
+                </a>
+                <div class="cta-caption">Создать поход или присоединиться к существующему можно за пару минут.</div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Problem Section -->
+    <section id="problem">
+        <div class="container">
+            <div class="row align-items-center justify-content-between">
+                <div class="col-lg-5 reveal">
+                    <span class="section-tag">В чём боль?</span>
+                    <h2 class="section-title-large">Проблема обычно не в маршруте.</h2>
+                </div>
+                <div class="col-lg-6 reveal">
+                    <div class="problem-text-block">
+                        <div class="problem-line">Открыл карту.</div>
+                        <div class="problem-line">Нашёл красивое место.</div>
+                        <div class="problem-line">Посмотрел фотографии.</div>
+                        <div class="problem-line">Выбрал дату.</div>
+                        <div class="problem-line">Всё готово.</div>
+                        <div class="problem-line">Кроме одного.</div>
+                        <div class="problem-line highlight">Нужно найти людей, которые действительно готовы пойти.</div>
+                        <div class="problem-line highlight" style="color: var(--accent-primary)">Именно на этом этапе большинство планов так и остаются планами.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- What is FindGo -->
+    <section id="about" style="background: rgba(255, 255, 255, 0.01);">
+        <div class="container">
+            <div class="text-center mb-5 reveal">
+                <span class="section-tag">Решение</span>
+                <h2 class="section-title-large" style="margin-bottom: 20px;">Для этого и существует FindGo.</h2>
+                <p class="text-secondary" style="max-width: 650px; margin: 0 auto; font-size: 1.15rem; line-height: 1.7;">
+                    FindGo помогает людям находить походы и собирать группы для совместных поездок.
+                </p>
+            </div>
+
+            <div class="row g-4 mt-2">
+                <div class="col-md-6 reveal">
+                    <div class="card-feature">
+                        <div class="feature-icon-wrapper">
+                            <i class="bi bi-compass-fill"></i>
+                        </div>
+                        <h3>Создай свой поход</h3>
+                        <p class="text-secondary mb-0" style="line-height: 1.7;">
+                            Если у тебя уже есть идея маршрута — создай поход. Опиши детали, дату и пригласи людей.
+                        </p>
+                    </div>
+                </div>
+                <div class="col-md-6 reveal">
+                    <div class="card-feature">
+                        <div class="feature-icon-wrapper">
+                            <i class="bi bi-people-fill"></i>
+                        </div>
+                        <h3>Присоединяйся к другим</h3>
+                        <p class="text-secondary mb-0" style="line-height: 1.7;">
+                            Если хочется просто куда-нибудь выбраться — посмотри, что планируют другие пользователи.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="text-center mt-5 reveal">
+                <p class="text-secondary" style="font-size: 1.1rem;">
+                    Никаких бесконечных поисков по чатам и случайным объявлениям. Всё находится в одном месте.
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <!-- How it works -->
+    <section id="how-it-works">
+        <div class="container">
+            <div class="text-center mb-5 reveal">
+                <span class="section-tag">Простой процесс</span>
+                <h2 class="section-title-large">Как это работает</h2>
+            </div>
+
+            <div class="row g-4">
+                <div class="col-lg-3 col-sm-6 reveal">
+                    <div class="card-feature">
+                        <div class="step-num">01</div>
+                        <div class="step-title">Создай аккаунт</div>
+                        <div class="step-desc">Регистрация занимает меньше минуты. Просто укажи имя и email.</div>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-sm-6 reveal">
+                    <div class="card-feature">
+                        <div class="step-num">02</div>
+                        <div class="step-title">Выбери поход</div>
+                        <div class="step-desc">Посмотри существующие походы на карте или в списке и найди интересный вариант.</div>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-sm-6 reveal">
+                    <div class="card-feature">
+                        <div class="step-num">03</div>
+                        <div class="step-title">Или создай свой</div>
+                        <div class="step-desc">Укажи интересное место, дату, время и описание маршрута для попутчиков.</div>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-sm-6 reveal">
+                    <div class="card-feature">
+                        <div class="step-num">04</div>
+                        <div class="step-title">Собери группу</div>
+                        <div class="step-desc">Другие пользователи увидят твой поход, смогут задать вопросы и присоединиться.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Benefits -->
+    <section id="benefits" style="background: rgba(255, 255, 255, 0.01);">
+        <div class="container">
+            <div class="row align-items-center justify-content-between mb-5 reveal">
+                <div class="col-lg-5">
+                    <span class="section-tag">Преимущества</span>
+                    <h2 class="section-title-large" style="margin-bottom: 0;">Зачем использовать FindGo</h2>
+                </div>
+            </div>
+
+            <div class="row g-4">
+                <div class="col-md-6 reveal">
+                    <div class="card-feature d-flex gap-4 align-items-start">
+                        <div class="feature-icon-wrapper m-0 flex-shrink-0">
+                            <i class="bi bi-clock-history"></i>
+                        </div>
+                        <div>
+                            <h4>Меньше времени на поиски людей</h4>
+                            <p class="text-secondary mb-0 mt-2">Не нужно писать в десятки чатов. Заинтересованные люди придут сами.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6 reveal">
+                    <div class="card-feature d-flex gap-4 align-items-start">
+                        <div class="feature-icon-wrapper m-0 flex-shrink-0">
+                            <i class="bi bi-geo-alt-fill"></i>
+                        </div>
+                        <div>
+                            <h4>Все походы в одном месте</h4>
+                            <p class="text-secondary mb-0 mt-2">Удобный поиск по интерактивной карте Бишкека и подробный календарь событий.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6 reveal">
+                    <div class="card-feature d-flex gap-4 align-items-start">
+                        <div class="feature-icon-wrapper m-0 flex-shrink-0">
+                            <i class="bi bi-map"></i>
+                        </div>
+                        <div>
+                            <h4>Можно создать собственный маршрут</h4>
+                            <p class="text-secondary mb-0 mt-2">Полная свобода в планировании. Выбирай свои любимые локации и сложность.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6 reveal">
+                    <div class="card-feature d-flex gap-4 align-items-start">
+                        <div class="feature-icon-wrapper m-0 flex-shrink-0">
+                            <i class="bi bi-emoji-smile-fill"></i>
+                        </div>
+                        <div>
+                            <h4>Подходит всем</h4>
+                            <p class="text-secondary mb-0 mt-2">Не важно, опытный ты альпинист или просто хочешь прогуляться до Ала-Арчи.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- FAQ -->
+    <section id="faq">
+        <div class="container" style="max-width: 800px;">
+            <div class="text-center mb-5 reveal">
+                <span class="section-tag">FAQ</span>
+                <h2 class="section-title-large">Частые вопросы</h2>
+            </div>
+
+            <div class="reveal">
+                <div class="faq-item">
+                    <div class="faq-question">
+                        <span>Это бесплатно?</span>
+                        <i class="bi bi-plus-lg faq-icon"></i>
+                    </div>
+                    <div class="faq-answer">
+                        Да, основные возможности сервиса доступны бесплатно. Вы можете свободно искать компанию, создавать свои походы или вступать в группы.
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <div class="faq-question">
+                        <span>Можно создать собственный поход?</span>
+                        <i class="bi bi-plus-lg faq-icon"></i>
+                    </div>
+                    <div class="faq-answer">
+                        Да, сразу после быстрой регистрации вы сможете указать любое место на карте, время сбора, сложность и описание для попутчиков.
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <div class="faq-question">
+                        <span>Нужен опыт походов?</span>
+                        <i class="bi bi-plus-lg faq-icon"></i>
+                    </div>
+                    <div class="faq-answer">
+                        Нет. Всё зависит от конкретного маршрута. Организатор указывает требования к подготовке в описании, так что вы легко найдете подходящий вариант.
+                    </div>
+                </div>
+
+                <div class="faq-item">
+                    <div class="faq-question">
+                        <span>Сколько времени занимает создание похода?</span>
+                        <i class="bi bi-plus-lg faq-icon"></i>
+                    </div>
+                    <div class="faq-answer">
+                        Обычно меньше одной минуты. Достаточно заполнить название, выбрать дату и коротко рассказать о ваших планах.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Final CTA Block -->
+    <section id="cta">
+        <div class="container">
+            <div class="cta-block reveal">
+                <h2>Возможно, твоя следующая поездка<br>уже кем-то запланирована.</h2>
+                <p>Посмотри существующие походы или создай свой собственный.</p>
+                <div class="d-flex flex-wrap justify-content-center gap-3">
+                    <a href="#" onclick="handleCtaClick(event)" class="btn-cta">
+                        Кто куда идёт?
+                    </a>
+                    <a href="/register.html" class="btn-cta-secondary" id="ctaSecondaryRegister">
+                        Регистрация
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container">
+            <div class="row g-4 justify-content-between">
+                <div class="col-lg-4">
+                    <a class="footer-logo" href="/">
+                        <img src="/img/logo.png" alt="FindGo" width="36" height="36">
+                        <span>FindGo</span>
+                    </a>
+                    <p class="mt-3">
+                        Сервис для поиска походов, путешествий и людей для совместного отдыха в Бишкеке и за его пределами.
+                    </p>
+                    <p class="small text-muted mt-4">
+                        &copy; 2026 FindGo. Все права защищены.
+                    </p>
+                </div>
+                <div class="col-lg-6">
+                    <div class="row g-4">
+                        <div class="col-6 col-sm-4">
+                            <h6 class="text-white mb-3">О проекте</h6>
+                            <ul class="footer-links">
+                                <li><a href="#about">О нас</a></li>
+                                <li><a href="#how-it-works">Как работает</a></li>
+                                <li><a href="#faq">Частые вопросы</a></li>
+                            </ul>
+                        </div>
+                        <div class="col-6 col-sm-4">
+                            <h6 class="text-white mb-3">Документы</h6>
+                            <ul class="footer-links">
+                                <li><a href="#">Политика конфиденциальности</a></li>
+                                <li><a href="#">Пользовательское соглашение</a></li>
+                            </ul>
+                        </div>
+                        <div class="col-12 col-sm-4">
+                            <h6 class="text-white mb-3">Контакты</h6>
+                            <ul class="footer-links">
+                                <li><a href="mailto:findgo.gmail.com"><i class="bi bi-envelope me-2"></i>findgo.kg</a></li>
+                                <li><a href="#"><i class="bi bi-telegram me-2"></i>Telegram</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Bootstrap JS Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        // Check authentication state
+        const token = localStorage.getItem('token');
+        const headerAuthButtons = document.getElementById('headerAuthButtons');
+        const ctaSecondaryRegister = document.getElementById('ctaSecondaryRegister');
+
+        if (token) {
+            // User is authenticated
+            headerAuthButtons.innerHTML = `
+                <a href="/app.html" class="btn-header-app">В приложение</a>
+            `;
+            if (ctaSecondaryRegister) {
+                ctaSecondaryRegister.innerHTML = 'Открыть приложение';
+                ctaSecondaryRegister.href = '/app.html';
+            }
+        }
+
+        // CTA buttons action
+        function handleCtaClick(e) {
+            e.preventDefault();
+            if (token) {
+                window.location.href = '/app.html';
+            } else {
+                window.location.href = '/register.html';
+            }
+        }
+
+        // FAQ accordion
+        document.querySelectorAll('.faq-question').forEach(question => {
+            question.addEventListener('click', () => {
+                const item = question.parentNode;
+                const isActive = item.classList.contains('active');
+                
+                // Close other items
+                document.querySelectorAll('.faq-item').forEach(otherItem => {
+                    otherItem.classList.remove('active');
+                    otherItem.querySelector('.faq-answer').style.maxHeight = null;
+                });
+                
+                if (!isActive) {
+                    item.classList.add('active');
+                    const answer = item.querySelector('.faq-answer');
+                    answer.style.maxHeight = answer.scrollHeight + 'px';
+                }
+            });
+        });
+
+        // Reveal animations on scroll
+        const revealElements = document.querySelectorAll('.reveal');
+        
+        function revealOnScroll() {
+            for (let i = 0; i < revealElements.length; i++) {
+                const windowHeight = window.innerHeight;
+                const elementTop = revealElements[i].getBoundingClientRect().top;
+                const elementVisible = 100;
+                
+                if (elementTop < windowHeight - elementVisible) {
+                    revealElements[i].classList.add('active');
+                }
+            }
+        }
+        
+        window.addEventListener('scroll', revealOnScroll);
+        // Initial check
+        window.addEventListener('load', revealOnScroll);
+        
+        // Highlight problem lines sequentially on scroll
+        const problemLines = document.querySelectorAll('.problem-line');
+        const problemSection = document.getElementById('problem');
+        
+        window.addEventListener('scroll', () => {
+            if (!problemSection) return;
+            const rect = problemSection.getBoundingClientRect();
+            const viewHeight = Math.max(document.documentElement.clientHeight, window.innerHeight);
+            
+            // If problem section is in view
+            if (!(rect.bottom < 0 || rect.top - viewHeight >= 0)) {
+                const progress = (viewHeight - rect.top) / (viewHeight + rect.height);
+                const stepCount = problemLines.length;
+                
+                problemLines.forEach((line, index) => {
+                    const lineThreshold = (index / stepCount) * 0.7 + 0.1;
+                    if (progress > lineThreshold) {
+                        line.classList.add('highlight');
+                    } else {
+                        // Don't remove highlight from the last two lines which are always active or just keep them
+                        if (!line.classList.contains('always-highlight')) {
+                            line.classList.remove('highlight');
+                        }
+                    }
+                });
+            }
+        });
+    </script>
+</body>
+</html>

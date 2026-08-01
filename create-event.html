@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="ru" data-bs-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Создать встречу | FindGo</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <link rel="stylesheet" type="text/css" href="https://npmcdn.com/flatpickr/dist/themes/airbnb.css">
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/ru.js"></script>
+    <link rel="icon" type="image/png" href="/img/logo.png">
+    <link rel="stylesheet" href="/index.css">
+</head>
+<body>
+
+<!-- Боковое меню -->
+<div class="offcanvas offcanvas-start" tabindex="-1" id="sidebarMenu">
+    <div class="offcanvas-header border-0">
+        <h5 class="offcanvas-title fw-bold"><img src="/img/logo.png" alt="Find&Go" width="36" height="36" class="d-inline-block align-top me-2" style="border-radius: 4px;">Find&Go</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas"></button>
+    </div>
+    <div class="offcanvas-body">
+        <ul class="nav flex-column mb-auto">
+            <li class="nav-item"><a class="nav-link" href="/app.html"><i class="bi bi-house-door"></i> Главная</a></li>
+
+            <li class="nav-item"><a class="nav-link fw-bold text-primary" href="/create-event.html"><i class="bi bi-plus-circle"></i> Создать поход</a></li>
+            <li class="nav-item"><a class="nav-link" href="/profile.html"><i class="bi bi-person"></i> Мой профиль</a></li>
+            <li class="nav-item"><a class="nav-link" href="/faq.html"><i class="bi bi-question-circle"></i> Вопросы и ответы</a></li>
+            <li class="nav-item"><a class="nav-link" href="/chats.html"><i class="bi bi-chat-dots"></i> Чаты походов</a></li>
+            <li class="nav-item"><a class="nav-link" href="/dm.html"><i class="bi bi-person-heart"></i> Личные сообщения</a></li>
+            <li class="nav-item"><a class="nav-link" href="/icebreakers.html"><i class="bi bi-snow2"></i> Темы для общения</a></li>
+        </ul>
+        <hr>
+        <div class="theme-switch p-2 rounded-3 bg-secondary-subtle mb-3 d-flex justify-content-between align-items-center">
+            <span class="fw-medium"><i class="bi bi-moon-stars text-primary me-2"></i> Тёмная тема</span>
+            <div class="form-check form-switch m-0">
+                <input class="form-check-input" type="checkbox" id="darkModeSwitch">
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Навбар -->
+<nav class="navbar navbar-expand-lg fixed-top shadow-sm">
+    <div class="container-fluid px-3 px-md-4">
+        <button class="btn-menu me-2" type="button" data-bs-toggle="offcanvas" data-bs-target="#sidebarMenu">
+            <i class="bi bi-list"></i>
+        </button>
+        <a class="navbar-brand d-flex align-items-center" href="/app.html">
+            <img src="/img/logo.png" alt="Find&Go" width="45" height="45" class="d-inline-block align-top me-2" style="border-radius: 6px;">
+            Find&Go
+        </a>
+        
+        <div class="ms-auto d-flex align-items-center gap-2">
+            <div id="userProfileLink" style="cursor: pointer; display: flex; align-items: center; gap: 8px;" onclick="window.location.href='/profile.html'">
+                <img id="headerAvatar" src="https://api.dicebear.com/7.x/avataaars/svg?seed=default" width="32" height="32" class="rounded-circle shadow-sm" style="object-fit: cover;">
+                <span id="userName" class="fw-bold d-none d-md-inline-block" style="color: var(--bs-body-color);"></span>
+            </div>
+            <button id="logoutBtn" class="btn btn-logout ms-2">Выйти</button>
+        </div>
+    </div>
+</nav>
+
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-7">
+            <div class="form-card">
+                <div class="text-center">
+                    <h1 class="form-title"><i class="bi bi-plus-circle"></i> Создать встречу</h1>
+                    <p class="form-subtitle">Найди компанию для совместного отдыха</p>
+                </div>
+                
+                <form id="createEventForm">
+                    <!-- Название встречи -->
+                    <div class="mb-4">
+                        <label class="form-label"><i class="bi bi-fonts"></i> Название встречи</label>
+                        <input type="text" id="title" class="form-control" placeholder="Например: Поиграть в настолки или Прогулка на ВДНХ" required>
+                        <div class="form-text text-muted small mt-1">Коротко и ясно опишите суть встречи</div>
+                    </div>
+
+                    <!-- Категория -->
+                    <div class="mb-4">
+                        <label class="form-label"><i class="bi bi-tag-fill"></i> Категория</label>
+                        <select id="category" class="form-select" required>
+                            <option value="">-- Выберите категорию --</option>
+                            <option value="прогулка">Прогулка</option>
+                            <option value="игры">Игры</option>
+                            <option value="спорт">Спорт</option>
+                            <option value="кино">Кино</option>
+                            <option value="кафе">Кафе / Ресторан</option>
+                            <option value="учеба">Учеба / Работа</option>
+                            <option value="настолки">Настольные игры</option>
+                            <option value="другое">Другое</option>
+                        </select>
+                    </div>
+
+                    <!-- Возрастная группа -->
+                    <div class="mb-4">
+                        <label class="form-label"><i class="bi bi-person-check-fill"></i> Возрастная группа</label>
+                        <select id="ageGroup" class="form-select" required>
+                            <option value="">-- Выберите возрастную группу --</option>
+                            <option value="14-16">14-16 лет</option>
+                            <option value="16-18">16-18 лет</option>
+                            <option value="18-21" selected>18-21 лет</option>
+                            <option value="21-25">21-25 лет</option>
+                            <option value="25-30">25-30 лет</option>
+                            <option value="30+">30+ лет</option>
+                        </select>
+                    </div>
+
+                    <!-- Выбор места -->
+                    <div class="mb-4">
+                        <label class="form-label"><i class="bi bi-geo-alt-fill"></i> Куда пойдём?</label>
+                        <select id="placeId" class="form-select" required>
+                            <option value="">-- Выберите место --</option>
+                        </select>
+                        <div class="form-text text-muted small mt-1">Места загружаются из базы данных</div>
+                    </div>
+                    
+                    <!-- Дата и время -->
+                    <div class="mb-4">
+                        <label class="form-label"><i class="bi bi-calendar-event"></i> Когда идём?</label>
+                        <input type="text" id="eventDateTime" class="form-control" placeholder="Выберите дату и время" required>
+                        <div class="form-text text-muted small mt-1">Выберите удобный день и время</div>
+                    </div>
+                    
+                    <!-- Количество участников -->
+                    <div class="mb-4">
+                        <label class="form-label"><i class="bi bi-people-fill"></i> Сколько человек ищем?</label>
+                        <input type="number" id="maxParticipants" class="form-control" min="2" max="20" value="4" required>
+                        <div class="form-text text-muted small mt-1">Включая вас</div>
+                    </div>
+                    
+                    <!-- Описание -->
+                    <div class="mb-4">
+                        <label class="form-label"><i class="bi bi-chat-text-fill"></i> Описание (необязательно)</label>
+                        <textarea id="description" class="form-control" rows="3" placeholder="Напишите пару слов о себе или о том, кого ищете..."></textarea>
+                    </div>
+                    
+                    <!-- Кнопка отправки -->
+                    <button type="submit" class="btn btn-primary w-100 text-white" style="border-radius: 50px; padding: 14px; font-weight: 600; font-size: 1.1rem;">
+                        <i class="bi bi-send-fill"></i> Создать встречу
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Контейнер для тостов -->
+<div id="toastContainer" class="position-fixed bottom-0 end-0 p-3" style="z-index: 1100;"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    // ========== АВТОРИЗАЦИЯ ==========
+    const token = localStorage.getItem('token');
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    if (!token) window.location.href = '/login.html';
+    
+    const profile = JSON.parse(localStorage.getItem('profile') || '{}');
+    const headerAvatar = document.getElementById('headerAvatar');
+    if (headerAvatar) {
+        headerAvatar.src = profile.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.name || 'default'}`;
+    }
+    
+    document.getElementById('userName').innerText = user.name || 'Пользователь';
+    document.getElementById('logoutBtn').addEventListener('click', () => {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        window.location.href = '/login.html';
+    });
+    
+    // ========== ТЁМНАЯ ТЕМА ==========
+    function initDarkMode() {
+        const switchEl = document.getElementById('darkModeSwitch');
+        const htmlEl = document.documentElement;
+        const savedTheme = localStorage.getItem('theme');
+        if (savedTheme === 'dark') {
+            htmlEl.setAttribute('data-bs-theme', 'dark');
+            if (switchEl) switchEl.checked = true;
+        } else {
+            htmlEl.setAttribute('data-bs-theme', 'light');
+            if (switchEl) switchEl.checked = false;
+        }
+        if (switchEl) {
+            switchEl.addEventListener('change', (e) => {
+                if (e.target.checked) {
+                    htmlEl.setAttribute('data-bs-theme', 'dark');
+                    localStorage.setItem('theme', 'dark');
+                } else {
+                    htmlEl.setAttribute('data-bs-theme', 'light');
+                    localStorage.setItem('theme', 'light');
+                }
+            });
+        }
+    }
+    initDarkMode();
+    
+    // ========== ТОСТЫ ==========
+    function showToast(message, type = 'success') {
+        const container = document.getElementById('toastContainer');
+        if (!container) {
+            console.warn('Контейнер для тостов не найден');
+            return;
+        }
+        const toast = document.createElement('div');
+        toast.className = `toast align-items-center text-white bg-${type === 'success' ? 'success' : 'danger'} border-0 mb-2`;
+        toast.setAttribute('role', 'alert');
+        toast.innerHTML = `
+            <div class="d-flex">
+                <div class="toast-body">${message}</div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+            </div>
+        `;
+        container.appendChild(toast);
+        const bsToast = new bootstrap.Toast(toast, { delay: 3000 });
+        bsToast.show();
+        toast.addEventListener('hidden.bs.toast', () => toast.remove());
+    }
+    
+    // ========== ЗАГРУЗКА МЕСТ ==========
+    async function loadPlaces() {
+        const select = document.getElementById('placeId');
+        select.innerHTML = '<option value="">Загрузка мест...</option>';
+        
+        try {
+            const response = await fetch('/api/places', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            
+            if (!response.ok) throw new Error('Ошибка загрузки мест');
+            
+            const places = await response.json();
+            
+            if (places.length === 0) {
+                select.innerHTML = '<option value="">Нет доступных мест</option>';
+                return;
+            }
+            
+            select.innerHTML = '<option value="">-- Выберите место --</option>';
+            places.forEach(place => {
+                const option = document.createElement('option');
+                option.value = place.id;
+                option.textContent = place.name;
+                select.appendChild(option);
+            });
+            
+            // Если есть параметр place в URL, выбираем соответствующее место
+            const urlParams = new URLSearchParams(window.location.search);
+            const placeName = urlParams.get('place');
+            if (placeName) {
+                for (let i = 0; i < select.options.length; i++) {
+                    if (select.options[i].text === placeName) {
+                        select.selectedIndex = i;
+                        break;
+                    }
+                }
+            }
+            
+        } catch (error) {
+            console.error('Ошибка:', error);
+            select.innerHTML = '<option value="">Ошибка загрузки мест. Обновите страницу</option>';
+            showToast('Не удалось загрузить места', 'danger');
+        }
+    }
+    
+    // ========== FLAT PICKR ==========
+    let fp = null;
+    function initFlatpickr() {
+        fp = flatpickr("#eventDateTime", {
+            enableTime: true,
+            dateFormat: "Y-m-d H:i",
+            time_24hr: true,
+            minDate: "today",
+            locale: "ru",
+            defaultDate: new Date(new Date().setHours(19, 0, 0, 0))
+        });
+    }
+    
+    // ========== СОЗДАНИЕ ВСТРЕЧИ ==========
+    document.getElementById('createEventForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const title = document.getElementById('title').value.trim();
+        const category = document.getElementById('category').value;
+        const ageGroup = document.getElementById('ageGroup').value;
+        const placeId = document.getElementById('placeId').value;
+        const datetimeRaw = document.getElementById('eventDateTime').value;
+        const maxParticipants = document.getElementById('maxParticipants').value;
+        const description = document.getElementById('description').value;
+        
+        // ========== ВАЛИДАЦИЯ ==========
+        if (!title) {
+            showToast('⚠️ Укажите название встречи', 'danger');
+            return;
+        }
+
+        if (!category) {
+            showToast('⚠️ Выберите категорию', 'danger');
+            return;
+        }
+
+        if (!ageGroup) {
+            showToast('⚠️ Выберите возрастную группу', 'danger');
+            return;
+        }
+
+        if (!placeId) {
+            showToast('⚠️ Выберите место', 'danger');
+            return;
+        }
+        
+        if (!datetimeRaw) {
+            showToast('⚠️ Выберите дату и время', 'danger');
+            return;
+        }
+        
+        // Превращаем в формат для API
+        const datetime = datetimeRaw.replace(' ', 'T') + ':00';
+        
+        const submitBtn = e.target.querySelector('button[type="submit"]');
+        const originalText = submitBtn.innerHTML;
+        
+        // ========== ПОКАЗЫВАЕМ ЗАГРУЗКУ ==========
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Создание...';
+        
+        try {
+            const response = await fetch('/api/events', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    title: title,
+                    category: category,
+                    ageGroup: ageGroup,
+                    placeId: parseInt(placeId),
+                    datetime: datetime,
+                    maxParticipants: parseInt(maxParticipants),
+                    description: description
+                })
+            });
+            
+            if (response.ok) {
+                showToast('🎉 Встреча успешно создана!', 'success');
+                setTimeout(() => {
+                    window.location.href = '/app.html';
+                }, 1500);
+            } else {
+                const error = await response.json();
+                showToast(error.message || '❌ Ошибка при создании встречи', 'danger');
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalText;
+            }
+        } catch (error) {
+            console.error('Ошибка:', error);
+            showToast('❌ Ошибка соединения. Попробуйте позже.', 'danger');
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalText;
+        }
+    });
+    
+    // ========== ЗАПУСК ==========
+    initFlatpickr();
+    loadPlaces();
+</script>
+</body>
+</html>
