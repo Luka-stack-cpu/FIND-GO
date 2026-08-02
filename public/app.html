@@ -1563,11 +1563,33 @@
         }
         document.getElementById('userProfileLink')?.addEventListener('click', () => { window.location.href = '/profile.html'; });
 
-        // Показ кнопки панели модератора
-        if (currentUser.role === 'moderator' || currentUser.role === 'admin') {
-            const modItem = document.getElementById('modPanelNavItem');
-            if (modItem) modItem.style.display = 'block';
-        }
+        // Показ кнопки панели модератора — берём роль с сервера (не из localStorage)
+        (async () => {
+            try {
+                const res = await fetch('/api/auth/profile', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (res.ok) {
+                    const freshUser = await res.json();
+                    // Обновляем localStorage свежими данными (включая role)
+                    const stored = JSON.parse(localStorage.getItem('user') || '{}');
+                    stored.role = freshUser.role;
+                    stored.ageGroup = freshUser.ageGroup;
+                    localStorage.setItem('user', JSON.stringify(stored));
+
+                    if (freshUser.role === 'moderator' || freshUser.role === 'admin') {
+                        const modItem = document.getElementById('modPanelNavItem');
+                        if (modItem) modItem.style.display = 'block';
+                    }
+                }
+            } catch (e) {
+                // fallback: проверяем из localStorage
+                if (currentUser.role === 'moderator' || currentUser.role === 'admin') {
+                    const modItem = document.getElementById('modPanelNavItem');
+                    if (modItem) modItem.style.display = 'block';
+                }
+            }
+        })();
 
         // ========== 2. ТЁМНАЯ ТЕМА ==========
         function initDarkMode() {
