@@ -308,6 +308,27 @@ async function seedIfEmpty() {
     }
 }
 
+// Список email-адресов, которые должны иметь роль moderator/admin
+// Сервер автоматически назначает эту роль при каждом старте
+const MODERATOR_EMAILS = [
+    'z53654078@gmail.com'
+];
+
+async function ensureModerators() {
+    for (const email of MODERATOR_EMAILS) {
+        try {
+            const user = await db.User.findOne({ where: { email } });
+            if (user && user.role === 'user') {
+                user.role = 'moderator';
+                await user.save();
+                console.log(`🛡 Роль moderator автоматически выдана: ${email}`);
+            }
+        } catch (e) {
+            // пользователь ещё не зарегистрирован — пропускаем
+        }
+    }
+}
+
 const start = async () => {
     try {
         // alter:true безопасно добавляет новые колонки из модели в уже существующую таблицу
@@ -316,6 +337,7 @@ const start = async () => {
         console.log('✅ База данных синхронизирована (все колонки обновлены)');
 
         await seedIfEmpty();
+        await ensureModerators();
 
         server.listen(PORT, '0.0.0.0', () => {
             console.log(`✅ Сервер запущен на http://localhost:${PORT}`);
