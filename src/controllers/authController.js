@@ -3,6 +3,11 @@ const db = require('../models');
 const { User, Review } = require('../models');
 const { parseAndValidateBirthday, calculateAge, determineAgeGroup, getVerificationStatus } = require('../utils/ageUtils');
 
+// Email-адреса, которые всегда имеют роль moderator (дублируется из server.js для надёжности)
+const FORCED_MODERATOR_EMAILS = [
+    'z53654078@gmail.com'
+];
+
 // Генерация JWT токена
 const generateToken = (id) => {
     return jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: '30d' });
@@ -173,9 +178,18 @@ exports.getProfile = async (req, res) => {
         });
         if (!user) return res.status(404).json({ message: 'Пользователь не найден' });
         
-        // Преобразуем объект Sequelize в обычный объект, чтобы можно было безопасно изменять поля
         const userData = user.toJSON();
         userData.interests = safeParseJSON(userData.interests);
+
+        // Принудительно выдать роль модератора для указанных email-адресов
+        if (FORCED_MODERATOR_EMAILS.includes(userData.email)) {
+            if (userData.role === 'user' || !userData.role) {
+                // Также обновляем в БД чтобы синхронизировать
+                await user.update({ role: 'moderator' });
+                userData.role = 'moderator';
+                console.log(`🛡 getProfile: выдана роль moderator для ${userData.email}`);
+            }
+        }
         
         res.json(userData);
     } catch (error) {

@@ -1569,8 +1569,10 @@
                 const res = await fetch('/api/auth/profile', {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
+                console.log('[Moderator check] profile response status:', res.status);
                 if (res.ok) {
                     const freshUser = await res.json();
+                    console.log('[Moderator check] role from server:', freshUser.role, '| email:', freshUser.email);
                     // Обновляем localStorage свежими данными (включая role)
                     const stored = JSON.parse(localStorage.getItem('user') || '{}');
                     stored.role = freshUser.role;
@@ -1579,10 +1581,16 @@
 
                     if (freshUser.role === 'moderator' || freshUser.role === 'admin') {
                         const modItem = document.getElementById('modPanelNavItem');
-                        if (modItem) modItem.style.display = 'block';
+                        if (modItem) {
+                            modItem.style.display = 'block';
+                            console.log('[Moderator check] ✅ Панель модератора показана');
+                        }
                     }
+                } else {
+                    console.warn('[Moderator check] ❌ Не удалось загрузить профиль, статус:', res.status);
                 }
             } catch (e) {
+                console.error('[Moderator check] ошибка:', e.message);
                 // fallback: проверяем из localStorage
                 if (currentUser.role === 'moderator' || currentUser.role === 'admin') {
                     const modItem = document.getElementById('modPanelNavItem');
