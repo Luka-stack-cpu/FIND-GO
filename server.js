@@ -307,50 +307,10 @@ async function seedIfEmpty() {
 
 const start = async () => {
     try {
-        await db.sequelize.sync();
-        console.log('✅ База данных синхронизирована');
-
-        // Safe SQLite migrations for new columns
-        try {
-            await db.sequelize.query("ALTER TABLE Events ADD COLUMN title VARCHAR(255) DEFAULT 'Встреча';");
-            console.log('✅ Добавлена колонка title в Events');
-        } catch (e) {}
-        try {
-            await db.sequelize.query("ALTER TABLE Events ADD COLUMN category VARCHAR(255) DEFAULT 'другое';");
-            console.log('✅ Добавлена колонка category в Events');
-        } catch (e) {}
-        try {
-            await db.sequelize.query("ALTER TABLE Events ADD COLUMN ageGroup VARCHAR(255) DEFAULT '18-21';");
-            console.log('✅ Добавлена колонка ageGroup в Events');
-        } catch (e) {}
-        try {
-            await db.sequelize.query("ALTER TABLE Users ADD COLUMN birthday DATE;");
-            console.log('✅ Добавлена колонка birthday в Users');
-        } catch (e) {}
-        try {
-            await db.sequelize.query("ALTER TABLE Users ADD COLUMN ageGroup VARCHAR(255) DEFAULT 'adult';");
-            console.log('✅ Добавлена колонка ageGroup в Users');
-        } catch (e) {}
-        try {
-            await db.sequelize.query("ALTER TABLE Users ADD COLUMN isAgeVerified BOOLEAN DEFAULT 0;");
-            console.log('✅ Добавлена колонка isAgeVerified в Users');
-        } catch (e) {}
-        try {
-            await db.sequelize.query("ALTER TABLE Users ADD COLUMN verificationStatus VARCHAR(255) DEFAULT 'unverified';");
-            console.log('✅ Добавлена колонка verificationStatus в Users');
-        } catch (e) {}
-        try {
-            await db.sequelize.query("ALTER TABLE Users ADD COLUMN role VARCHAR(255) DEFAULT 'user';");
-            console.log('✅ Добавлена колонка role в Users');
-        } catch (e) {}
-        try {
-            await db.sequelize.query("ALTER TABLE Users ADD COLUMN isHidden BOOLEAN DEFAULT 0;");
-            console.log('✅ Добавлена колонка isHidden в Users');
-        } catch (e) {}
-        try {
-            await db.sequelize.query("ALTER TABLE Users ADD COLUMN isBanned BOOLEAN DEFAULT 0;");
-            console.log('✅ Добавлена колонка isBanned в Users');
-        } catch (e) {}
+        // alter:true безопасно добавляет новые колонки из модели в уже существующую таблицу
+        // Работает и для SQLite (dev), и для PostgreSQL (Render/prod)
+        await db.sequelize.sync({ alter: true });
+        console.log('✅ База данных синхронизирована (все колонки обновлены)');
 
         await seedIfEmpty();
 
