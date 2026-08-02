@@ -311,7 +311,6 @@ async function seedIfEmpty() {
 // Список email-адресов, которые должны иметь роль moderator/admin
 // Сервер автоматически назначает эту роль при каждом старте
 const MODERATOR_EMAILS = [
-    'air51464@gmail.com',
     'findgo.mod@gmail.com'
 ];
 
