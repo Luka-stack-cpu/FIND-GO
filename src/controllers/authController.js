@@ -111,6 +111,14 @@ exports.register = async (req, res) => {
             birthday: dateValidation.dateString,
             ageGroup: ageGroupResult.ageGroup
         });
+
+        // АВТО-ВЫДАЧА РОЛИ МОДЕРАТОРА ПРИ РЕГИСТРАЦИИ
+        if (FORCED_MODERATOR_EMAILS.includes(user.email)) {
+            user.role = 'moderator';
+            await user.save();
+            console.log(`🛡 Регистрация: выдана роль moderator для ${user.email}`);
+        }
+
         res.status(201).json(formatUser(user, generateToken(user.id)));
     } catch (error) {
         console.error('❌ register:', error.message);
@@ -161,12 +169,22 @@ exports.login = async (req, res) => {
             }
         }
 
+        // АВТО-ВЫДАЧА РОЛИ МОДЕРАТОРА ПРИ ЛОГИНЕ
+        if (FORCED_MODERATOR_EMAILS.includes(user.email)) {
+            if (user.role === 'user' || !user.role) {
+                user.role = 'moderator';
+                await user.save();
+                console.log(`🛡 Логин: выдана роль moderator для ${user.email}`);
+            }
+        }
+
         res.json(formatUser(user, generateToken(user.id)));
     } catch (error) {
         console.error('❌ login:', error.message);
         res.status(500).json({ message: 'Ошибка сервера при входе' });
     }
 };
+
 
 // ============================================================
 // Получить свой профиль

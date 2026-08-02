@@ -1566,7 +1566,8 @@
         // Показ кнопки панели модератора — берём роль с сервера (не из localStorage)
         (async () => {
             try {
-                const res = await fetch('/api/auth/profile', {
+                // Добавляем ?t= timestamp чтобы браузер точно не закешировал старую роль
+                const res = await fetch('/api/auth/profile?t=' + Date.now(), {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
                 console.log('[Moderator check] profile response status:', res.status);
