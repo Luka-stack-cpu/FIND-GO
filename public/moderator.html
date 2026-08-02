@@ -218,6 +218,48 @@
         </div>
     </div>
 
+    <!-- Модальное окно подтверждения разблокировки -->
+    <div class="modal fade" id="unbanConfirmModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content" style="background:#161a21; border:1px solid rgba(255,255,255,0.08); border-radius:20px;">
+                <div class="modal-header border-0 pb-0">
+                    <h5 class="modal-title fw-bold"><i class="bi bi-unlock text-success me-2"></i>Разблокировать пользователя</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="text-secondary">Вы уверены, что хотите снять блокировку с этого пользователя? Пользователь снова получит полный доступ к платформе.</p>
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-outline-secondary rounded-pill px-4" data-bs-dismiss="modal">Отмена</button>
+                    <button type="button" class="btn btn-success rounded-pill px-4 fw-bold" id="confirmUnbanBtn">
+                        <i class="bi bi-unlock me-1"></i> Разблокировать
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модальное окно подтверждения закрытия жалобы -->
+    <div class="modal fade" id="closeReportConfirmModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content" style="background:#161a21; border:1px solid rgba(255,255,255,0.08); border-radius:20px;">
+                <div class="modal-header border-0 pb-0">
+                    <h5 class="modal-title fw-bold"><i class="bi bi-check-circle text-success me-2"></i>Закрыть жалобу</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="text-secondary">Вы уверены, что хотите закрыть эту жалобу? Она будет отмечена как рассмотренная и исчезнет из списка активных.</p>
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-outline-secondary rounded-pill px-4" data-bs-dismiss="modal">Отмена</button>
+                    <button type="button" class="btn btn-success rounded-pill px-4 fw-bold" id="confirmCloseReportBtn">
+                        <i class="bi bi-check-circle me-1"></i> Закрыть жалобу
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div id="toastContainer" class="position-fixed bottom-0 end-0 p-3" style="z-index: 1100;"></div>
 
     <!-- JS -->
@@ -226,28 +268,43 @@
         const token = localStorage.getItem('token');
         const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
 
-        // Проверка прав при заходе
+        // Проверка прав при заходе — сначала проверяем localStorage, потом сервер
         if (!token) {
             window.location.href = '/login.html';
         } else if (currentUser.role !== 'moderator' && currentUser.role !== 'admin') {
-            alert('У вас нет доступа к этой странице');
-            window.location.href = '/app.html';
+            // Может localStorage устарел — проверяем с сервером
+            fetch('/api/auth/profile?t=' + Date.now(), {
+                headers: { 'Authorization': `Bearer ${token}` }
+            }).then(r => r.json()).then(u => {
+                if (u.role !== 'moderator' && u.role !== 'admin') {
+                    alert('У вас нет доступа к этой странице');
+                    window.location.href = '/app.html';
+                }
+                // Если роль ок — остаёмся на странице
+            }).catch(() => {
+                alert('У вас нет доступа к этой странице');
+                window.location.href = '/app.html';
+            });
         }
 
-        // Уведомления
-        function showToast(message, type = 'success') {
+        // =================== TOAST ===================
+        function showToast(message, type = 'success', duration = 4000) {
             const container = document.getElementById('toastContainer');
             const toast = document.createElement('div');
-            toast.className = `toast align-items-center text-white bg-${type === 'success' ? 'success' : 'danger'} border-0 mb-2`;
+            const bgColor = type === 'success' ? '#16a34a' : type === 'warning' ? '#d97706' : '#dc2626';
+            toast.className = `toast align-items-center border-0 mb-2 show`;
             toast.setAttribute('role', 'alert');
-            toast.innerHTML = `<div class="d-flex"><div class="toast-body">${message}</div><button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button></div>`;
+            toast.style.cssText = `background: ${bgColor}; color: white; border-radius: 12px; min-width: 280px; box-shadow: 0 8px 24px rgba(0,0,0,0.4);`;
+            toast.innerHTML = `
+                <div class="d-flex">
+                    <div class="toast-body fw-semibold" style="font-size: 0.95rem;">${message}</div>
+                    <button type="button" class="btn-close btn-close-white me-2 m-auto" onclick="this.closest('.toast').remove()"></button>
+                </div>`;
             container.appendChild(toast);
-            const bsToast = new bootstrap.Toast(toast, { delay: 3500 });
-            bsToast.show();
-            toast.addEventListener('hidden.bs.toast', () => toast.remove());
+            setTimeout(() => { if (toast.parentNode) toast.remove(); }, duration);
         }
 
-        // Загрузка всех новых жалоб
+        // =================== ЗАГРУЗКА ЖАЛОБ ===================
         async function loadReports() {
             const container = document.getElementById('reportsContainer');
             container.innerHTML = `
@@ -261,7 +318,8 @@
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
                 if (!res.ok) {
-                    throw new Error('Не удалось загрузить жалобы');
+                    const err = await res.json().catch(() => ({}));
+                    throw new Error(err.message || `HTTP ${res.status}`);
                 }
                 const reports = await res.json();
                 
@@ -315,12 +373,20 @@
                     <div class="col-12 text-center py-5">
                         <i class="bi bi-x-circle text-danger fs-1 mb-2"></i>
                         <p class="text-danger">Ошибка: ${err.message}</p>
+                        <button class="btn btn-outline-secondary btn-sm mt-2" onclick="loadReports()">Повторить</button>
                     </div>`;
             }
         }
 
-        // Открытие детальной информации по жалобе/пользователю
+        // =================== ДЕТАЛЬНЫЙ ПРОСМОТР ===================
+        // Глобальное состояние открытой жалобы
+        let _currentReportId = null;
+        let _currentUserId = null;
+
         async function openReportDetail(reportId, userId) {
+            _currentReportId = reportId;
+            _currentUserId = userId;
+
             const body = document.getElementById('modDetailModalBody');
             const footer = document.getElementById('modDetailModalFooter');
             
@@ -331,7 +397,8 @@
                 </div>`;
             footer.innerHTML = '';
 
-            const modal = new bootstrap.Modal(document.getElementById('modDetailModal'));
+            // Всегда используем getOrCreateInstance для надёжной работы
+            const modal = bootstrap.Modal.getOrCreateInstance(document.getElementById('modDetailModal'));
             modal.show();
 
             try {
@@ -347,7 +414,6 @@
 
                 const regDate = new Date(user.createdAt).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' });
                 
-                // Отрисовка профиля и деталей
                 let eventsHtml = events.map(e => `
                     <div class="p-2 border border-secondary border-opacity-25 rounded-3 mb-2 small d-flex justify-content-between align-items-center">
                         <span><i class="bi bi-compass text-primary me-2"></i><strong>${e.title}</strong> (${e.category})</span>
@@ -397,7 +463,7 @@
                                 </tr>
                                 <tr>
                                     <td>Статус бана:</td>
-                                    <td id="statusBanned" class="${user.isBanned ? 'text-danger fw-bold' : 'text-success'}">${user.isBanned ? 'ЗАБЛОКИРОВАН' : 'Активен'}</td>
+                                    <td id="statusBanned" class="${user.isBanned ? 'text-danger fw-bold' : 'text-success'}">${user.isBanned ? 'ЗАБЛОКИРОВАН' : 'Активен'}${user.isBanned && user.banReason ? ' (' + user.banReason + ')' : ''}${user.isBanned && user.banUntil ? ' до ' + new Date(user.banUntil).toLocaleDateString('ru-RU') : user.isBanned ? ' — бессрочно' : ''}</td>
                                 </tr>
                             </table>
                             ${user.bio ? `<div class="mt-3 p-3 bg-secondary bg-opacity-10 rounded-3 small"><h6>О себе:</h6>${user.bio}</div>` : ''}
@@ -418,17 +484,20 @@
                     </div>`;
 
                 // Отрисовка кнопок управления
+                const isBanned = user.isBanned;
+                const isHidden = user.isHidden;
+
                 footer.innerHTML = `
                     <button type="button" class="btn btn-outline-secondary rounded-pill btn-action-mod px-4" data-bs-dismiss="modal">Назад</button>
-                    <div class="d-flex gap-2">
-                        <button type="button" class="btn btn-success rounded-pill btn-action-mod" onclick="actionCloseReport(${reportId})">
+                    <div class="d-flex gap-2 flex-wrap justify-content-end">
+                        <button type="button" class="btn btn-success rounded-pill btn-action-mod" id="btnCloseReport" onclick="promptCloseReport(${reportId})">
                             <i class="bi bi-check-circle me-1"></i> Закрыть жалобу
                         </button>
                         <button type="button" class="btn btn-warning text-dark rounded-pill btn-action-mod" id="btnToggleHide" onclick="actionToggleHide(${user.id})">
-                            <i class="bi bi-eye-slash me-1"></i> ${user.isHidden ? 'Показать профиль' : 'Скрыть профиль'}
+                            <i class="bi bi-eye-slash me-1"></i> ${isHidden ? 'Показать профиль' : 'Скрыть профиль'}
                         </button>
-                        <button type="button" class="btn btn-danger rounded-pill btn-action-mod" id="btnToggleBan" onclick="actionToggleBan(${user.id})">
-                            <i class="bi bi-slash-circle me-1"></i> ${user.isBanned ? 'Разблокировать' : 'Заблокировать'}
+                        <button type="button" class="btn ${isBanned ? 'btn-outline-success' : 'btn-danger'} rounded-pill btn-action-mod" id="btnToggleBan" onclick="actionToggleBan(${user.id})">
+                            <i class="bi bi-slash-circle me-1"></i> ${isBanned ? 'Разблокировать' : 'Заблокировать'}
                         </button>
                     </div>`;
 
@@ -437,54 +506,79 @@
             }
         }
 
-        // Действие: Закрыть жалобу
-        async function actionCloseReport(reportId) {
-            if (!confirm('Вы действительно хотите закрыть эту жалобу?')) return;
+        // =================== ЗАКРЫТИЕ ЖАЛОБЫ ===================
+        let _pendingCloseReportId = null;
+
+        function promptCloseReport(reportId) {
+            _pendingCloseReportId = reportId;
+            bootstrap.Modal.getOrCreateInstance(document.getElementById('closeReportConfirmModal')).show();
+        }
+
+        document.getElementById('confirmCloseReportBtn').addEventListener('click', async () => {
+            bootstrap.Modal.getInstance(document.getElementById('closeReportConfirmModal'))?.hide();
+            if (!_pendingCloseReportId) return;
             try {
-                const res = await fetch(`/api/moderator/reports/${reportId}/close`, {
+                const res = await fetch(`/api/moderator/reports/${_pendingCloseReportId}/close`, {
                     method: 'POST',
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
+                const data = await res.json().catch(() => ({}));
                 if (res.ok) {
-                    showToast('✅ Жалоба успешно закрыта');
-                    bootstrap.Modal.getInstance(document.getElementById('modDetailModal')).hide();
+                    showToast('✅ Жалоба успешно закрыта', 'success', 4000);
+                    // Закрываем детальное окно
+                    bootstrap.Modal.getInstance(document.getElementById('modDetailModal'))?.hide();
+                    _pendingCloseReportId = null;
                     loadReports();
                 } else {
-                    const data = await res.json();
-                    showToast(data.message || 'Ошибка выполнения действия', 'danger');
+                    showToast('❌ ' + (data.message || 'Ошибка закрытия жалобы'), 'danger', 5000);
                 }
-            } catch (e) { showToast('Ошибка соединения с сервером', 'danger'); }
-        }
+            } catch (e) {
+                showToast('❌ Ошибка соединения с сервером', 'danger', 5000);
+            }
+        });
 
-        // Действие: Скрыть/показать профиль
+        // =================== СКРЫТЬ/ПОКАЗАТЬ ПРОФИЛЬ ===================
         async function actionToggleHide(userId) {
+            const btnToggleHide = document.getElementById('btnToggleHide');
+            if (btnToggleHide) {
+                btnToggleHide.disabled = true;
+                btnToggleHide.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Обработка...';
+            }
             try {
                 const res = await fetch(`/api/moderator/users/${userId}/hide`, {
                     method: 'POST',
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
-                const data = await res.json();
+                const data = await res.json().catch(() => ({}));
                 if (res.ok) {
-                    showToast(`✅ ${data.message}`);
+                    showToast(`✅ ${data.message}`, 'success', 4000);
                     const statusHidden = document.getElementById('statusHidden');
-                    const btnToggleHide = document.getElementById('btnToggleHide');
                     if (statusHidden) {
                         statusHidden.textContent = data.isHidden ? 'Скрыт' : 'Виден всем';
                         statusHidden.className = data.isHidden ? 'text-danger' : 'text-success';
                     }
                     if (btnToggleHide) {
+                        btnToggleHide.disabled = false;
                         btnToggleHide.innerHTML = `<i class="bi bi-eye-slash me-1"></i> ${data.isHidden ? 'Показать профиль' : 'Скрыть профиль'}`;
                     }
-                    loadReports();
                 } else {
-                    showToast(data.message || 'Ошибка выполнения действия', 'danger');
+                    showToast('❌ ' + (data.message || 'Ошибка изменения видимости'), 'danger', 5000);
+                    if (btnToggleHide) {
+                        btnToggleHide.disabled = false;
+                        btnToggleHide.innerHTML = `<i class="bi bi-eye-slash me-1"></i> Скрыть / Показать`;
+                    }
                 }
-            } catch (e) { showToast('Ошибка соединения с сервером', 'danger'); }
+            } catch (e) {
+                showToast('❌ Ошибка соединения с сервером', 'danger', 5000);
+                if (btnToggleHide) {
+                    btnToggleHide.disabled = false;
+                    btnToggleHide.innerHTML = `<i class="bi bi-eye-slash me-1"></i> Скрыть / Показать`;
+                }
+            }
         }
 
-        // ===== ЛОГИКА ФОРМЫ БЛОКИРОВКИ =====
+        // =================== БАН / РАЗБАН ===================
         let _banTargetUserId = null;
-        let _banCurrentlyBanned = false;
 
         // Переключение кнопок срока блокировки
         document.querySelectorAll('.ban-duration-btn').forEach(btn => {
@@ -501,7 +595,33 @@
             document.getElementById('customReasonBlock').style.display = e.target.value === 'Другое' ? 'block' : 'none';
         });
 
-        // Кнопка подтверждения бана
+        function actionToggleBan(userId) {
+            const statusBannedEl = document.getElementById('statusBanned');
+            const isBanned = statusBannedEl && statusBannedEl.textContent.includes('ЗАБЛОКИРОВАН');
+            _banTargetUserId = userId;
+
+            if (isBanned) {
+                // Показываем красивый модальный диалог подтверждения разбана
+                bootstrap.Modal.getOrCreateInstance(document.getElementById('unbanConfirmModal')).show();
+            } else {
+                // Показываем форму для бана
+                document.getElementById('banReasonSelect').value = 'Подозрительное поведение';
+                document.getElementById('customReasonBlock').style.display = 'none';
+                document.getElementById('customDateBlock').style.display = 'none';
+                document.querySelectorAll('.ban-duration-btn').forEach((b, i) => {
+                    b.classList.toggle('active', i === 0);
+                });
+                bootstrap.Modal.getOrCreateInstance(document.getElementById('banFormModal')).show();
+            }
+        }
+
+        // Подтверждение разбана
+        document.getElementById('confirmUnbanBtn').addEventListener('click', async () => {
+            bootstrap.Modal.getInstance(document.getElementById('unbanConfirmModal'))?.hide();
+            await _executeBanRequest(_banTargetUserId, null, null);
+        });
+
+        // Подтверждение бана
         document.getElementById('confirmBanBtn').addEventListener('click', async () => {
             const select = document.getElementById('banReasonSelect');
             let banReason = select.value === 'Другое'
@@ -519,48 +639,31 @@
                 d.setDate(d.getDate() + days);
                 banUntil = d.toISOString();
             }
-            // days === 0 = бессрочно, banUntil остаётся null
 
-            bootstrap.Modal.getInstance(document.getElementById('banFormModal')).hide();
-
+            bootstrap.Modal.getInstance(document.getElementById('banFormModal'))?.hide();
             await _executeBanRequest(_banTargetUserId, banReason, banUntil);
         });
 
-        // Действие: Заблокировать/разблокировать пользователя
-        async function actionToggleBan(userId) {
-            const statusBannedEl = document.getElementById('statusBanned');
-            const isBanned = statusBannedEl && statusBannedEl.textContent.includes('ЗАБЛОКИРОВАН');
-
-            if (isBanned) {
-                // Снять бан без формы
-                if (!confirm('Разблокировать пользователя?')) return;
-                await _executeBanRequest(userId, null, null);
-            } else {
-                // Показываем форму для бана
-                _banTargetUserId = userId;
-                // Сбросить форму
-                document.getElementById('banReasonSelect').value = 'Подозрительное поведение';
-                document.getElementById('customReasonBlock').style.display = 'none';
-                document.getElementById('customDateBlock').style.display = 'none';
-                document.querySelectorAll('.ban-duration-btn').forEach((b, i) => {
-                    b.classList.toggle('active', i === 0);
-                });
-                bootstrap.Modal.getOrCreateInstance(document.getElementById('banFormModal')).show();
-            }
-        }
-
         async function _executeBanRequest(userId, banReason, banUntil) {
+            const btnToggleBan = document.getElementById('btnToggleBan');
+            if (btnToggleBan) {
+                btnToggleBan.disabled = true;
+                btnToggleBan.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Обработка...';
+            }
             try {
                 const res = await fetch(`/api/moderator/users/${userId}/ban`, {
                     method: 'POST',
                     headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
                     body: JSON.stringify({ banReason, banUntil })
                 });
-                const data = await res.json();
+                const data = await res.json().catch(() => ({}));
                 if (res.ok) {
-                    showToast(`✅ ${data.message}`);
+                    const msg = data.isBanned
+                        ? `🚫 Пользователь заблокирован. Причина: ${data.banReason || 'не указана'}${data.banUntil ? '. До: ' + new Date(data.banUntil).toLocaleDateString('ru-RU') : ' (бессрочно)'}`
+                        : '✅ Пользователь разблокирован';
+                    showToast(msg, data.isBanned ? 'danger' : 'success', 6000);
+
                     const statusBanned = document.getElementById('statusBanned');
-                    const btnToggleBan = document.getElementById('btnToggleBan');
                     if (statusBanned) {
                         let statusText = data.isBanned ? 'ЗАБЛОКИРОВАН' : 'Активен';
                         if (data.isBanned && data.banReason) statusText += ` (${data.banReason})`;
@@ -570,17 +673,29 @@
                         statusBanned.className = data.isBanned ? 'text-danger fw-bold' : 'text-success';
                     }
                     if (btnToggleBan) {
+                        btnToggleBan.disabled = false;
+                        btnToggleBan.className = `btn ${data.isBanned ? 'btn-outline-success' : 'btn-danger'} rounded-pill btn-action-mod`;
                         btnToggleBan.innerHTML = `<i class="bi bi-slash-circle me-1"></i> ${data.isBanned ? 'Разблокировать' : 'Заблокировать'}`;
                     }
-                    loadReports();
                 } else {
-                    showToast(data.message || 'Ошибка выполнения действия', 'danger');
+                    showToast('❌ ' + (data.message || 'Ошибка блокировки'), 'danger', 5000);
+                    if (btnToggleBan) {
+                        btnToggleBan.disabled = false;
+                        btnToggleBan.innerHTML = `<i class="bi bi-slash-circle me-1"></i> Заблокировать`;
+                    }
                 }
-            } catch (e) { showToast('Ошибка соединения с сервером', 'danger'); }
+            } catch (e) {
+                showToast('❌ Ошибка соединения с сервером', 'danger', 5000);
+                if (btnToggleBan) {
+                    btnToggleBan.disabled = false;
+                    btnToggleBan.innerHTML = `<i class="bi bi-slash-circle me-1"></i> Заблокировать`;
+                }
+            }
         }
 
         // Инициализация при загрузке
         loadReports();
     </script>
 </body>
+
 </html>
