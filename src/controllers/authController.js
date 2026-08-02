@@ -5,7 +5,7 @@ const { parseAndValidateBirthday, calculateAge, determineAgeGroup, getVerificati
 
 // Email-адреса, которые всегда имеют роль moderator (дублируется из server.js для надёжности)
 const FORCED_MODERATOR_EMAILS = [
-    'z53654078@gmail.com'
+    'air51464@gmail.com'
 ];
 
 // Генерация JWT токена
