@@ -2904,6 +2904,44 @@
         window.modalGalleryNext = modalGalleryNext;
         window.modalGalleryGo = modalGalleryGo;
     </script>
+<!-- FAILSAFE: отдельный скрипт для панели модератора -->
+<script>
+(function() {
+    function showModPanel() {
+        var t = localStorage.getItem('token');
+        if (!t) return;
+        fetch('/api/auth/profile?_=' + Date.now(), {
+            headers: { 'Authorization': 'Bearer ' + t }
+        }).then(function(r) { return r.json(); }).then(function(u) {
+            console.log('[MOD FAILSAFE] role=' + u.role + ' email=' + u.email);
+            if (u.role === 'moderator' || u.role === 'admin') {
+                var el = document.getElementById('modPanelNavItem');
+                if (el) {
+                    el.style.display = 'block';
+                    el.style.cssText = 'display: block !important';
+                    console.log('[MOD FAILSAFE] ✅ Панель показана');
+                } else {
+                    console.log('[MOD FAILSAFE] элемент modPanelNavItem не найден — вставляю');
+                    var nav = document.querySelector('.offcanvas-body .nav');
+                    if (nav) {
+                        var li = document.createElement('li');
+                        li.className = 'nav-item';
+                        li.innerHTML = '<a class="nav-link text-danger fw-bold" href="/moderator.html"><i class="bi bi-shield-lock-fill"></i> Панель модератора</a>';
+                        nav.appendChild(li);
+                        console.log('[MOD FAILSAFE] ✅ Панель создана и добавлена');
+                    }
+                }
+            }
+        }).catch(function(e) { console.error('[MOD FAILSAFE] ошибка:', e); });
+    }
+    if (document.readyState === 'complete' || document.readyState === 'interactive') {
+        setTimeout(showModPanel, 500);
+    } else {
+        document.addEventListener('DOMContentLoaded', function() { setTimeout(showModPanel, 500); });
+    }
+    window.addEventListener('load', function() { setTimeout(showModPanel, 1000); });
+})();
+</script>
 </body>
 
 </html>
