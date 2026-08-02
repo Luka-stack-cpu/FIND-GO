@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="ru" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Панель модератора | Find&Go</title>
+    <!-- Google Fonts & Bootstrap -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <link rel="icon" type="image/png" href="/img/logo.png">
+
+    <style>
+        :root {
+            --font-display: 'Outfit', -apple-system, sans-serif;
+            --font-body: 'Inter', -apple-system, sans-serif;
+            --bg-color: #0d0f12;
+            --card-bg: rgba(22, 26, 33, 0.8);
+            --card-border: rgba(255, 255, 255, 0.08);
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --accent-primary: #6366f1;
+            --accent-gradient: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+            --glass-bg: rgba(13, 15, 18, 0.7);
+            --glass-border: rgba(255, 255, 255, 0.05);
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            font-family: var(--font-body);
+            letter-spacing: -0.01em;
+        }
+
+        .navbar {
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--glass-border);
+            padding: 14px 0;
+        }
+
+        .mod-card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 20px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .mod-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 24px rgba(0,0,0,0.3);
+            border-color: rgba(255,255,255,0.15);
+        }
+
+        .user-avatar {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid var(--accent-primary);
+        }
+
+        .modal-content {
+            background-color: #161a21;
+            border: 1px solid var(--card-border);
+            border-radius: 24px;
+        }
+
+        .btn-action-mod {
+            border-radius: 12px;
+            padding: 10px 18px;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        .btn-action-mod:hover {
+            transform: translateY(-1px);
+        }
+
+        .badge-teen {
+            background-color: rgba(245, 158, 11, 0.15);
+            color: #fbbf24;
+            border: 1px solid rgba(245, 158, 11, 0.3);
+        }
+
+        .badge-adult {
+            background-color: rgba(16, 185, 129, 0.15);
+            color: #34d399;
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+
+        .badge-danger-glow {
+            background-color: rgba(239, 68, 68, 0.15);
+            color: #f87171;
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
+            70% { box-shadow: 0 0 0 8px rgba(239, 68, 68, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+        }
+
+        .empty-state {
+            padding: 80px 20px;
+            text-align: center;
+            color: var(--text-secondary);
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Навбар -->
+    <nav class="navbar navbar-expand-lg navbar-dark fixed-top">
+        <div class="container">
+            <a class="navbar-brand fw-bold d-flex align-items-center" href="/app.html">
+                <img src="/img/logo.png" alt="Find&Go" width="40" height="40" class="d-inline-block align-top me-2" style="border-radius: 6px;">
+                Find&Go <span class="ms-2 badge bg-danger text-uppercase fs-7" style="font-size: 0.65rem; letter-spacing: 0.05em;">Модератор</span>
+            </a>
+            <div class="ms-auto">
+                <a href="/app.html" class="btn btn-outline-light rounded-pill btn-sm px-4">
+                    <i class="bi bi-arrow-left me-1"></i> На главную
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Основной контент -->
+    <div class="container mt-5 pt-5 mb-5">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h1 class="fw-black mb-1" style="font-family: var(--font-display);">Активные жалобы</h1>
+                <p class="text-secondary mb-0">Список новых обращений пользователей, требующих рассмотрения.</p>
+            </div>
+            <button class="btn btn-secondary btn-sm rounded-pill px-3" onclick="loadReports()">
+                <i class="bi bi-arrow-clockwise me-1"></i> Обновить
+            </button>
+        </div>
+
+        <!-- Список карточек -->
+        <div class="row g-4" id="reportsContainer">
+            <div class="col-12 text-center py-5">
+                <div class="spinner-border text-primary"></div>
+                <p class="mt-2 text-secondary">Загрузка жалоб...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Детальное модальное окно модератора -->
+    <div class="modal fade" id="modDetailModal" tabindex="-1" aria-labelledby="modDetailModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header border-0 pb-0">
+                    <h5 class="modal-title fw-bold" id="modDetailModalLabel"><i class="bi bi-shield-shaded text-danger me-2"></i>Детали нарушения</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4" id="modDetailModalBody">
+                    <!-- Заполняется динамически -->
+                </div>
+                <div class="modal-footer border-0 pt-0 gap-2 justify-content-between" id="modDetailModalFooter">
+                    <!-- Заполняется динамически -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модальное окно для формы блокировки -->
+    <div class="modal fade" id="banFormModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content" style="background:#161a21; border:1px solid rgba(255,255,255,0.08); border-radius:20px;">
+                <div class="modal-header border-0 pb-0">
+                    <h5 class="modal-title fw-bold"><i class="bi bi-slash-circle text-danger me-2"></i>Заблокировать пользователя</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="text-secondary small mb-3">Укажите причину блокировки и срок действия. Пользователь увидит эти данные при попытке входа.</p>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Причина блокировки</label>
+                        <select id="banReasonSelect" class="form-select bg-dark text-white border-secondary">
+                            <option value="Подозрительное поведение">Подозрительное поведение</option>
+                            <option value="Домогательства">Домогательства</option>
+                            <option value="Спам">Спам</option>
+                            <option value="Фейковый профиль">Фейковый профиль</option>
+                            <option value="Нарушение правил сервиса">Нарушение правил сервиса</option>
+                            <option value="Другое">Другое</option>
+                        </select>
+                    </div>
+                    <div class="mb-3" id="customReasonBlock" style="display:none;">
+                        <label class="form-label fw-semibold">Своя причина</label>
+                        <input type="text" id="banReasonCustom" class="form-control bg-dark text-white border-secondary" placeholder="Укажите причину вручную...">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Срок блокировки</label>
+                        <div class="d-flex gap-2">
+                            <button type="button" class="btn btn-outline-secondary rounded-pill ban-duration-btn active" data-days="0">Бессрочно</button>
+                            <button type="button" class="btn btn-outline-secondary rounded-pill ban-duration-btn" data-days="1">1 день</button>
+                            <button type="button" class="btn btn-outline-secondary rounded-pill ban-duration-btn" data-days="7">7 дней</button>
+                            <button type="button" class="btn btn-outline-secondary rounded-pill ban-duration-btn" data-days="30">30 дней</button>
+                        </div>
+                    </div>
+                    <div class="mb-3" id="customDateBlock" style="display:none;">
+                        <label class="form-label fw-semibold">Конкретная дата окончания</label>
+                        <input type="datetime-local" id="banUntilDate" class="form-control bg-dark text-white border-secondary">
+                    </div>
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-outline-secondary rounded-pill px-4" data-bs-dismiss="modal">Отмена</button>
+                    <button type="button" class="btn btn-danger rounded-pill px-4 fw-bold" id="confirmBanBtn">
+                        <i class="bi bi-slash-circle me-1"></i> Заблокировать
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="toastContainer" class="position-fixed bottom-0 end-0 p-3" style="z-index: 1100;"></div>
+
+    <!-- JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        const token = localStorage.getItem('token');
+        const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
+
+        // Проверка прав при заходе
+        if (!token) {
+            window.location.href = '/login.html';
+        } else if (currentUser.role !== 'moderator' && currentUser.role !== 'admin') {
+            alert('У вас нет доступа к этой странице');
+            window.location.href = '/app.html';
+        }
+
+        // Уведомления
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = `toast align-items-center text-white bg-${type === 'success' ? 'success' : 'danger'} border-0 mb-2`;
+            toast.setAttribute('role', 'alert');
+            toast.innerHTML = `<div class="d-flex"><div class="toast-body">${message}</div><button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button></div>`;
+            container.appendChild(toast);
+            const bsToast = new bootstrap.Toast(toast, { delay: 3500 });
+            bsToast.show();
+            toast.addEventListener('hidden.bs.toast', () => toast.remove());
+        }
+
+        // Загрузка всех новых жалоб
+        async function loadReports() {
+            const container = document.getElementById('reportsContainer');
+            container.innerHTML = `
+                <div class="col-12 text-center py-5">
+                    <div class="spinner-border text-primary"></div>
+                    <p class="mt-2 text-secondary">Загрузка жалоб...</p>
+                </div>`;
+
+            try {
+                const res = await fetch('/api/moderator/reports', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (!res.ok) {
+                    throw new Error('Не удалось загрузить жалобы');
+                }
+                const reports = await res.json();
+                
+                if (reports.length === 0) {
+                    container.innerHTML = `
+                        <div class="col-12 empty-state">
+                            <i class="bi bi-check-circle text-success fs-1 mb-3 d-block"></i>
+                            <h4 class="fw-bold">Нет новых жалоб</h4>
+                            <p class="text-secondary">Отличная работа! Все жалобы рассмотрены.</p>
+                        </div>`;
+                    return;
+                }
+
+                container.innerHTML = reports.map(r => {
+                    const reportedUser = r.reportedUser;
+                    const isTeen = reportedUser.ageGroup === 'teenager';
+                    const ageBadgeClass = isTeen ? 'badge-teen' : 'badge-adult';
+                    const ageText = isTeen ? 'Подросток' : 'Взрослый';
+                    const dateFormatted = new Date(r.createdAt).toLocaleString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+
+                    return `
+                    <div class="col-md-6 col-lg-4">
+                        <div class="card mod-card h-100 p-4">
+                            <div class="d-flex align-items-center gap-3 mb-3">
+                                <img class="user-avatar" src="${reportedUser.avatar}" alt="${reportedUser.name}">
+                                <div>
+                                    <h5 class="fw-bold mb-1">${reportedUser.name}</h5>
+                                    <div class="d-flex gap-2 align-items-center">
+                                        <span class="badge ${ageBadgeClass}">${ageText}</span>
+                                        <span class="badge badge-danger-glow"><i class="bi bi-exclamation-triangle me-1"></i>Жалоб: ${reportedUser.reportCount}</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <small class="text-secondary d-block">Причина жалобы:</small>
+                                <span class="fw-semibold text-warning">${r.reason}</span>
+                            </div>
+                            <div class="mb-4">
+                                <small class="text-secondary d-block">Дата поступления:</small>
+                                <span class="small text-secondary">${dateFormatted}</span>
+                            </div>
+                            <button class="btn btn-primary w-100 rounded-pill btn-action-mod mt-auto" onclick="openReportDetail(${r.id}, ${reportedUser.id})">
+                                <i class="bi bi-search me-1"></i> Рассмотреть
+                            </button>
+                        </div>
+                    </div>`;
+                }).join('');
+
+            } catch (err) {
+                container.innerHTML = `
+                    <div class="col-12 text-center py-5">
+                        <i class="bi bi-x-circle text-danger fs-1 mb-2"></i>
+                        <p class="text-danger">Ошибка: ${err.message}</p>
+                    </div>`;
+            }
+        }
+
+        // Открытие детальной информации по жалобе/пользователю
+        async function openReportDetail(reportId, userId) {
+            const body = document.getElementById('modDetailModalBody');
+            const footer = document.getElementById('modDetailModalFooter');
+            
+            body.innerHTML = `
+                <div class="text-center py-5">
+                    <div class="spinner-border text-primary"></div>
+                    <p class="mt-2 text-secondary">Сбор детального досье...</p>
+                </div>`;
+            footer.innerHTML = '';
+
+            const modal = new bootstrap.Modal(document.getElementById('modDetailModal'));
+            modal.show();
+
+            try {
+                const res = await fetch(`/api/moderator/users/${userId}/details`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (!res.ok) throw new Error('Ошибка при загрузке досье');
+
+                const data = await res.json();
+                const user = data.user;
+                const events = data.events;
+                const reportsHistory = data.reportsHistory;
+
+                const regDate = new Date(user.createdAt).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' });
+                
+                // Отрисовка профиля и деталей
+                let eventsHtml = events.map(e => `
+                    <div class="p-2 border border-secondary border-opacity-25 rounded-3 mb-2 small d-flex justify-content-between align-items-center">
+                        <span><i class="bi bi-compass text-primary me-2"></i><strong>${e.title}</strong> (${e.category})</span>
+                        <span class="text-secondary">${new Date(e.datetime).toLocaleDateString('ru-RU')}</span>
+                    </div>
+                `).join('');
+                if (events.length === 0) eventsHtml = '<p class="text-secondary small">У пользователя нет созданных мероприятий.</p>';
+
+                let historyHtml = reportsHistory.map(r => `
+                    <div class="p-2 border border-danger border-opacity-25 rounded-3 mb-2 small">
+                        <div class="d-flex justify-content-between">
+                            <span class="text-warning"><strong>${r.reason}</strong></span>
+                            <span class="text-secondary">${new Date(r.createdAt).toLocaleDateString('ru-RU')}</span>
+                        </div>
+                        ${r.description ? `<p class="mb-0 mt-1 text-secondary text-wrap" style="max-height: 80px; overflow-y:auto;">${r.description}</p>` : ''}
+                        <small class="text-secondary d-block mt-1">Отправитель: ${r.reporter ? r.reporter.name : 'Система'}</small>
+                        <small class="d-block text-info">Статус: ${r.status}</small>
+                    </div>
+                `).join('');
+                if (reportsHistory.length === 0) historyHtml = '<p class="text-secondary small">Жалоб в истории не обнаружено.</p>';
+
+                body.innerHTML = `
+                    <div class="row">
+                        <!-- Профиль -->
+                        <div class="col-md-6 border-end border-secondary border-opacity-25">
+                            <h6 class="text-uppercase text-secondary small fw-bold mb-3">Профиль пользователя</h6>
+                            <div class="d-flex align-items-center gap-3 mb-3">
+                                <img src="${user.avatar}" class="rounded-circle border border-primary p-1" style="width: 70px; height: 70px; object-fit: cover;">
+                                <div>
+                                    <h5 class="fw-bold mb-0">${user.name}</h5>
+                                    <small class="text-secondary d-block">${user.email}</small>
+                                    <small class="badge bg-secondary mt-1">${user.ageGroup === 'teenager' ? 'Подросток' : 'Взрослый'}</small>
+                                </div>
+                            </div>
+                            <table class="table table-sm table-borderless text-secondary small">
+                                <tr>
+                                    <td>Дата регистрации:</td>
+                                    <td class="text-white">${regDate}</td>
+                                </tr>
+                                <tr>
+                                    <td>Рейтинг:</td>
+                                    <td class="text-white"><i class="bi bi-star-fill text-warning me-1"></i>${user.avgRating} (${user.totalReviews} отзывов)</td>
+                                </tr>
+                                <tr>
+                                    <td>Статус видимости:</td>
+                                    <td id="statusHidden" class="${user.isHidden ? 'text-danger' : 'text-success'}">${user.isHidden ? 'Скрыт' : 'Виден всем'}</td>
+                                </tr>
+                                <tr>
+                                    <td>Статус бана:</td>
+                                    <td id="statusBanned" class="${user.isBanned ? 'text-danger fw-bold' : 'text-success'}">${user.isBanned ? 'ЗАБЛОКИРОВАН' : 'Активен'}</td>
+                                </tr>
+                            </table>
+                            ${user.bio ? `<div class="mt-3 p-3 bg-secondary bg-opacity-10 rounded-3 small"><h6>О себе:</h6>${user.bio}</div>` : ''}
+                        </div>
+
+                        <!-- Активность и жалобы -->
+                        <div class="col-md-6">
+                            <h6 class="text-uppercase text-secondary small fw-bold mb-3">Мероприятия (${events.length})</h6>
+                            <div class="mb-4" style="max-height: 180px; overflow-y: auto;">
+                                ${eventsHtml}
+                            </div>
+                            
+                            <h6 class="text-uppercase text-secondary small fw-bold mb-3">История жалоб (${reportsHistory.length})</h6>
+                            <div style="max-height: 200px; overflow-y: auto;">
+                                ${historyHtml}
+                            </div>
+                        </div>
+                    </div>`;
+
+                // Отрисовка кнопок управления
+                footer.innerHTML = `
+                    <button type="button" class="btn btn-outline-secondary rounded-pill btn-action-mod px-4" data-bs-dismiss="modal">Назад</button>
+                    <div class="d-flex gap-2">
+                        <button type="button" class="btn btn-success rounded-pill btn-action-mod" onclick="actionCloseReport(${reportId})">
+                            <i class="bi bi-check-circle me-1"></i> Закрыть жалобу
+                        </button>
+                        <button type="button" class="btn btn-warning text-dark rounded-pill btn-action-mod" id="btnToggleHide" onclick="actionToggleHide(${user.id})">
+                            <i class="bi bi-eye-slash me-1"></i> ${user.isHidden ? 'Показать профиль' : 'Скрыть профиль'}
+                        </button>
+                        <button type="button" class="btn btn-danger rounded-pill btn-action-mod" id="btnToggleBan" onclick="actionToggleBan(${user.id})">
+                            <i class="bi bi-slash-circle me-1"></i> ${user.isBanned ? 'Разблокировать' : 'Заблокировать'}
+                        </button>
+                    </div>`;
+
+            } catch (err) {
+                body.innerHTML = `<div class="alert alert-danger">Не удалось загрузить данные: ${err.message}</div>`;
+            }
+        }
+
+        // Действие: Закрыть жалобу
+        async function actionCloseReport(reportId) {
+            if (!confirm('Вы действительно хотите закрыть эту жалобу?')) return;
+            try {
+                const res = await fetch(`/api/moderator/reports/${reportId}/close`, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (res.ok) {
+                    showToast('✅ Жалоба успешно закрыта');
+                    bootstrap.Modal.getInstance(document.getElementById('modDetailModal')).hide();
+                    loadReports();
+                } else {
+                    const data = await res.json();
+                    showToast(data.message || 'Ошибка выполнения действия', 'danger');
+                }
+            } catch (e) { showToast('Ошибка соединения с сервером', 'danger'); }
+        }
+
+        // Действие: Скрыть/показать профиль
+        async function actionToggleHide(userId) {
+            try {
+                const res = await fetch(`/api/moderator/users/${userId}/hide`, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    showToast(`✅ ${data.message}`);
+                    const statusHidden = document.getElementById('statusHidden');
+                    const btnToggleHide = document.getElementById('btnToggleHide');
+                    if (statusHidden) {
+                        statusHidden.textContent = data.isHidden ? 'Скрыт' : 'Виден всем';
+                        statusHidden.className = data.isHidden ? 'text-danger' : 'text-success';
+                    }
+                    if (btnToggleHide) {
+                        btnToggleHide.innerHTML = `<i class="bi bi-eye-slash me-1"></i> ${data.isHidden ? 'Показать профиль' : 'Скрыть профиль'}`;
+                    }
+                    loadReports();
+                } else {
+                    showToast(data.message || 'Ошибка выполнения действия', 'danger');
+                }
+            } catch (e) { showToast('Ошибка соединения с сервером', 'danger'); }
+        }
+
+        // ===== ЛОГИКА ФОРМЫ БЛОКИРОВКИ =====
+        let _banTargetUserId = null;
+        let _banCurrentlyBanned = false;
+
+        // Переключение кнопок срока блокировки
+        document.querySelectorAll('.ban-duration-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.ban-duration-btn').forEach(b => b.classList.remove('active', 'btn-danger', 'text-white'));
+                btn.classList.add('active');
+                const days = parseInt(btn.dataset.days);
+                document.getElementById('customDateBlock').style.display = days === -1 ? 'block' : 'none';
+            });
+        });
+
+        // Показ пользовательской причины
+        document.getElementById('banReasonSelect').addEventListener('change', e => {
+            document.getElementById('customReasonBlock').style.display = e.target.value === 'Другое' ? 'block' : 'none';
+        });
+
+        // Кнопка подтверждения бана
+        document.getElementById('confirmBanBtn').addEventListener('click', async () => {
+            const select = document.getElementById('banReasonSelect');
+            let banReason = select.value === 'Другое'
+                ? (document.getElementById('banReasonCustom').value.trim() || 'Другое')
+                : select.value;
+
+            const activeBtn = document.querySelector('.ban-duration-btn.active');
+            const days = activeBtn ? parseInt(activeBtn.dataset.days) : 0;
+            let banUntil = null;
+
+            if (days === -1) {
+                banUntil = document.getElementById('banUntilDate').value || null;
+            } else if (days > 0) {
+                const d = new Date();
+                d.setDate(d.getDate() + days);
+                banUntil = d.toISOString();
+            }
+            // days === 0 = бессрочно, banUntil остаётся null
+
+            bootstrap.Modal.getInstance(document.getElementById('banFormModal')).hide();
+
+            await _executeBanRequest(_banTargetUserId, banReason, banUntil);
+        });
+
+        // Действие: Заблокировать/разблокировать пользователя
+        async function actionToggleBan(userId) {
+            const statusBannedEl = document.getElementById('statusBanned');
+            const isBanned = statusBannedEl && statusBannedEl.textContent.includes('ЗАБЛОКИРОВАН');
+
+            if (isBanned) {
+                // Снять бан без формы
+                if (!confirm('Разблокировать пользователя?')) return;
+                await _executeBanRequest(userId, null, null);
+            } else {
+                // Показываем форму для бана
+                _banTargetUserId = userId;
+                // Сбросить форму
+                document.getElementById('banReasonSelect').value = 'Подозрительное поведение';
+                document.getElementById('customReasonBlock').style.display = 'none';
+                document.getElementById('customDateBlock').style.display = 'none';
+                document.querySelectorAll('.ban-duration-btn').forEach((b, i) => {
+                    b.classList.toggle('active', i === 0);
+                });
+                bootstrap.Modal.getOrCreateInstance(document.getElementById('banFormModal')).show();
+            }
+        }
+
+        async function _executeBanRequest(userId, banReason, banUntil) {
+            try {
+                const res = await fetch(`/api/moderator/users/${userId}/ban`, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ banReason, banUntil })
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    showToast(`✅ ${data.message}`);
+                    const statusBanned = document.getElementById('statusBanned');
+                    const btnToggleBan = document.getElementById('btnToggleBan');
+                    if (statusBanned) {
+                        let statusText = data.isBanned ? 'ЗАБЛОКИРОВАН' : 'Активен';
+                        if (data.isBanned && data.banReason) statusText += ` (${data.banReason})`;
+                        if (data.isBanned && data.banUntil) statusText += ` до ${new Date(data.banUntil).toLocaleDateString('ru-RU')}`;
+                        if (data.isBanned && !data.banUntil) statusText += ' — бессрочно';
+                        statusBanned.textContent = statusText;
+                        statusBanned.className = data.isBanned ? 'text-danger fw-bold' : 'text-success';
+                    }
+                    if (btnToggleBan) {
+                        btnToggleBan.innerHTML = `<i class="bi bi-slash-circle me-1"></i> ${data.isBanned ? 'Разблокировать' : 'Заблокировать'}`;
+                    }
+                    loadReports();
+                } else {
+                    showToast(data.message || 'Ошибка выполнения действия', 'danger');
+                }
+            } catch (e) { showToast('Ошибка соединения с сервером', 'danger'); }
+        }
+
+        // Инициализация при загрузке
+        loadReports();
+    </script>
+</body>
+</html>

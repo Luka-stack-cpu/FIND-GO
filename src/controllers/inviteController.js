@@ -12,6 +12,24 @@ exports.sendInvite = async (req, res) => {
             return res.status(400).json({ message: 'Не указан получатель или место' });
         }
 
+        const [fromUser, toUser] = await Promise.all([
+            User.findByPk(fromUserId),
+            User.findByPk(toUserId)
+        ]);
+        if (!fromUser || !toUser || fromUser.ageGroup !== toUser.ageGroup) {
+            return res.status(403).json({ message: 'Доступ запрещён' });
+        }
+
+        if (eventId) {
+            const event = await Event.findByPk(eventId);
+            if (!event) return res.status(404).json({ message: 'Поход не найден' });
+            
+            const eventCreator = await User.findByPk(event.creatorId);
+            if (!eventCreator || eventCreator.ageGroup !== fromUser.ageGroup) {
+                return res.status(403).json({ message: 'Доступ запрещён' });
+            }
+        }
+
         const existing = await Invite.findOne({
             where: { fromUserId, toUserId, status: 'pending', eventId: eventId || null }
         });
@@ -22,11 +40,10 @@ exports.sendInvite = async (req, res) => {
         const invite = await Invite.create({ fromUserId, toUserId, eventId: eventId || null, placeName, placeId });
 
         // ✅ БАГ 5: создаём уведомление для получателя
-        const sender = await User.findByPk(fromUserId, { attributes: ['name'] });
         await createNotification(
             toUserId,
             '📩 Новое приглашение',
-            `${sender?.name || 'Пользователь'} приглашает тебя в "${placeName}"`,
+            `${fromUser.name || 'Пользователь'} приглашает тебя в "${placeName}"`,
             'invite',
             '/'
         );

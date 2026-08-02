@@ -69,6 +69,10 @@ app.get('/icebreakers.html', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'icebreakers.html'));
 });
 
+app.get('/moderator.html', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'moderator.html'));
+});
+
 // Health check для Render
 app.get('/health', (req, res) => {
     res.status(200).send('OK');
@@ -105,6 +109,8 @@ const userRoutes   = require('./src/routes/userRoutes');
 const notificationRoutes = require('./src/routes/notificationRoutes');
 const reviewRoutes = require('./src/routes/reviewRoutes');
 const dmRoutes = require('./src/routes/dmRoutes');
+const reportRoutes = require('./src/routes/reportRoutes');
+const moderatorRoutes = require('./src/routes/moderatorRoutes');
 
 
 app.use('/api/auth', authRoutes);
@@ -115,6 +121,8 @@ app.use('/api', userRoutes);
 app.use('/api', notificationRoutes);
 app.use('/api/reviews', reviewRoutes);
 app.use('/api', dmRoutes);
+app.use('/api', reportRoutes);
+app.use('/api', moderatorRoutes);
 
 // Middleware для обработки ошибок
 app.use((err, req, res, next) => {
@@ -145,17 +153,32 @@ const roomUsers = new Map();
 io.on('connection', (socket) => {
     console.log('🔌 Новое Socket.IO подключение');
     
-    socket.on('joinEvent', (data) => {
-        if (!data?.eventId) return;
-        const room = `event_${data.eventId}`;
-        socket.join(room);
+    socket.on('joinEvent', async (data) => {
+        if (!data?.eventId || !data?.userId) return;
+        try {
+            const [user, event] = await Promise.all([
+                db.User.findByPk(data.userId),
+                db.Event.findByPk(data.eventId, {
+                    include: [{ model: db.User, as: 'creator', attributes: ['ageGroup'] }]
+                })
+            ]);
+            if (!user || !event || user.ageGroup !== event.creator.ageGroup) {
+                console.log(`⚠️ Отклонено joinEvent: несовпадение возрастных групп`);
+                return;
+            }
 
-        if (!roomUsers.has(data.eventId)) roomUsers.set(data.eventId, new Set());
-        roomUsers.get(data.eventId).add(socket.id);
+            const room = `event_${data.eventId}`;
+            socket.join(room);
 
-        socket.eventId = data.eventId;
-        socket.userName = data.userName;
-        console.log(`📡 Пользователь ${data.userName} присоединился к событию ${data.eventId}`);
+            if (!roomUsers.has(data.eventId)) roomUsers.set(data.eventId, new Set());
+            roomUsers.get(data.eventId).add(socket.id);
+
+            socket.eventId = data.eventId;
+            socket.userName = data.userName;
+            console.log(`📡 Пользователь ${data.userName} присоединился к событию ${data.eventId}`);
+        } catch (error) {
+            console.error('❌ Ошибка при joinEvent:', error.message);
+        }
     });
 
     socket.on('sendMessage', async (data) => {
@@ -164,6 +187,17 @@ io.on('connection', (socket) => {
         if (data.text.length > 2000) return;
 
         try {
+            const [user, event] = await Promise.all([
+                db.User.findByPk(data.userId),
+                db.Event.findByPk(data.eventId, {
+                    include: [{ model: db.User, as: 'creator', attributes: ['ageGroup'] }]
+                })
+            ]);
+            if (!user || !event || user.ageGroup !== event.creator.ageGroup) {
+                console.log(`⚠️ Отклонено sendMessage: несовпадение возрастных групп`);
+                return;
+            }
+
             const message = await db.Message.create({
                 eventId: data.eventId,
                 userId: data.userId,
@@ -193,6 +227,15 @@ io.on('connection', (socket) => {
     socket.on('sendPrivateMessage', async (data) => {
         if (!data?.fromUserId || !data?.toUserId || !data?.text) return;
         try {
+            const [fromUser, toUser] = await Promise.all([
+                db.User.findByPk(data.fromUserId),
+                db.User.findByPk(data.toUserId)
+            ]);
+            if (!fromUser || !toUser || fromUser.ageGroup !== toUser.ageGroup) {
+                console.log(`⚠️ Отклонено sendPrivateMessage: несовпадение возрастов или пользователи не найдены`);
+                return;
+            }
+
             const message = await db.PrivateMessage.create({
                 fromUserId: data.fromUserId,
                 toUserId: data.toUserId,
@@ -295,6 +338,18 @@ const start = async () => {
         try {
             await db.sequelize.query("ALTER TABLE Users ADD COLUMN verificationStatus VARCHAR(255) DEFAULT 'unverified';");
             console.log('✅ Добавлена колонка verificationStatus в Users');
+        } catch (e) {}
+        try {
+            await db.sequelize.query("ALTER TABLE Users ADD COLUMN role VARCHAR(255) DEFAULT 'user';");
+            console.log('✅ Добавлена колонка role в Users');
+        } catch (e) {}
+        try {
+            await db.sequelize.query("ALTER TABLE Users ADD COLUMN isHidden BOOLEAN DEFAULT 0;");
+            console.log('✅ Добавлена колонка isHidden в Users');
+        } catch (e) {}
+        try {
+            await db.sequelize.query("ALTER TABLE Users ADD COLUMN isBanned BOOLEAN DEFAULT 0;");
+            console.log('✅ Добавлена колонка isBanned в Users');
         } catch (e) {}
 
         await seedIfEmpty();

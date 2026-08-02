@@ -49,6 +49,7 @@ function formatUser(user, token) {
         ageGroup: user.ageGroup || 'adult',
         isAgeVerified: Boolean(user.isAgeVerified),
         verificationStatus: user.verificationStatus || 'unverified',
+        role: user.role || 'user',
         token
     };
 }
@@ -136,6 +137,25 @@ exports.login = async (req, res) => {
             return res.status(401).json({ message: 'Неверный email или пароль' });
         }
 
+        if (user.isBanned) {
+            if (user.banUntil && new Date() > new Date(user.banUntil)) {
+                // Разбаниваем
+                user.isBanned = false;
+                user.banReason = null;
+                user.banUntil = null;
+                await user.save();
+                const { invalidateUserCache } = require('../middleware/authMiddleware');
+                if (invalidateUserCache) invalidateUserCache(user.id);
+            } else {
+                return res.status(403).json({
+                    message: 'Ваш аккаунт заблокирован.',
+                    isBanned: true,
+                    banReason: user.banReason || 'Подозрительное поведение',
+                    banUntil: user.banUntil || null
+                });
+            }
+        }
+
         res.json(formatUser(user, generateToken(user.id)));
     } catch (error) {
         console.error('❌ login:', error.message);
@@ -197,10 +217,16 @@ exports.updateInterests = async (req, res) => {
 // ============================================================
 exports.getInterests = async (req, res) => {
     try {
+        const userAgeGroup = req.user.ageGroup || 'adult';
         const users = await User.findAll({
             attributes: ['id', 'name', 'avatar', 'interests'],
             // исключаем текущего пользователя — он и так себя знает
-            where: { id: { [require('sequelize').Op.ne]: req.user.id } }
+            where: { 
+                id: { [require('sequelize').Op.ne]: req.user.id },
+                ageGroup: userAgeGroup,
+                isHidden: false,
+                isBanned: false
+            }
         });
 
         // Получаем рейтинги всех пользователей
@@ -239,9 +265,19 @@ exports.getUserById = async (req, res) => {
     try {
         const user = await User.findByPk(req.params.id, {
             // email не отдаём — приватность
-            attributes: ['id', 'name', 'avatar', 'interests', 'bio', 'ageGroup', 'isAgeVerified']
+            attributes: ['id', 'name', 'avatar', 'interests', 'bio', 'ageGroup', 'isAgeVerified', 'isHidden', 'isBanned']
         });
         if (!user) return res.status(404).json({ message: 'Пользователь не найден' });
+
+        if ((user.isHidden || user.isBanned) && req.user.role !== 'moderator' && req.user.role !== 'admin') {
+            return res.status(403).json({ message: 'Доступ запрещён: этот профиль скрыт или заблокирован' });
+        }
+
+        const reqUserAgeGroup = req.user.ageGroup || 'adult';
+        const targetUserAgeGroup = user.ageGroup || 'adult';
+        if (reqUserAgeGroup !== targetUserAgeGroup) {
+            return res.status(403).json({ message: 'Доступ запрещён' });
+        }
 
         // Получаем средний рейтинг
         const ratingResult = await Review.findOne({

@@ -53,6 +53,11 @@ exports.getUserReviews = async (req, res) => {
     try {
         const userId = req.params.id;
 
+        const targetUser = await User.findByPk(userId);
+        if (!targetUser || targetUser.ageGroup !== req.user.ageGroup) {
+            return res.status(403).json({ message: 'Доступ запрещён' });
+        }
+
         // Получаем агрегированные данные
         const aggResult = await Review.findOne({
             where: { toUserId: userId },

@@ -7,6 +7,11 @@ exports.getChatHistory = async (req, res) => {
         const myId = req.user.id;
         const targetId = req.params.userId;
 
+        const targetUser = await User.findByPk(targetId);
+        if (!targetUser || targetUser.ageGroup !== req.user.ageGroup) {
+            return res.status(403).json({ message: 'Доступ запрещён' });
+        }
+
         const messages = await PrivateMessage.findAll({
             where: {
                 [Op.or]: [
@@ -38,14 +43,13 @@ exports.getConversations = async (req, res) => {
     try {
         const myId = req.user.id;
         
-        // Это более сложный запрос, для начала можно просто получить всех, кому писали или кто писал
         const messages = await PrivateMessage.findAll({
             where: {
                 [Op.or]: [{ fromUserId: myId }, { toUserId: myId }]
             },
             include: [
-                { model: User, as: 'sender', attributes: ['id', 'name', 'avatar'] },
-                { model: User, as: 'receiver', attributes: ['id', 'name', 'avatar'] }
+                { model: User, as: 'sender', attributes: ['id', 'name', 'avatar', 'ageGroup'] },
+                { model: User, as: 'receiver', attributes: ['id', 'name', 'avatar', 'ageGroup'] }
             ],
             order: [['createdAt', 'DESC']]
         });
@@ -53,13 +57,15 @@ exports.getConversations = async (req, res) => {
         const conversations = new Map();
         messages.forEach(msg => {
             const partner = msg.fromUserId === myId ? msg.receiver : msg.sender;
-            if (!conversations.has(partner.id)) {
-                conversations.set(partner.id, {
-                    partner,
-                    lastMessage: msg.text,
-                    time: msg.createdAt,
-                    unread: !msg.read && msg.toUserId === myId
-                });
+            if (partner && partner.ageGroup === req.user.ageGroup) {
+                if (!conversations.has(partner.id)) {
+                    conversations.set(partner.id, {
+                        partner,
+                        lastMessage: msg.text,
+                        time: msg.createdAt,
+                        unread: !msg.read && msg.toUserId === myId
+                    });
+                }
             }
         });
 

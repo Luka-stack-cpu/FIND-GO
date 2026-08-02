@@ -88,7 +88,17 @@
                     localStorage.setItem('user', JSON.stringify(data));
                     window.location.href = '/app.html';
                 } else {
-                    alert(data.message);
+                    if (data.isBanned) {
+                        let banMessage = `Ваш аккаунт заблокирован.\nПричина: ${data.banReason || 'Не указана'}\n`;
+                        if (data.banUntil) {
+                            banMessage += `Дата окончания блокировки: ${new Date(data.banUntil).toLocaleString('ru-RU')}`;
+                        } else {
+                            banMessage += `Дата окончания блокировки: Бессрочно`;
+                        }
+                        alert(banMessage);
+                    } else {
+                        alert(data.message);
+                    }
                     submitBtn.disabled = false;
                     submitBtn.innerHTML = originalText;
                 }

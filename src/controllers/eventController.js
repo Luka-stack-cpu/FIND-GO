@@ -1,5 +1,6 @@
 const { Event, Place, User, Message } = require('../models');
 const db = require('../models'); // для прямых SQL-запросов
+const { getEventAgeGroupType, getAllowedEventAgeGroups } = require('../utils/ageGroupHelpers');
 
 // ========== СОЗДАТЬ ПОХОД ==========
 exports.createEvent = async (req, res) => {
@@ -7,12 +8,21 @@ exports.createEvent = async (req, res) => {
     const { placeId, datetime, maxParticipants, description, title, category, ageGroup } = req.body;
     const creatorId = req.user.id;
     
+    const userAgeGroup = req.user.ageGroup || 'adult';
+    const targetAgeGroup = ageGroup || (userAgeGroup === 'teenager' ? '14-16' : '18-21');
+    
+    // Validate target event ageGroup
+    const allowedGroups = getAllowedEventAgeGroups(userAgeGroup);
+    if (!allowedGroups.includes(targetAgeGroup)) {
+        return res.status(403).json({ message: 'Недопустимая возрастная группа для вашего возраста' });
+    }
+
     const event = await Event.create({
       creatorId,
       placeId,
       title: title || 'Встреча',
       category: category || 'другое',
-      ageGroup: ageGroup || '18-21',
+      ageGroup: targetAgeGroup,
       datetime,
       maxParticipants: maxParticipants || 5,
       description
@@ -32,15 +42,30 @@ exports.createEvent = async (req, res) => {
 exports.getActiveEvents = async (req, res) => {
   try {
     console.log('🔍 Запрос активных походов...');
+    const userAgeGroup = req.user.ageGroup || 'adult';
+    const allowedGroups = getAllowedEventAgeGroups(userAgeGroup);
+
     const events = await Event.findAll({
-      where: { status: 'active' },
+      where: { 
+        status: 'active',
+        ageGroup: { [require('sequelize').Op.in]: allowedGroups }
+      },
       include: [
         {
           model: Place,
           as: 'place',
           attributes: ['id', 'name', 'description', 'image', 'category', 'address']
         },
-        { model: User, as: 'creator', attributes: ['id', 'name', 'avatar'] }
+        { 
+          model: User, 
+          as: 'creator', 
+          attributes: ['id', 'name', 'avatar', 'ageGroup'],
+          where: {
+            ageGroup: userAgeGroup,
+            isHidden: false,
+            isBanned: false
+          }
+        }
       ],
       order: [['datetime', 'ASC']]
     });
@@ -79,9 +104,17 @@ exports.joinEvent = async (req, res) => {
     const eventId = req.params.id;
     const userId = req.user.id;
     
-    const event = await Event.findByPk(eventId);
+    const event = await Event.findByPk(eventId, {
+      include: [{ model: User, as: 'creator', attributes: ['ageGroup'] }]
+    });
     if (!event) {
       return res.status(404).json({ message: 'Событие не найдено' });
+    }
+
+    const userAgeGroup = req.user.ageGroup || 'adult';
+    const allowedGroups = getAllowedEventAgeGroups(userAgeGroup);
+    if (event.creator.ageGroup !== userAgeGroup || !allowedGroups.includes(event.ageGroup)) {
+      return res.status(403).json({ message: 'Доступ запрещён' });
     }
     
     // Проверка, не присоединился ли уже
@@ -149,14 +182,22 @@ exports.getEventById = async (req, res) => {
     const event = await Event.findByPk(req.params.id, {
       include: [
         { model: Place, as: 'place', attributes: ['id', 'name', 'description', 'image', 'category', 'address'] },
-        { model: User, as: 'creator', attributes: ['id', 'name', 'avatar'] }
+        { model: User, as: 'creator', attributes: ['id', 'name', 'avatar', 'ageGroup'] }
       ]
     });
     if (!event) {
       return res.status(404).json({ message: 'Поход не найден' });
     }
     
-    const participantUsers = await event.getParticipants();
+    const userAgeGroup = req.user.ageGroup || 'adult';
+    const allowedGroups = getAllowedEventAgeGroups(userAgeGroup);
+    if (event.creator.ageGroup !== userAgeGroup || !allowedGroups.includes(event.ageGroup)) {
+      return res.status(403).json({ message: 'Доступ запрещён' });
+    }
+
+    const participantUsers = await event.getParticipants({
+      attributes: ['id', 'name', 'avatar', 'ageGroup']
+    });
     res.json({
       ...event.toJSON(),
       participantsCount: participantUsers.length,
@@ -171,13 +212,21 @@ exports.getEventById = async (req, res) => {
 // ========== ПОЛУЧИТЬ УЧАСТНИКОВ ПОХОДА ==========
 exports.getEventParticipants = async (req, res) => {
   try {
-    const event = await Event.findByPk(req.params.id);
+    const event = await Event.findByPk(req.params.id, {
+      include: [{ model: User, as: 'creator', attributes: ['ageGroup'] }]
+    });
     if (!event) return res.status(404).json({ message: 'Событие не найдено' });
+
+    const userAgeGroup = req.user.ageGroup || 'adult';
+    if (event.creator.ageGroup !== userAgeGroup) {
+      return res.status(403).json({ message: 'Доступ запрещён' });
+    }
+
     const participants = await event.getParticipants({
-        attributes: ['id', 'name', 'avatar'],
+        attributes: ['id', 'name', 'avatar', 'ageGroup'],
         joinTableAttributes: []
     });
-    res.json(participants);
+    res.json(participants.filter(p => p.ageGroup === userAgeGroup));
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Ошибка загрузки участников' });
@@ -190,6 +239,18 @@ exports.getEventMessages = async (req, res) => {
     const eventId = parseInt(req.params.id, 10);
     if (isNaN(eventId)) {
       return res.status(400).json({ message: 'Неверный формат ID чата' });
+    }
+
+    const event = await Event.findByPk(eventId, {
+      include: [{ model: User, as: 'creator', attributes: ['ageGroup'] }]
+    });
+    if (!event) {
+      return res.status(404).json({ message: 'Поход не найден' });
+    }
+
+    const userAgeGroup = req.user.ageGroup || 'adult';
+    if (event.creator.ageGroup !== userAgeGroup) {
+      return res.status(403).json({ message: 'Доступ запрещён' });
     }
 
     const messages = await db.sequelize.query(
@@ -226,6 +287,13 @@ exports.updateEvent = async (req, res) => {
     
     if (!isAllowed) {
       return res.status(403).json({ message: 'Только создатель или участник личного чата может редактировать' });
+    }
+
+    if (ageGroup) {
+      const allowedGroups = getAllowedEventAgeGroups(req.user.ageGroup || 'adult');
+      if (!allowedGroups.includes(ageGroup)) {
+        return res.status(403).json({ message: 'Недопустимая возрастная группа для вашего возраста' });
+      }
     }
     
     await event.update({ datetime, maxParticipants, description, title, category, ageGroup });
@@ -295,13 +363,27 @@ exports.completeEvent = async (req, res) => {
 // ========== ПОХОДЫ ДЛЯ LANDING PAGE (СЛУЧАЙНЫЕ АКТИВНЫЕ + ОБЩЕЕ КОЛИЧЕСТВО) ==========
 exports.getLandingEvents = async (req, res) => {
   try {
-    const totalEvents = await Event.count();
+    const totalEvents = await Event.count({
+      where: {
+        ageGroup: { [require('sequelize').Op.in]: ['18-21', '21-25', '25-30', '30+', 'adult'] }
+      }
+    });
     
     const events = await Event.findAll({
-      where: { status: 'active' },
+      where: { 
+        status: 'active',
+        ageGroup: { [require('sequelize').Op.in]: ['18-21', '21-25', '25-30', '30+', 'adult'] }
+      },
       include: [
         { model: Place, as: 'place', attributes: ['id', 'name', 'description', 'image', 'category', 'address'] },
-        { model: User, as: 'creator', attributes: ['id', 'name', 'avatar'] }
+        { 
+          model: User, 
+          as: 'creator', 
+          attributes: ['id', 'name', 'avatar', 'ageGroup'],
+          where: {
+            ageGroup: 'adult'
+          }
+        }
       ]
     });
     

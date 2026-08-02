@@ -76,6 +76,24 @@ module.exports = async (req, res, next) => {
             setCachedUser(decoded.id, user);
         }
 
+        if (user.isBanned) {
+            // Проверяем, истек ли временный бан
+            if (user.banUntil && new Date() > new Date(user.banUntil)) {
+                // Время бана истекло, автоматически разбаниваем пользователя
+                await User.update({ isBanned: false, banReason: null, banUntil: null }, { where: { id: user.id } });
+                invalidateUserCache(user.id);
+                // Перезагружаем пользователя из БД
+                user = await User.findByPk(decoded.id, { attributes: { exclude: ['password'] } });
+            } else {
+                return res.status(403).json({
+                    message: 'Ваш аккаунт заблокирован.',
+                    isBanned: true,
+                    banReason: user.banReason || 'Подозрительное поведение',
+                    banUntil: user.banUntil || null
+                });
+            }
+        }
+
         req.user = user;
         next();
     } catch (error) {

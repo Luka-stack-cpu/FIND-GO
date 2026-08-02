@@ -63,6 +63,26 @@ const User = sequelize.define('User', {
   verificationStatus: {
     type: DataTypes.STRING,
     defaultValue: 'unverified'
+  },
+  role: {
+    type: DataTypes.STRING,
+    defaultValue: 'user' // user, moderator, admin
+  },
+  isHidden: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false
+  },
+  isBanned: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false
+  },
+  banReason: {
+    type: DataTypes.STRING,
+    allowNull: true
+  },
+  banUntil: {
+    type: DataTypes.DATE,
+    allowNull: true
   }
 }, {
   hooks: {
