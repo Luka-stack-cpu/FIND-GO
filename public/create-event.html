@@ -16,6 +16,8 @@
 <body>
 
 <!-- Боковое меню -->
+
+<!-- Боковое меню -->
 <div class="offcanvas offcanvas-start" tabindex="-1" id="sidebarMenu">
     <div class="offcanvas-header border-0">
         <h5 class="offcanvas-title fw-bold"><img src="/img/logo.png" alt="Find&Go" width="36" height="36" class="d-inline-block align-top me-2" style="border-radius: 4px;">Find&Go</h5>
@@ -24,13 +26,14 @@
     <div class="offcanvas-body">
         <ul class="nav flex-column mb-auto">
             <li class="nav-item"><a class="nav-link" href="/app.html"><i class="bi bi-house-door"></i> Главная</a></li>
-
-            <li class="nav-item"><a class="nav-link fw-bold text-primary" href="/create-event.html"><i class="bi bi-plus-circle"></i> Создать поход</a></li>
+            <li class="nav-item"><a class="nav-link" href="/create-event.html"><i class="bi bi-plus-circle"></i> Создать поход</a></li>
             <li class="nav-item"><a class="nav-link" href="/profile.html"><i class="bi bi-person"></i> Мой профиль</a></li>
             <li class="nav-item"><a class="nav-link" href="/faq.html"><i class="bi bi-question-circle"></i> Вопросы и ответы</a></li>
             <li class="nav-item"><a class="nav-link" href="/chats.html"><i class="bi bi-chat-dots"></i> Чаты походов</a></li>
             <li class="nav-item"><a class="nav-link" href="/dm.html"><i class="bi bi-person-heart"></i> Личные сообщения</a></li>
             <li class="nav-item"><a class="nav-link" href="/icebreakers.html"><i class="bi bi-snow2"></i> Темы для общения</a></li>
+            <li class="nav-item"><a class="nav-link fw-semibold" href="/edinomyshlenniki.html" style="color: #8b5cf6;"><i class="bi bi-people-fill"></i> Единомышленники <span class="badge ms-1" style="background: linear-gradient(135deg,#667eea,#764ba2); font-size:0.65rem;">NEW</span></a></li>
+            <li class="nav-item" id="modPanelNavItem" style="display: none;"><a class="nav-link text-danger fw-bold" href="/moderator.html"><i class="bi bi-shield-lock-fill"></i> Панель модератора</a></li>
         </ul>
         <hr>
         <div class="theme-switch p-2 rounded-3 bg-secondary-subtle mb-3 d-flex justify-content-between align-items-center">
@@ -38,6 +41,10 @@
             <div class="form-check form-switch m-0">
                 <input class="form-check-input" type="checkbox" id="darkModeSwitch">
             </div>
+        </div>
+        <div class="d-flex gap-2">
+            <button class="btn btn-outline-primary flex-fill btn-sm" onclick="if(typeof switchLanguage === 'function') switchLanguage('ru')">Русский</button>
+            <button class="btn btn-outline-primary flex-fill btn-sm" onclick="if(typeof switchLanguage === 'function') switchLanguage('ky')">Кыргызча</button>
         </div>
     </div>
 </div>
@@ -73,6 +80,25 @@
                 </div>
                 
                 <form id="createEventForm">
+                    <!-- Переключатель Типа -->
+                    <div class="mb-4">
+                        <label class="form-label fw-bold"><i class="bi bi-ui-radios"></i> Тип события</label>
+                        <div class="d-flex gap-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="eventType" id="typeEvent" value="event" checked>
+                                <label class="form-check-label" for="typeEvent">
+                                    Разовое мероприятие
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="eventType" id="typeCompany" value="company">
+                                <label class="form-check-label" for="typeCompany">
+                                    Постоянная компания (Клуб)
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- Название встречи -->
                     <div class="mb-4">
                         <label class="form-label"><i class="bi bi-fonts"></i> Название встречи</label>
@@ -80,9 +106,34 @@
                         <div class="form-text text-muted small mt-1">Коротко и ясно опишите суть встречи</div>
                     </div>
 
-                    <!-- Категория -->
-                    <div class="mb-4">
-                        <label class="form-label"><i class="bi bi-tag-fill"></i> Категория</label>
+                    <!-- Выбор интереса (только для компаний) -->
+                    <div class="mb-4 d-none" id="companyInterestGroup">
+                        <label class="form-label"><i class="bi bi-star-fill text-warning"></i> Главный интерес компании</label>
+                        <select id="interestSlug" class="form-select">
+                            <option value="">-- Выберите интерес --</option>
+                            <option value="outdoor">Активный отдых 🏔</option>
+                            <option value="sport">Спорт ⚽</option>
+                            <option value="it">IT 💻</option>
+                            <option value="business">Бизнес 🚀</option>
+                            <option value="boardgames">Настольные игры 🎲</option>
+                            <option value="coffee">Кофе ☕</option>
+                            <option value="books">Книги 📚</option>
+                            <option value="music">Музыка 🎵</option>
+                            <option value="art">Творчество 🎨</option>
+                            <option value="languages">Языки 🇬🇧</option>
+                        </select>
+                    </div>
+
+                    <!-- Расписание (только для компаний) -->
+                    <div class="mb-4 d-none" id="companyScheduleGroup">
+                        <label class="form-label"><i class="bi bi-clock-history"></i> График встреч (опционально)</label>
+                        <input type="text" id="companySchedule" class="form-control" placeholder="Например: Каждую субботу в 18:00">
+                    </div>
+
+                    <div id="eventOnlyFields">
+                        <!-- Категория -->
+                        <div class="mb-4">
+                            <label class="form-label"><i class="bi bi-tag-fill"></i> Категория</label>
                         <select id="category" class="form-select" required>
                             <option value="">-- Выберите категорию --</option>
                             <option value="прогулка">Прогулка</option>
@@ -132,6 +183,7 @@
                         <input type="number" id="maxParticipants" class="form-control" min="2" max="20" value="4" required>
                         <div class="form-text text-muted small mt-1">Включая вас</div>
                     </div>
+                    </div> <!-- /eventOnlyFields -->
                     
                     <!-- Описание -->
                     <div class="mb-4">
@@ -279,23 +331,67 @@
         });
     }
     
-    // ========== СОЗДАНИЕ ВСТРЕЧИ ==========
+    // ========== СОЗДАНИЕ ВСТРЕЧИ ИЛИ КОМПАНИИ ==========
     document.getElementById('createEventForm').addEventListener('submit', async (e) => {
         e.preventDefault();
         
         const title = document.getElementById('title').value.trim();
+        const description = document.getElementById('description').value;
+        const isCompany = document.getElementById('typeCompany').checked;
+        
+        // ========== ВАЛИДАЦИЯ ==========
+        if (!title) {
+            showToast('⚠️ Укажите название', 'danger');
+            return;
+        }
+
+        if (isCompany) {
+            const interestSlug = document.getElementById('interestSlug').value;
+            const schedule = document.getElementById('companySchedule').value.trim();
+            
+            if (!interestSlug) {
+                showToast('⚠️ Выберите интерес', 'danger');
+                return;
+            }
+            
+            const submitBtn = e.target.querySelector('button[type="submit"]');
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Создание...';
+            
+            try {
+                const response = await fetch('/api/companies', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({
+                        name: title,
+                        description: description,
+                        interestSlug: interestSlug,
+                        schedule: schedule
+                    })
+                });
+                if (!response.ok) {
+                    const data = await response.json();
+                    throw new Error(data.message || 'Ошибка создания компании');
+                }
+                showToast('Компания успешно создана!', 'success');
+                setTimeout(() => window.location.href = '/edinomyshlenniki.html', 1500);
+            } catch (error) {
+                showToast(error.message, 'danger');
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i class="bi bi-send-fill"></i> Создать встречу';
+            }
+            return; // Завершаем выполнение, так как это компания
+        }
+        
+        // --- ДАЛЬШЕ ЛОГИКА СОЗДАНИЯ ОБЫЧНОГО МЕРОПРИЯТИЯ ---
         const category = document.getElementById('category').value;
         const ageGroup = document.getElementById('ageGroup').value;
         const placeId = document.getElementById('placeId').value;
         const datetimeRaw = document.getElementById('eventDateTime').value;
         const maxParticipants = document.getElementById('maxParticipants').value;
-        const description = document.getElementById('description').value;
-        
-        // ========== ВАЛИДАЦИЯ ==========
-        if (!title) {
-            showToast('⚠️ Укажите название встречи', 'danger');
-            return;
-        }
 
         if (!category) {
             showToast('⚠️ Выберите категорию', 'danger');
@@ -378,6 +474,40 @@
     function init() {
         initFlatpickr();
         loadPlaces();
+        
+        // Логика переключения Типа
+        const typeEvent = document.getElementById('typeEvent');
+        const typeCompany = document.getElementById('typeCompany');
+        const eventOnlyFields = document.getElementById('eventOnlyFields');
+        const companyInterestGroup = document.getElementById('companyInterestGroup');
+        const companyScheduleGroup = document.getElementById('companyScheduleGroup');
+        
+        function toggleType() {
+            if (typeCompany.checked) {
+                eventOnlyFields.classList.add('d-none');
+                companyInterestGroup.classList.remove('d-none');
+                companyScheduleGroup.classList.remove('d-none');
+                // Убираем required у скрытых полей
+                document.getElementById('category').removeAttribute('required');
+                document.getElementById('ageGroup').removeAttribute('required');
+                document.getElementById('placeId').removeAttribute('required');
+                document.getElementById('eventDateTime').removeAttribute('required');
+                document.getElementById('maxParticipants').removeAttribute('required');
+            } else {
+                eventOnlyFields.classList.remove('d-none');
+                companyInterestGroup.classList.add('d-none');
+                companyScheduleGroup.classList.add('d-none');
+                // Возвращаем required
+                document.getElementById('category').setAttribute('required', 'true');
+                document.getElementById('ageGroup').setAttribute('required', 'true');
+                document.getElementById('placeId').setAttribute('required', 'true');
+                document.getElementById('eventDateTime').setAttribute('required', 'true');
+                document.getElementById('maxParticipants').setAttribute('required', 'true');
+            }
+        }
+        
+        typeEvent.addEventListener('change', toggleType);
+        typeCompany.addEventListener('change', toggleType);
         
         // Предзаполнение параметров из URL (для Единомышленников)
         const urlParams = new URLSearchParams(window.location.search);

@@ -142,6 +142,39 @@
     </style>
 </head>
 <body>
+
+<!-- Боковое меню -->
+<div class="offcanvas offcanvas-start" tabindex="-1" id="sidebarMenu">
+    <div class="offcanvas-header border-0">
+        <h5 class="offcanvas-title fw-bold"><img src="/img/logo.png" alt="Find&Go" width="36" height="36" class="d-inline-block align-top me-2" style="border-radius: 4px;">Find&Go</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas"></button>
+    </div>
+    <div class="offcanvas-body">
+        <ul class="nav flex-column mb-auto">
+            <li class="nav-item"><a class="nav-link" href="/app.html"><i class="bi bi-house-door"></i> Главная</a></li>
+            <li class="nav-item"><a class="nav-link" href="/create-event.html"><i class="bi bi-plus-circle"></i> Создать поход</a></li>
+            <li class="nav-item"><a class="nav-link" href="/profile.html"><i class="bi bi-person"></i> Мой профиль</a></li>
+            <li class="nav-item"><a class="nav-link" href="/faq.html"><i class="bi bi-question-circle"></i> Вопросы и ответы</a></li>
+            <li class="nav-item"><a class="nav-link" href="/chats.html"><i class="bi bi-chat-dots"></i> Чаты походов</a></li>
+            <li class="nav-item"><a class="nav-link" href="/dm.html"><i class="bi bi-person-heart"></i> Личные сообщения</a></li>
+            <li class="nav-item"><a class="nav-link" href="/icebreakers.html"><i class="bi bi-snow2"></i> Темы для общения</a></li>
+            <li class="nav-item"><a class="nav-link fw-semibold" href="/edinomyshlenniki.html" style="color: #8b5cf6;"><i class="bi bi-people-fill"></i> Единомышленники <span class="badge ms-1" style="background: linear-gradient(135deg,#667eea,#764ba2); font-size:0.65rem;">NEW</span></a></li>
+            <li class="nav-item" id="modPanelNavItem" style="display: none;"><a class="nav-link text-danger fw-bold" href="/moderator.html"><i class="bi bi-shield-lock-fill"></i> Панель модератора</a></li>
+        </ul>
+        <hr>
+        <div class="theme-switch p-2 rounded-3 bg-secondary-subtle mb-3 d-flex justify-content-between align-items-center">
+            <span class="fw-medium"><i class="bi bi-moon-stars text-primary me-2"></i> Тёмная тема</span>
+            <div class="form-check form-switch m-0">
+                <input class="form-check-input" type="checkbox" id="darkModeSwitch">
+            </div>
+        </div>
+        <div class="d-flex gap-2">
+            <button class="btn btn-outline-primary flex-fill btn-sm" onclick="if(typeof switchLanguage === 'function') switchLanguage('ru')">Русский</button>
+            <button class="btn btn-outline-primary flex-fill btn-sm" onclick="if(typeof switchLanguage === 'function') switchLanguage('ky')">Кыргызча</button>
+        </div>
+    </div>
+</div>
+
     <nav class="top-nav">
         <a href="/app.html" class="back-btn" id="mainBackBtn"><i class="bi bi-arrow-left"></i></a>
         <span class="nav-title" id="navTitleText">Единомышленники</span>
@@ -193,6 +226,25 @@
         </div>
     </div>
 
+    <!-- EVENT DETAILS MODAL -->
+    <div class="modal-overlay" id="eventModal" onclick="closeEventModal(event)">
+        <div class="modal-box" style="max-width: 500px; padding: 24px;">
+            <button class="close-modal-btn" onclick="closeEventModal(null,true)">×</button>
+            <h3 id="emTitle" style="margin-bottom:8px;">Название мероприятия</h3>
+            <div style="display:flex;gap:12px;color:var(--text-muted);font-size:0.9rem;margin-bottom:16px;" id="emMeta">
+                <!-- Время и место -->
+            </div>
+            <p id="emDesc" style="font-size:0.95rem;line-height:1.5;margin-bottom:20px;">Описание</p>
+            
+            <h5 style="font-size:1rem;margin-bottom:12px;">Участники (<span id="emCount">0/0</span>)</h5>
+            <div id="emParticipants" style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:20px;">
+                <!-- Аватарки участников -->
+            </div>
+            
+            <button class="btn btn-primary w-100 rounded-pill" id="emJoinBtn" onclick="joinEvent()" style="padding:12px;font-weight:600;">Вступить</button>
+        </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         const token = localStorage.getItem('token');
@@ -202,6 +254,8 @@
         let allInterests = [];
         let currentSlug = null;
         let selectedInterests = [];
+        let currentEvents = []; // Кэш мероприятий
+        let selectedEventId = null;
 
         const CATALOG = [
             { name:'Активный отдых', slug:'outdoor',    icon:'🏔' },
@@ -277,12 +331,17 @@
 
             const backBtn = document.getElementById('mainBackBtn');
             backBtn.removeAttribute('href');
-            backBtn.onclick = () => {
+            backBtn.onclick = (e) => {
+                if (e) e.preventDefault();
                 showView('viewGrid');
                 currentSlug = null;
-                backBtn.href = '/app.html';
-                backBtn.onclick = null;
                 document.getElementById('navTitleText').textContent = 'Единомышленники';
+                
+                // Восстанавливаем href для возврата на главную при следующем клике
+                setTimeout(() => {
+                    backBtn.href = '/app.html';
+                    backBtn.onclick = null;
+                }, 10);
             };
 
             const detailHeader = document.getElementById('detailHeader');
@@ -380,7 +439,8 @@
             try {
                 const res = await fetch('/api/interests/' + slug + '/events');
                 if (!res.ok) throw new Error('HTTP ' + res.status);
-                const events = await res.json();
+                currentEvents = await res.json();
+                const events = currentEvents;
 
                 if (!events.length) {
                     c.innerHTML = `<div class="empty-state"><span class="empty-icon">📅</span><h4>Пока нет мероприятий</h4>
@@ -401,7 +461,7 @@
                         ${e.description ? '<p style="font-size:0.9rem;color:var(--bs-body-color);opacity:0.85;margin-bottom:12px;line-height:1.5;">' + e.description + '</p>' : ''}
                         <div class="event-footer">
                             <span class="event-spots">${spots > 0 ? 'Свободно: ' + spots + ' мест' : '🔴 Мест нет'}</span>
-                            <a href="/app.html" class="btn-join-event">Посмотреть</a>
+                            <button onclick="openEventModal(${e.id})" class="btn-join-event" style="border:none;">Посмотреть</button>
                         </div>
                     </div>`;
                 }).join('') + '</div>';
@@ -416,6 +476,76 @@
                 <div class="empty-state"><span class="empty-icon">🏠</span><h4>Постоянных компаний пока нет</h4>
                     <p>Создайте свою — она не исчезает после одной встречи.<br>Функция появится в следующем обновлении.</p>
                     <a href="/app.html" class="btn-cta"><i class="bi bi-house"></i> На главную</a></div>`;
+        }
+
+        // EVENT MODAL LOGIC
+        async function openEventModal(id) {
+            selectedEventId = id;
+            const ev = currentEvents.find(e => e.id === id);
+            if (!ev) return;
+            
+            document.getElementById('emTitle').textContent = ev.title;
+            const timeStr = formatDate(ev.datetime);
+            const placeStr = ev.place ? ev.place.name : '';
+            document.getElementById('emMeta').innerHTML = `
+                <span><i class="bi bi-calendar2"></i> ${timeStr}</span>
+                ${placeStr ? `<span><i class="bi bi-geo-alt"></i> ${placeStr}</span>` : ''}
+            `;
+            document.getElementById('emDesc').textContent = ev.description || 'Нет описания';
+            document.getElementById('emCount').textContent = `${ev.participantsCount}/${ev.maxParticipants}`;
+            
+            // Загрузка участников
+            document.getElementById('emParticipants').innerHTML = '<div class="spinner-border spinner-border-sm text-primary"></div>';
+            document.getElementById('eventModal').classList.add('open');
+            
+            try {
+                const res = await fetch('/api/events/' + id, { headers: { 'Authorization': 'Bearer ' + token }});
+                if (res.ok) {
+                    const fullEv = await res.json();
+                    if (fullEv.participants && fullEv.participants.length) {
+                        document.getElementById('emParticipants').innerHTML = fullEv.participants.map(p => `
+                            <img src="${p.avatar || '/img/default-avatar.png'}" title="${p.name}" style="width:40px;height:40px;border-radius:50%;object-fit:cover;cursor:pointer;" onclick="window.location.href='/user.html?id=${p.id}'">
+                        `).join('');
+                    } else {
+                        document.getElementById('emParticipants').innerHTML = '<span class="text-muted small">Пока нет участников</span>';
+                    }
+                }
+            } catch(e) {
+                document.getElementById('emParticipants').innerHTML = '<span class="text-muted small">Не удалось загрузить участников</span>';
+            }
+        }
+
+        function closeEventModal(e, force) {
+            if (force || (e && e.target === document.getElementById('eventModal'))) {
+                document.getElementById('eventModal').classList.remove('open');
+            }
+        }
+        
+        async function joinEvent() {
+            if (!selectedEventId) return;
+            const btn = document.getElementById('emJoinBtn');
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+            try {
+                const res = await fetch(`/api/events/${selectedEventId}/join`, {
+                    method: 'POST',
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+                if (res.ok) {
+                    btn.innerHTML = '<i class="bi bi-check-lg"></i> Вы вступили';
+                    btn.classList.replace('btn-primary', 'btn-success');
+                    setTimeout(() => { closeEventModal(null, true); loadEvents(currentSlug); }, 1500);
+                } else {
+                    const data = await res.json();
+                    alert(data.message || 'Ошибка');
+                    btn.disabled = false;
+                    btn.innerHTML = 'Вступить';
+                }
+            } catch(e) {
+                alert('Ошибка соединения');
+                btn.disabled = false;
+                btn.innerHTML = 'Вступить';
+            }
         }
 
         // HELPER TO CREATE EVENT WITH PRE-FILLED CATEGORY
