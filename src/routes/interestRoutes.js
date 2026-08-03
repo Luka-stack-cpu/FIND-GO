@@ -38,7 +38,16 @@ router.get('/interests', async (req, res) => {
         INTERESTS_CATALOG.forEach(i => { countMap[i.slug] = 0; });
 
         allUsers.forEach(u => {
-            const userInterests = u.interests || [];
+            let userInterests = u.interests;
+            if (typeof userInterests === 'string') {
+                try {
+                    userInterests = JSON.parse(userInterests);
+                } catch(e) {
+                    userInterests = [];
+                }
+            }
+            if (!Array.isArray(userInterests)) userInterests = [];
+
             userInterests.forEach(slug => {
                 if (countMap[slug] !== undefined) countMap[slug]++;
             });
