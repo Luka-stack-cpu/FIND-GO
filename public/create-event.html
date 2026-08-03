@@ -345,28 +345,59 @@
                 })
             });
             
-            if (response.ok) {
-                showToast('🎉 Встреча успешно создана!', 'success');
-                setTimeout(() => {
-                    window.location.href = '/app.html';
-                }, 1500);
-            } else {
-                const error = await response.json();
-                showToast(error.message || '❌ Ошибка при создании встречи', 'danger');
-                submitBtn.disabled = false;
-                submitBtn.innerHTML = originalText;
+            if (!response.ok) {
+                const data = await response.json();
+                throw new Error(data.message || 'Ошибка создания похода');
             }
+            
+            showToast('Поход успешно создан!', 'success');
+            setTimeout(() => {
+                window.location.href = '/app.html';
+            }, 1500);
         } catch (error) {
             console.error('Ошибка:', error);
-            showToast('❌ Ошибка соединения. Попробуйте позже.', 'danger');
+            showToast(error.message, 'danger');
+        } finally {
             submitBtn.disabled = false;
-            submitBtn.innerHTML = originalText;
+            submitBtn.innerHTML = '<i class="bi bi-send-fill"></i> Создать встречу';
         }
     });
+
+    // ========== ИНИЦИАЛИЗАЦИЯ ==========
+    function init() {
+        initFlatpickr();
+        loadPlaces();
+        
+        // Предзаполнение параметров из URL (для Единомышленников)
+        const urlParams = new URLSearchParams(window.location.search);
+        const categoryName = urlParams.get('category');
+        if (categoryName) {
+            document.getElementById('title').value = 'Встреча: ' + categoryName;
+            
+            // Пытаемся найти подходящую категорию в селекте
+            const catSelect = document.getElementById('category');
+            let found = false;
+            for (let i = 0; i < catSelect.options.length; i++) {
+                if (catSelect.options[i].text.toLowerCase() === categoryName.toLowerCase() || 
+                    catSelect.options[i].value.toLowerCase() === categoryName.toLowerCase()) {
+                    catSelect.selectedIndex = i;
+                    found = true;
+                    break;
+                }
+            }
+            // Если не нашли точное совпадение, добавляем новую опцию
+            if (!found) {
+                const newOption = document.createElement('option');
+                newOption.value = categoryName.toLowerCase();
+                newOption.text = categoryName;
+                newOption.selected = true;
+                catSelect.add(newOption);
+            }
+        }
+    }
     
-    // ========== ЗАПУСК ==========
-    initFlatpickr();
-    loadPlaces();
+    // Запускаем инициализацию при загрузке страницы
+    window.addEventListener('DOMContentLoaded', init);
 </script>
 </body>
 </html>

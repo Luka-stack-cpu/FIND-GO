@@ -233,7 +233,7 @@ exports.updateInterests = async (req, res) => {
             .slice(0, 20); // максимум 20 интересов
 
         await User.update(
-            { interests: JSON.stringify(cleanInterests) },
+            { interests: cleanInterests },
             { where: { id: req.user.id } }
         );
         res.json({ message: 'Интересы обновлены', interests: cleanInterests });

@@ -118,7 +118,7 @@ router.get('/interests/:slug/people', authMiddleware, async (req, res) => {
         if (!interest) return res.status(404).json({ message: 'Интерес не найден' });
 
         // Получаем текущего пользователя
-        const currentUser = await User.findByPk(req.userId, {
+        const currentUser = await User.findByPk(req.user.id, {
             attributes: ['id', 'interests', 'ageGroup', 'city']
         });
         if (!currentUser) return res.status(401).json({ message: 'Не авторизован' });
@@ -251,7 +251,7 @@ router.put('/interests/my', authMiddleware, async (req, res) => {
             return res.status(400).json({ message: 'Выберите хотя бы 1 интерес' });
         }
 
-        const user = await User.findByPk(req.userId);
+        const user = await User.findByPk(req.user.id);
         if (!user) return res.status(404).json({ message: 'Пользователь не найден' });
 
         user.interests = filtered;

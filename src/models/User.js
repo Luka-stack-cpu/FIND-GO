@@ -37,7 +37,12 @@ const User = sequelize.define('User', {
     defaultValue: '[]',
     get() {
         const raw = this.getDataValue('interests');
-        return raw ? JSON.parse(raw) : [];
+        if (!raw) return [];
+        try {
+            return typeof raw === 'string' ? JSON.parse(raw) : raw;
+        } catch (e) {
+            return []; // Фолбэк если данные повреждены (например пустая строка)
+        }
     },
     set(value) {
         this.setDataValue('interests', JSON.stringify(value));

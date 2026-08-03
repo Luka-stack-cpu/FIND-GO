@@ -350,7 +350,7 @@
                 if (!people.length) {
                     c.innerHTML = `<div class="empty-state"><span class="empty-icon">👥</span><h4>Пока здесь никого нет</h4>
                         <p>Стань первым с этим интересом или пригласи друзей</p>
-                        <a href="/create-event.html" class="btn-cta"><i class="bi bi-plus-circle"></i> Создать мероприятие</a></div>`;
+                        <a href="#" onclick="createEventWithCategory(); return false;" class="btn-cta"><i class="bi bi-plus-circle"></i> Создать мероприятие</a></div>`;
                     return;
                 }
 
@@ -385,7 +385,7 @@
                 if (!events.length) {
                     c.innerHTML = `<div class="empty-state"><span class="empty-icon">📅</span><h4>Пока нет мероприятий</h4>
                         <p>Станьте первым организатором!</p>
-                        <a href="/create-event.html" class="btn-cta"><i class="bi bi-plus-circle"></i> Создать мероприятие</a></div>`;
+                        <a href="#" onclick="createEventWithCategory(); return false;" class="btn-cta"><i class="bi bi-plus-circle"></i> Создать мероприятие</a></div>`;
                     return;
                 }
 
@@ -418,9 +418,34 @@
                     <a href="/app.html" class="btn-cta"><i class="bi bi-house"></i> На главную</a></div>`;
         }
 
+        // HELPER TO CREATE EVENT WITH PRE-FILLED CATEGORY
+        function createEventWithCategory() {
+            if (!currentSlug) {
+                window.location.href = '/create-event.html';
+                return;
+            }
+            const cat = CATALOG.find(c => c.slug === currentSlug);
+            if (cat) {
+                window.location.href = '/create-event.html?category=' + encodeURIComponent(cat.name);
+            } else {
+                window.location.href = '/create-event.html';
+            }
+        }
+
         // INTERESTS PICKER
         function openInterestsPicker() {
-            selectedInterests = [...(storedUser.interests || [])];
+            let userInterests = storedUser.interests;
+            // Безопасный парсинг, если interests сохранился как строка
+            if (typeof userInterests === 'string') {
+                try {
+                    userInterests = JSON.parse(userInterests);
+                } catch(e) {
+                    userInterests = [];
+                }
+            }
+            if (!Array.isArray(userInterests)) userInterests = [];
+            
+            selectedInterests = [...userInterests];
             document.getElementById('interestsPicker').innerHTML = CATALOG.map(c => `
                 <button class="interest-pick-btn ${selectedInterests.includes(c.slug) ? 'selected' : ''}" id="pick_${c.slug}" onclick="toggleInterest('${c.slug}')">
                     <span class="pick-icon">${c.icon}</span><span>${c.name}</span>
