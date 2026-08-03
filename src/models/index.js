@@ -8,6 +8,7 @@ const Notification = require('./Notification'); // ✅ БАГ 9
 const Review = require('./Review');
 const PrivateMessage = require('./PrivateMessage');
 const Report = require('./Report');
+const Interest = require('./Interest');
 
 // Базовые ассоциации
 Event.belongsTo(User, { as: 'creator', foreignKey: 'creatorId' });
@@ -47,5 +48,5 @@ Report.belongsTo(User, { as: 'reportedUser', foreignKey: 'reportedUserId' });
 User.hasMany(Report, { as: 'submittedReports', foreignKey: 'reporterId' });
 User.hasMany(Report, { as: 'receivedReports', foreignKey: 'reportedUserId' });
 
-const db = { sequelize, User, Place, Event, Message, Invite, Notification, Review, PrivateMessage, Report };
+const db = { sequelize, User, Place, Event, Message, Invite, Notification, Review, PrivateMessage, Report, Interest };
 module.exports = db;

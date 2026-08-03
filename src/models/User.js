@@ -83,6 +83,11 @@ const User = sequelize.define('User', {
   banUntil: {
     type: DataTypes.DATE,
     allowNull: true
+  },
+  city: {
+    type: DataTypes.STRING,
+    allowNull: true,
+    defaultValue: null
   }
 }, {
   hooks: {

@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Единомышленники | Find&Go</title>
+    <meta name="description" content="Найдите людей с общими интересами — для реальных встреч в Бишкеке">
+    <link rel="icon" type="image/png" href="/img/logo.png">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #0b0d14;
+            --surface: #12151f;
+            --surface2: #1a1e2e;
+            --border: rgba(255,255,255,0.07);
+            --text: #f0f2f8;
+            --text-muted: #6b7280;
+            --accent: #7c3aed;
+            --accent2: #667eea;
+            --accent-glow: rgba(124,58,237,0.25);
+            --green: #10b981;
+            --yellow: #f59e0b;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Inter', -apple-system, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; overflow-x: hidden; }
+
+        /* NAVBAR */
+        .top-nav { position: fixed; top:0; left:0; right:0; z-index:100; background: rgba(11,13,20,0.85); backdrop-filter: blur(20px); border-bottom: 1px solid var(--border); padding: 14px 20px; display:flex; align-items:center; gap:12px; }
+        .back-btn { width:38px; height:38px; border-radius:50%; border:1px solid var(--border); background:var(--surface2); color:var(--text); display:flex; align-items:center; justify-content:center; cursor:pointer; transition:all 0.2s; text-decoration:none; font-size:1rem; flex-shrink:0; }
+        .back-btn:hover { background:var(--accent); border-color:var(--accent); color:white; }
+        .nav-title { font-weight:700; font-size:1rem; background: linear-gradient(135deg,#a78bfa,#667eea); -webkit-background-clip:text; background-clip:text; color:transparent; }
+        .user-interests-btn { margin-left:auto; background:rgba(124,58,237,0.15); border:1px solid rgba(124,58,237,0.3); color:#a78bfa; border-radius:50px; padding:7px 14px; font-size:0.8rem; font-weight:600; cursor:pointer; transition:all 0.2s; white-space:nowrap; }
+        .user-interests-btn:hover { background:rgba(124,58,237,0.3); color:white; }
+
+        /* LAYOUT */
+        .page-wrap { padding-top:72px; max-width:700px; margin:0 auto; padding-left:16px; padding-right:16px; }
+        .view { display:none; animation: fadeIn 0.3s ease; }
+        .view.active { display:block; }
+        @keyframes fadeIn { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:translateY(0); } }
+
+        /* HERO */
+        .page-hero { padding:36px 0 28px; text-align:center; }
+        .hero-badge { display:inline-flex; align-items:center; gap:6px; background:rgba(124,58,237,0.15); border:1px solid rgba(124,58,237,0.3); border-radius:50px; padding:6px 16px; font-size:0.8rem; font-weight:600; color:#a78bfa; margin-bottom:16px; }
+        .page-hero h1 { font-size:2.2rem; font-weight:900; letter-spacing:-0.5px; margin-bottom:10px; background: linear-gradient(135deg,#ffffff 0%,#a78bfa 100%); -webkit-background-clip:text; background-clip:text; color:transparent; }
+        .page-hero p { color:var(--text-muted); font-size:0.95rem; line-height:1.6; max-width:400px; margin:0 auto; }
+
+        /* SEARCH */
+        .search-wrap { position:relative; margin-bottom:28px; }
+        .search-wrap i { position:absolute; left:16px; top:50%; transform:translateY(-50%); color:var(--text-muted); font-size:1rem; }
+        #searchInput { width:100%; background:var(--surface); border:1px solid var(--border); border-radius:50px; padding:13px 20px 13px 44px; color:var(--text); font-size:0.95rem; outline:none; transition:border-color 0.2s; }
+        #searchInput::placeholder { color:var(--text-muted); }
+        #searchInput:focus { border-color:rgba(124,58,237,0.5); box-shadow:0 0 0 3px var(--accent-glow); }
+
+        /* CATEGORIES GRID */
+        .categories-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:32px; }
+        .category-card { background:var(--surface); border:1px solid var(--border); border-radius:20px; padding:20px 16px; cursor:pointer; transition:all 0.25s; position:relative; overflow:hidden; }
+        .category-card:hover { border-color:rgba(124,58,237,0.4); transform:translateY(-3px); box-shadow:0 12px 32px rgba(0,0,0,0.3); }
+        .category-icon { font-size:2.2rem; display:block; margin-bottom:10px; line-height:1; }
+        .category-name { font-weight:700; font-size:0.95rem; margin-bottom:4px; color:var(--text); }
+        .category-count { font-size:0.78rem; color:var(--text-muted); }
+        .category-count span { color:var(--accent2); font-weight:600; }
+
+        /* SKELETON */
+        .skeleton-card { background:linear-gradient(90deg,var(--surface) 25%,var(--surface2) 50%,var(--surface) 75%); background-size:200% 100%; animation:shimmer 1.4s infinite; border-radius:20px; height:110px; }
+        .skeleton-line { background:linear-gradient(90deg,var(--surface2) 25%,#1e2235 50%,var(--surface2) 75%); background-size:200% 100%; animation:shimmer 1.4s infinite; border-radius:8px; display:block; }
+        @keyframes shimmer { 0%{background-position:-200% 0} 100%{background-position:200% 0} }
+
+        /* DETAIL VIEW */
+        .detail-header { padding:28px 0 20px; }
+        .detail-icon { font-size:3.5rem; display:block; margin-bottom:12px; }
+        .detail-title { font-size:2rem; font-weight:900; letter-spacing:-0.5px; margin-bottom:12px; }
+        .detail-stats { display:flex; gap:12px; flex-wrap:wrap; margin-bottom:4px; }
+        .stat-chip { display:inline-flex; align-items:center; gap:6px; background:var(--surface2); border:1px solid var(--border); border-radius:50px; padding:6px 14px; font-size:0.82rem; font-weight:500; }
+        .stat-chip.green { border-color:rgba(16,185,129,0.3); color:#34d399; }
+        .stat-chip.blue { border-color:rgba(102,126,234,0.3); color:#818cf8; }
+        .stat-chip.yellow { border-color:rgba(245,158,11,0.3); color:#fbbf24; }
+
+        /* TABS */
+        .tabs-row { display:flex; gap:4px; background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:4px; margin-bottom:20px; }
+        .tab-btn { flex:1; text-align:center; padding:10px 8px; border-radius:10px; border:none; background:transparent; color:var(--text-muted); font-size:0.82rem; font-weight:600; cursor:pointer; transition:all 0.2s; }
+        .tab-btn.active { background:linear-gradient(135deg,#7c3aed,#667eea); color:white; box-shadow:0 4px 12px var(--accent-glow); }
+
+        /* PEOPLE */
+        .people-list { display:flex; flex-direction:column; gap:12px; margin-bottom:32px; }
+        .person-card { background:var(--surface); border:1px solid var(--border); border-radius:18px; padding:16px; display:flex; align-items:center; gap:14px; transition:all 0.2s; }
+        .person-card:hover { border-color:rgba(124,58,237,0.3); background:var(--surface2); }
+        .person-avatar { width:52px; height:52px; border-radius:50%; object-fit:cover; border:2px solid var(--border); flex-shrink:0; }
+        .person-info { flex:1; min-width:0; }
+        .person-name { font-weight:700; font-size:0.95rem; margin-bottom:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+        .person-meta { font-size:0.78rem; color:var(--text-muted); margin-bottom:6px; }
+        .person-common { display:inline-flex; align-items:center; gap:6px; background:rgba(124,58,237,0.12); border:1px solid rgba(124,58,237,0.2); border-radius:50px; padding:3px 10px; font-size:0.75rem; font-weight:600; color:#a78bfa; }
+        .btn-view-profile { flex-shrink:0; background:rgba(124,58,237,0.12); border:1px solid rgba(124,58,237,0.25); border-radius:50px; padding:7px 14px; font-size:0.78rem; font-weight:600; color:#a78bfa; cursor:pointer; transition:all 0.2s; white-space:nowrap; text-decoration:none; }
+        .btn-view-profile:hover { background:var(--accent); color:white; border-color:var(--accent); }
+
+        /* EVENTS */
+        .events-list { display:flex; flex-direction:column; gap:12px; margin-bottom:32px; }
+        .event-card { background:var(--surface); border:1px solid var(--border); border-radius:18px; padding:18px; transition:all 0.2s; }
+        .event-card:hover { border-color:rgba(102,126,234,0.3); background:var(--surface2); }
+        .event-title { font-weight:700; font-size:1rem; margin-bottom:6px; }
+        .event-meta { display:flex; flex-wrap:wrap; gap:10px; font-size:0.8rem; color:var(--text-muted); margin-bottom:12px; }
+        .event-meta i { color:var(--accent2); }
+        .event-footer { display:flex; align-items:center; justify-content:space-between; }
+        .event-spots { font-size:0.8rem; color:var(--text-muted); }
+        .btn-join-event { background:linear-gradient(135deg,#667eea,#764ba2); border:none; border-radius:50px; padding:7px 18px; font-size:0.8rem; font-weight:600; color:white; cursor:pointer; text-decoration:none; transition:all 0.2s; }
+        .btn-join-event:hover { transform:translateY(-1px); box-shadow:0 6px 16px rgba(102,126,234,0.4); }
+
+        /* EMPTY STATE */
+        .empty-state { text-align:center; padding:48px 20px; }
+        .empty-state .empty-icon { font-size:3.5rem; margin-bottom:16px; display:block; opacity:0.5; }
+        .empty-state h4 { font-weight:700; font-size:1.1rem; margin-bottom:8px; }
+        .empty-state p { color:var(--text-muted); font-size:0.9rem; line-height:1.6; margin-bottom:20px; }
+        .btn-cta { background:linear-gradient(135deg,#7c3aed,#667eea); border:none; border-radius:50px; padding:10px 24px; font-size:0.9rem; font-weight:600; color:white; cursor:pointer; text-decoration:none; transition:all 0.2s; display:inline-flex; align-items:center; gap:8px; }
+        .btn-cta:hover { transform:translateY(-2px); box-shadow:0 8px 20px rgba(124,58,237,0.4); }
+
+        /* MODAL */
+        .modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.7); backdrop-filter:blur(6px); z-index:200; display:none; align-items:center; justify-content:center; padding:20px; }
+        .modal-overlay.open { display:flex; }
+        .modal-box { background:var(--surface); border:1px solid var(--border); border-radius:24px; max-width:480px; width:100%; max-height:85vh; overflow-y:auto; padding:28px; animation:fadeIn 0.25s ease; }
+        .modal-box h3 { font-size:1.3rem; font-weight:800; margin-bottom:6px; }
+        .modal-desc { color:var(--text-muted); font-size:0.875rem; margin-bottom:8px; }
+        .pick-counter { font-size:0.8rem; color:var(--text-muted); margin-bottom:16px; }
+        .pick-counter span { color:#a78bfa; font-weight:700; }
+        .interests-picker { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:24px; }
+        .interest-pick-btn { background:var(--surface2); border:1.5px solid var(--border); border-radius:14px; padding:12px 14px; cursor:pointer; display:flex; align-items:center; gap:10px; font-size:0.875rem; font-weight:600; color:var(--text-muted); transition:all 0.2s; text-align:left; }
+        .interest-pick-btn.selected { border-color:var(--accent); background:rgba(124,58,237,0.12); color:var(--text); }
+        .interest-pick-btn:hover:not(.selected) { border-color:rgba(124,58,237,0.3); }
+        .pick-icon { font-size:1.3rem; }
+        .btn-save-interests { width:100%; background:linear-gradient(135deg,#7c3aed,#667eea); border:none; border-radius:14px; padding:14px; font-size:0.95rem; font-weight:700; color:white; cursor:pointer; transition:all 0.2s; }
+        .btn-save-interests:hover:not(:disabled) { transform:translateY(-2px); box-shadow:0 8px 24px rgba(124,58,237,0.4); }
+        .btn-save-interests:disabled { opacity:0.5; cursor:not-allowed; }
+        .close-modal-btn { float:right; background:none; border:none; color:var(--text-muted); font-size:1.4rem; cursor:pointer; line-height:1; margin-left:auto; }
+        .close-modal-btn:hover { color:var(--text); }
+
+        /* SPINNER */
+        .loader-wrap { display:flex; align-items:center; justify-content:center; padding:48px; }
+        .spinner-ring { width:40px; height:40px; border:3px solid var(--surface2); border-top-color:var(--accent); border-radius:50%; animation:spin 0.8s linear infinite; }
+        @keyframes spin { to { transform:rotate(360deg); } }
+
+        @media (max-width:480px) { .page-hero h1 { font-size:1.8rem; } .interests-picker { grid-template-columns:1fr 1fr; } }
+    </style>
+</head>
+<body>
+    <nav class="top-nav">
+        <a href="/app.html" class="back-btn" id="mainBackBtn"><i class="bi bi-arrow-left"></i></a>
+        <span class="nav-title" id="navTitleText">Единомышленники</span>
+        <button class="user-interests-btn" onclick="openInterestsPicker()"><i class="bi bi-sliders2 me-1"></i> Мои интересы</button>
+    </nav>
+
+    <div class="page-wrap">
+        <!-- VIEW 1: GRID -->
+        <div class="view active" id="viewGrid">
+            <div class="page-hero">
+                <div class="hero-badge"><i class="bi bi-people-fill"></i> Find&Go — Единомышленники</div>
+                <h1>Найди своих</h1>
+                <p>Люди, с которыми вам действительно будет интересно встретиться вживую</p>
+            </div>
+            <div class="search-wrap">
+                <i class="bi bi-search"></i>
+                <input id="searchInput" type="text" placeholder="Поиск интересов..." autocomplete="off" oninput="filterCategories(this.value)">
+            </div>
+            <div class="categories-grid" id="categoriesGrid">
+                <div class="skeleton-card"></div><div class="skeleton-card"></div>
+                <div class="skeleton-card"></div><div class="skeleton-card"></div>
+                <div class="skeleton-card"></div><div class="skeleton-card"></div>
+                <div class="skeleton-card"></div><div class="skeleton-card"></div>
+                <div class="skeleton-card"></div><div class="skeleton-card"></div>
+            </div>
+        </div>
+
+        <!-- VIEW 2: DETAIL -->
+        <div class="view" id="viewDetail">
+            <div class="detail-header" id="detailHeader"></div>
+            <div class="tabs-row">
+                <button class="tab-btn active" id="tabPeople" onclick="switchTab('people')"><i class="bi bi-person-heart me-1"></i> Люди</button>
+                <button class="tab-btn" id="tabEvents" onclick="switchTab('events')"><i class="bi bi-calendar2-event me-1"></i> Мероприятия</button>
+                <button class="tab-btn" id="tabCompanies" onclick="switchTab('companies')"><i class="bi bi-people me-1"></i> Компании</button>
+            </div>
+            <div id="tabContent"></div>
+        </div>
+    </div>
+
+    <!-- INTERESTS MODAL -->
+    <div class="modal-overlay" id="interestsModal" onclick="closeInterestsPicker(event)">
+        <div class="modal-box">
+            <button class="close-modal-btn" onclick="closeInterestsPicker(null,true)">×</button>
+            <h3>Мои интересы</h3>
+            <p class="modal-desc">Выберите интересы — чем больше, тем точнее подбор людей</p>
+            <p class="pick-counter">Выбрано: <span id="pickedCount">0</span> / 10</p>
+            <div class="interests-picker" id="interestsPicker"></div>
+            <button class="btn-save-interests" id="saveInterestsBtn" onclick="saveInterests()"><i class="bi bi-check-circle me-1"></i> Сохранить интересы</button>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        const token = localStorage.getItem('token');
+        const storedUser = JSON.parse(localStorage.getItem('user') || '{}');
+        if (!token) window.location.href = '/login.html';
+
+        let allInterests = [];
+        let currentSlug = null;
+        let selectedInterests = [];
+
+        const CATALOG = [
+            { name:'Активный отдых', slug:'outdoor',    icon:'🏔' },
+            { name:'Спорт',          slug:'sport',       icon:'⚽' },
+            { name:'IT',             slug:'it',          icon:'💻' },
+            { name:'Бизнес',         slug:'business',    icon:'🚀' },
+            { name:'Настольные игры',slug:'boardgames',  icon:'🎲' },
+            { name:'Кофе',           slug:'coffee',      icon:'☕' },
+            { name:'Книги',          slug:'books',       icon:'📚' },
+            { name:'Музыка',         slug:'music',       icon:'🎵' },
+            { name:'Творчество',     slug:'art',         icon:'🎨' },
+            { name:'Языки',          slug:'languages',   icon:'🇬🇧' },
+        ];
+
+        function showView(id) {
+            document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+        }
+
+        function formatDate(dt) {
+            return new Date(dt).toLocaleString('ru-RU', { day:'numeric', month:'long', hour:'2-digit', minute:'2-digit' });
+        }
+
+        function plural(n, one, few, many) {
+            const mod10 = n % 10, mod100 = n % 100;
+            if (mod10 === 1 && mod100 !== 11) return one;
+            if ([2,3,4].includes(mod10) && ![12,13,14].includes(mod100)) return few;
+            return many;
+        }
+
+        // LOAD CATALOG
+        async function loadInterests() {
+            try {
+                const res = await fetch('/api/interests');
+                if (!res.ok) throw new Error('HTTP ' + res.status);
+                allInterests = await res.json();
+                renderGrid(allInterests);
+            } catch(e) {
+                document.getElementById('categoriesGrid').innerHTML = `
+                    <div style="grid-column:1/-1;">
+                        <div class="empty-state"><span class="empty-icon">⚠️</span><h4>Не удалось загрузить</h4>
+                        <p>${e.message}</p><button class="btn-cta" onclick="loadInterests()"><i class="bi bi-arrow-clockwise"></i> Повторить</button></div>
+                    </div>`;
+            }
+        }
+
+        function renderGrid(interests) {
+            const grid = document.getElementById('categoriesGrid');
+            if (!interests.length) {
+                grid.innerHTML = `<div style="grid-column:1/-1;"><div class="empty-state"><span class="empty-icon">🔍</span><h4>Ничего не найдено</h4></div></div>`;
+                return;
+            }
+            grid.innerHTML = interests.map(i => `
+                <div class="category-card" onclick="openInterest('${i.slug}')">
+                    <span class="category-icon">${i.icon}</span>
+                    <div class="category-name">${i.name}</div>
+                    <div class="category-count"><span>${i.participantsCount}</span> ${plural(i.participantsCount,'участник','участника','участников')}</div>
+                </div>`).join('');
+        }
+
+        function filterCategories(q) {
+            const filtered = allInterests.filter(i =>
+                i.name.toLowerCase().includes(q.toLowerCase()) ||
+                i.category_group.toLowerCase().includes(q.toLowerCase())
+            );
+            renderGrid(filtered);
+        }
+
+        // OPEN DETAIL
+        async function openInterest(slug) {
+            currentSlug = slug;
+            showView('viewDetail');
+
+            const backBtn = document.getElementById('mainBackBtn');
+            backBtn.removeAttribute('href');
+            backBtn.onclick = () => {
+                showView('viewGrid');
+                currentSlug = null;
+                backBtn.href = '/app.html';
+                backBtn.onclick = null;
+                document.getElementById('navTitleText').textContent = 'Единомышленники';
+            };
+
+            const detailHeader = document.getElementById('detailHeader');
+            detailHeader.innerHTML = `
+                <div class="skeleton-line" style="width:64px;height:56px;border-radius:16px;margin-bottom:14px;"></div>
+                <div class="skeleton-line" style="width:55%;height:32px;margin-bottom:10px;"></div>
+                <div style="display:flex;gap:8px;">
+                    <div class="skeleton-line" style="width:110px;height:30px;border-radius:50px;"></div>
+                    <div class="skeleton-line" style="width:110px;height:30px;border-radius:50px;"></div>
+                </div>`;
+            document.getElementById('tabContent').innerHTML = '<div class="loader-wrap"><div class="spinner-ring"></div></div>';
+
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById('tabPeople').classList.add('active');
+
+            try {
+                const res = await fetch('/api/interests/' + slug);
+                if (!res.ok) throw new Error();
+                const data = await res.json();
+                document.getElementById('navTitleText').textContent = data.name;
+                detailHeader.innerHTML = `
+                    <span class="detail-icon">${data.icon}</span>
+                    <div class="detail-title">${data.name}</div>
+                    <div class="detail-stats">
+                        <span class="stat-chip blue"><i class="bi bi-people-fill"></i> ${data.participantsCount} ${plural(data.participantsCount,'участник','участника','участников')}</span>
+                        <span class="stat-chip yellow"><i class="bi bi-calendar2-event"></i> ${data.eventsCount} ${plural(data.eventsCount,'мероприятие','мероприятия','мероприятий')}</span>
+                        ${data.activeToday > 0 ? `<span class="stat-chip green"><i class="bi bi-circle-fill" style="font-size:0.5rem;"></i> ${data.activeToday} сегодня</span>` : ''}
+                    </div>`;
+            } catch(e) {
+                const cat = CATALOG.find(c => c.slug === slug);
+                if (cat) detailHeader.innerHTML = `<span class="detail-icon">${cat.icon}</span><div class="detail-title">${cat.name}</div>`;
+            }
+
+            loadPeople(slug);
+        }
+
+        function switchTab(tab) {
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById('tab' + tab.charAt(0).toUpperCase() + tab.slice(1)).classList.add('active');
+            if (!currentSlug) return;
+            if (tab === 'people') loadPeople(currentSlug);
+            else if (tab === 'events') loadEvents(currentSlug);
+            else showCompaniesEmpty();
+        }
+
+        // PEOPLE
+        async function loadPeople(slug) {
+            const c = document.getElementById('tabContent');
+            c.innerHTML = `<div class="people-list">${[...Array(4)].map(() => `
+                <div style="background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:16px;display:flex;gap:14px;align-items:center;">
+                    <div class="skeleton-line" style="width:52px;height:52px;border-radius:50%;flex-shrink:0;"></div>
+                    <div style="flex:1;">
+                        <div class="skeleton-line" style="width:40%;height:16px;margin-bottom:8px;"></div>
+                        <div class="skeleton-line" style="width:60%;height:12px;margin-bottom:8px;"></div>
+                        <div class="skeleton-line" style="width:80px;height:22px;border-radius:50px;"></div>
+                    </div>
+                </div>`).join('')}</div>`;
+            try {
+                const res = await fetch('/api/interests/' + slug + '/people', {
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+                if (!res.ok) throw new Error('HTTP ' + res.status);
+                const people = await res.json();
+
+                if (!people.length) {
+                    c.innerHTML = `<div class="empty-state"><span class="empty-icon">👥</span><h4>Пока здесь никого нет</h4>
+                        <p>Стань первым с этим интересом или пригласи друзей</p>
+                        <a href="/create-event.html" class="btn-cta"><i class="bi bi-plus-circle"></i> Создать мероприятие</a></div>`;
+                    return;
+                }
+
+                c.innerHTML = '<div class="people-list">' + people.map(p => {
+                    const meta = [p.ageDisplay ? p.ageDisplay + ' лет' : null, p.city ? '📍 ' + p.city : null].filter(Boolean).join(' · ');
+                    const icons = p.commonIcons && p.commonIcons.length ? p.commonIcons.join('') : '';
+                    return `<div class="person-card">
+                        <img class="person-avatar" src="${p.avatar}" alt="${p.name}" onerror="this.src='/img/default-avatar.png'">
+                        <div class="person-info">
+                            <div class="person-name">${p.name}</div>
+                            ${meta ? `<div class="person-meta">${meta}</div>` : ''}
+                            ${p.commonInterestsCount > 0 ? `<span class="person-common">${icons} Совпадает: ${p.commonInterestsCount} ${plural(p.commonInterestsCount,'интерес','интереса','интересов')}</span>` : ''}
+                        </div>
+                        <a href="/user.html?id=${p.id}" class="btn-view-profile">Профиль</a>
+                    </div>`;
+                }).join('') + '</div>';
+            } catch(e) {
+                c.innerHTML = `<div class="empty-state"><span class="empty-icon">⚠️</span><h4>Ошибка загрузки</h4><p>${e.message}</p>
+                    <button class="btn-cta" onclick="loadPeople('${slug}')"><i class="bi bi-arrow-clockwise"></i> Повторить</button></div>`;
+            }
+        }
+
+        // EVENTS
+        async function loadEvents(slug) {
+            const c = document.getElementById('tabContent');
+            c.innerHTML = '<div class="loader-wrap"><div class="spinner-ring"></div></div>';
+            try {
+                const res = await fetch('/api/interests/' + slug + '/events');
+                if (!res.ok) throw new Error('HTTP ' + res.status);
+                const events = await res.json();
+
+                if (!events.length) {
+                    c.innerHTML = `<div class="empty-state"><span class="empty-icon">📅</span><h4>Пока нет мероприятий</h4>
+                        <p>Станьте первым организатором!</p>
+                        <a href="/create-event.html" class="btn-cta"><i class="bi bi-plus-circle"></i> Создать мероприятие</a></div>`;
+                    return;
+                }
+
+                c.innerHTML = '<div class="events-list">' + events.map(e => {
+                    const spots = e.maxParticipants - e.participantsCount;
+                    return `<div class="event-card">
+                        <div class="event-title">${e.title}</div>
+                        <div class="event-meta">
+                            <span><i class="bi bi-calendar2"></i> ${formatDate(e.datetime)}</span>
+                            ${e.place ? '<span><i class="bi bi-geo-alt"></i> ' + e.place.name + '</span>' : ''}
+                            <span><i class="bi bi-people"></i> ${e.participantsCount}/${e.maxParticipants}</span>
+                        </div>
+                        ${e.description ? '<p style="font-size:0.85rem;color:var(--text-muted);margin-bottom:12px;line-height:1.5;">' + e.description + '</p>' : ''}
+                        <div class="event-footer">
+                            <span class="event-spots">${spots > 0 ? 'Свободно: ' + spots + ' мест' : '🔴 Мест нет'}</span>
+                            <a href="/app.html" class="btn-join-event">Посмотреть</a>
+                        </div>
+                    </div>`;
+                }).join('') + '</div>';
+            } catch(e) {
+                c.innerHTML = `<div class="empty-state"><span class="empty-icon">⚠️</span><h4>Ошибка загрузки</h4><p>${e.message}</p>
+                    <button class="btn-cta" onclick="loadEvents('${slug}')"><i class="bi bi-arrow-clockwise"></i> Повторить</button></div>`;
+            }
+        }
+
+        function showCompaniesEmpty() {
+            document.getElementById('tabContent').innerHTML = `
+                <div class="empty-state"><span class="empty-icon">🏠</span><h4>Постоянных компаний пока нет</h4>
+                    <p>Создайте свою — она не исчезает после одной встречи.<br>Функция появится в следующем обновлении.</p>
+                    <a href="/app.html" class="btn-cta"><i class="bi bi-house"></i> На главную</a></div>`;
+        }
+
+        // INTERESTS PICKER
+        function openInterestsPicker() {
+            selectedInterests = [...(storedUser.interests || [])];
+            document.getElementById('interestsPicker').innerHTML = CATALOG.map(c => `
+                <button class="interest-pick-btn ${selectedInterests.includes(c.slug) ? 'selected' : ''}" id="pick_${c.slug}" onclick="toggleInterest('${c.slug}')">
+                    <span class="pick-icon">${c.icon}</span><span>${c.name}</span>
+                </button>`).join('');
+            updatePickCount();
+            document.getElementById('interestsModal').classList.add('open');
+        }
+
+        function closeInterestsPicker(e, force) {
+            if (force || (e && e.target === document.getElementById('interestsModal')))
+                document.getElementById('interestsModal').classList.remove('open');
+        }
+
+        function toggleInterest(slug) {
+            if (selectedInterests.includes(slug)) {
+                selectedInterests = selectedInterests.filter(s => s !== slug);
+                document.getElementById('pick_' + slug).classList.remove('selected');
+            } else {
+                if (selectedInterests.length >= 10) return;
+                selectedInterests.push(slug);
+                document.getElementById('pick_' + slug).classList.add('selected');
+            }
+            updatePickCount();
+        }
+
+        function updatePickCount() {
+            document.getElementById('pickedCount').textContent = selectedInterests.length;
+            document.getElementById('saveInterestsBtn').disabled = selectedInterests.length === 0;
+        }
+
+        async function saveInterests() {
+            const btn = document.getElementById('saveInterestsBtn');
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Сохранение...';
+            try {
+                const res = await fetch('/api/interests/my', {
+                    method: 'PUT',
+                    headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ interests: selectedInterests })
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    const updatedUser = { ...storedUser, interests: data.interests };
+                    localStorage.setItem('user', JSON.stringify(updatedUser));
+                    btn.innerHTML = '<i class="bi bi-check-circle me-1"></i> Сохранено!';
+                    btn.style.background = '#10b981';
+                    setTimeout(() => {
+                        closeInterestsPicker(null, true);
+                        btn.disabled = false;
+                        btn.innerHTML = '<i class="bi bi-check-circle me-1"></i> Сохранить интересы';
+                        btn.style.background = '';
+                        loadInterests();
+                    }, 1200);
+                } else {
+                    throw new Error(data.message || 'Ошибка');
+                }
+            } catch(e) {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="bi bi-exclamation-circle me-1"></i> ' + e.message;
+                btn.style.background = '#dc2626';
+                setTimeout(() => {
+                    btn.innerHTML = '<i class="bi bi-check-circle me-1"></i> Сохранить интересы';
+                    btn.style.background = '';
+                }, 3000);
+            }
+        }
+
+        loadInterests();
+    </script>
+</body>
+</html>
