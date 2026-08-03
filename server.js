@@ -113,6 +113,7 @@ const reportRoutes = require('./src/routes/reportRoutes');
 const moderatorRoutes = require('./src/routes/moderatorRoutes');
 const adminRoutes = require('./src/routes/adminRoutes'); // TEMP: remove after use
 const interestRoutes = require('./src/routes/interestRoutes');
+const companyRoutes = require('./src/routes/companyRoutes');
 
 
 app.use('/api/auth', authRoutes);
@@ -127,6 +128,7 @@ app.use('/api', reportRoutes);
 app.use('/api', moderatorRoutes);
 app.use('/api/admin', adminRoutes); // TEMP: remove after use
 app.use('/api', interestRoutes);
+app.use('/api/companies', companyRoutes);
 
 
 // Middleware для обработки ошибок

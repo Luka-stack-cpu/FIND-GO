@@ -49,6 +49,14 @@ const Event = sequelize.define('Event', {
   isPersonal: {
     type: DataTypes.BOOLEAN,
     defaultValue: false
+  },
+  isClubEvent: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false
+  },
+  interestSlug: {
+    type: DataTypes.STRING,
+    allowNull: true
   }
 });
 

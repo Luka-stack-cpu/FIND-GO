@@ -25,7 +25,9 @@ exports.createEvent = async (req, res) => {
       ageGroup: targetAgeGroup,
       datetime,
       maxParticipants: maxParticipants || 5,
-      description
+      description,
+      isClubEvent: req.body.isClubEvent || false,
+      interestSlug: req.body.interestSlug || null
     });
 
     // ✅ Добавляем создателя в участники
@@ -48,7 +50,8 @@ exports.getActiveEvents = async (req, res) => {
     const events = await Event.findAll({
       where: { 
         status: 'active',
-        ageGroup: { [require('sequelize').Op.in]: allowedGroups }
+        ageGroup: { [require('sequelize').Op.in]: allowedGroups },
+        isClubEvent: false // Исключаем клубные события с главной страницы
       },
       include: [
         {

@@ -327,6 +327,11 @@
         submitBtn.disabled = true;
         submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Создание...';
         
+        // Получаем параметры из URL для клубов
+        const urlParams = new URLSearchParams(window.location.search);
+        const isClub = urlParams.get('isClub') === 'true';
+        const interestSlug = urlParams.get('slug');
+
         try {
             const response = await fetch('/api/events', {
                 method: 'POST',
@@ -341,7 +346,9 @@
                     placeId: parseInt(placeId),
                     datetime: datetime,
                     maxParticipants: parseInt(maxParticipants),
-                    description: description
+                    description: description,
+                    isClubEvent: isClub,
+                    interestSlug: interestSlug
                 })
             });
             
@@ -352,7 +359,11 @@
             
             showToast('Поход успешно создан!', 'success');
             setTimeout(() => {
-                window.location.href = '/app.html';
+                if (isClub) {
+                    window.location.href = '/edinomyshlenniki.html';
+                } else {
+                    window.location.href = '/app.html';
+                }
             }, 1500);
         } catch (error) {
             console.error('Ошибка:', error);

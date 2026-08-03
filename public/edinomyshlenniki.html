@@ -398,7 +398,7 @@
                             ${e.place ? '<span><i class="bi bi-geo-alt"></i> ' + e.place.name + '</span>' : ''}
                             <span><i class="bi bi-people"></i> ${e.participantsCount}/${e.maxParticipants}</span>
                         </div>
-                        ${e.description ? '<p style="font-size:0.85rem;color:var(--text-muted);margin-bottom:12px;line-height:1.5;">' + e.description + '</p>' : ''}
+                        ${e.description ? '<p style="font-size:0.9rem;color:var(--bs-body-color);opacity:0.85;margin-bottom:12px;line-height:1.5;">' + e.description + '</p>' : ''}
                         <div class="event-footer">
                             <span class="event-spots">${spots > 0 ? 'Свободно: ' + spots + ' мест' : '🔴 Мест нет'}</span>
                             <a href="/app.html" class="btn-join-event">Посмотреть</a>
@@ -426,7 +426,7 @@
             }
             const cat = CATALOG.find(c => c.slug === currentSlug);
             if (cat) {
-                window.location.href = '/create-event.html?category=' + encodeURIComponent(cat.name);
+                window.location.href = '/create-event.html?category=' + encodeURIComponent(cat.name) + '&slug=' + encodeURIComponent(cat.slug) + '&isClub=true';
             } else {
                 window.location.href = '/create-event.html';
             }

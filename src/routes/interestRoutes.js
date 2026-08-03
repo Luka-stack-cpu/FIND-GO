@@ -209,11 +209,10 @@ router.get('/interests/:slug/events', async (req, res) => {
         const where = {
             status: 'active',
             datetime: { [Op.gt]: new Date() },
-            isPersonal: false
+            isPersonal: false,
+            isClubEvent: true,
+            interestSlug: slug
         };
-        if (interest.event_category) {
-            where.category = { [Op.like]: `%${interest.event_category}%` };
-        }
 
         const events = await Event.findAll({
             where,

@@ -9,6 +9,7 @@ const Review = require('./Review');
 const PrivateMessage = require('./PrivateMessage');
 const Report = require('./Report');
 const Interest = require('./Interest');
+const Company = require('./Company');
 
 // Базовые ассоциации
 Event.belongsTo(User, { as: 'creator', foreignKey: 'creatorId' });
@@ -48,5 +49,12 @@ Report.belongsTo(User, { as: 'reportedUser', foreignKey: 'reportedUserId' });
 User.hasMany(Report, { as: 'submittedReports', foreignKey: 'reporterId' });
 User.hasMany(Report, { as: 'receivedReports', foreignKey: 'reportedUserId' });
 
-const db = { sequelize, User, Place, Event, Message, Invite, Notification, Review, PrivateMessage, Report, Interest };
+// Ассоциации компаний (клубов)
+Company.belongsTo(User, { as: 'creator', foreignKey: 'creatorId' });
+User.hasMany(Company, { as: 'createdCompanies', foreignKey: 'creatorId' });
+
+Company.belongsToMany(User, { through: 'CompanyMembers', as: 'members', foreignKey: 'CompanyId' });
+User.belongsToMany(Company, { through: 'CompanyMembers', as: 'joinedCompanies', foreignKey: 'UserId' });
+
+const db = { sequelize, User, Place, Event, Message, Invite, Notification, Review, PrivateMessage, Report, Interest, Company };
 module.exports = db;
