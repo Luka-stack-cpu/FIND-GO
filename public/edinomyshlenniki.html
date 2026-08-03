@@ -228,20 +228,31 @@
 
     <!-- EVENT DETAILS MODAL -->
     <div class="modal-overlay" id="eventModal" onclick="closeEventModal(event)">
-        <div class="modal-box" style="max-width: 500px; padding: 24px;">
-            <button class="close-modal-btn" onclick="closeEventModal(null,true)">×</button>
-            <h3 id="emTitle" style="margin-bottom:8px;">Название мероприятия</h3>
-            <div style="display:flex;gap:12px;color:var(--text-muted);font-size:0.9rem;margin-bottom:16px;" id="emMeta">
-                <!-- Время и место -->
+        <div class="modal-box" style="max-width: 520px; padding: 0; border-radius: 20px; overflow: hidden;">
+            <!-- Gradient Header -->
+            <div id="emHeader" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 24px 24px 20px; position: relative;">
+                <button class="close-modal-btn" onclick="closeEventModal(null,true)" style="position:absolute;top:12px;right:14px;background:rgba(255,255,255,0.2);border:none;color:#fff;width:32px;height:32px;border-radius:50%;font-size:1.2rem;line-height:1;cursor:pointer;">×</button>
+                <div style="font-size: 0.8rem; color: rgba(255,255,255,0.75); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px;" id="emCategory"></div>
+                <h3 id="emTitle" style="margin:0;color:#fff;font-size:1.3rem;font-weight:700;line-height:1.3;padding-right:36px;"></h3>
             </div>
-            <p id="emDesc" style="font-size:0.95rem;line-height:1.5;margin-bottom:20px;">Описание</p>
-            
-            <h5 style="font-size:1rem;margin-bottom:12px;">Участники (<span id="emCount">0/0</span>)</h5>
-            <div id="emParticipants" style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:20px;">
-                <!-- Аватарки участников -->
+
+            <!-- Body -->
+            <div style="padding: 20px 24px;">
+                <!-- Meta row -->
+                <div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:16px;" id="emMeta"></div>
+
+                <!-- Description -->
+                <p id="emDesc" style="font-size:0.9rem;line-height:1.6;color:var(--bs-body-color);margin-bottom:20px;background:var(--bs-secondary-bg);padding:12px 14px;border-radius:10px;"></p>
+
+                <!-- Participants -->
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+                    <span style="font-weight:600;font-size:0.95rem;">👥 Участники (<span id="emCount">0/0</span>)</span>
+                    <span id="emSpotsLabel" style="font-size:0.8rem;color:#6b7280;"></span>
+                </div>
+                <div id="emParticipants" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px;min-height:44px;align-items:center;"></div>
+
+                <button class="btn btn-primary w-100 rounded-pill" id="emJoinBtn" onclick="joinEvent()" style="padding:12px;font-weight:700;font-size:1rem;background:linear-gradient(135deg,#667eea,#764ba2);border:none;box-shadow:0 4px 15px rgba(118,75,162,0.3);">Вступить в поход</button>
             </div>
-            
-            <button class="btn btn-primary w-100 rounded-pill" id="emJoinBtn" onclick="joinEvent()" style="padding:12px;font-weight:600;">Вступить</button>
         </div>
     </div>
 
@@ -484,17 +495,49 @@
             const ev = currentEvents.find(e => e.id === id);
             if (!ev) return;
             
+            const spots = ev.maxParticipants - (ev.participantsCount || 0);
+            
+            // Gradient header
+            document.getElementById('emCategory').textContent = ev.category ? ev.category.toUpperCase() : 'ВСТРЕЧА';
             document.getElementById('emTitle').textContent = ev.title;
+            
+            // Meta chips
             const timeStr = formatDate(ev.datetime);
             const placeStr = ev.place ? ev.place.name : '';
             document.getElementById('emMeta').innerHTML = `
-                <span><i class="bi bi-calendar2"></i> ${timeStr}</span>
-                ${placeStr ? `<span><i class="bi bi-geo-alt"></i> ${placeStr}</span>` : ''}
+                <span style="display:flex;align-items:center;gap:5px;background:var(--bs-secondary-bg);padding:5px 10px;border-radius:20px;font-size:0.82rem;">
+                    <i class="bi bi-calendar2" style="color:#667eea;"></i> ${timeStr}
+                </span>
+                ${placeStr ? `<span style="display:flex;align-items:center;gap:5px;background:var(--bs-secondary-bg);padding:5px 10px;border-radius:20px;font-size:0.82rem;">
+                    <i class="bi bi-geo-alt" style="color:#764ba2;"></i> ${placeStr}
+                </span>` : ''}
+                ${ev.ageGroup ? `<span style="display:flex;align-items:center;gap:5px;background:var(--bs-secondary-bg);padding:5px 10px;border-radius:20px;font-size:0.82rem;">
+                    <i class="bi bi-person-badge" style="color:#10b981;"></i> ${ev.ageGroup}
+                </span>` : ''}
             `;
-            document.getElementById('emDesc').textContent = ev.description || 'Нет описания';
-            document.getElementById('emCount').textContent = `${ev.participantsCount}/${ev.maxParticipants}`;
             
-            // Загрузка участников
+            // Description
+            document.getElementById('emDesc').textContent = ev.description || 'Описание не указано.';
+            
+            // Participants count + spots
+            document.getElementById('emCount').textContent = `${ev.participantsCount || 0}/${ev.maxParticipants}`;
+            document.getElementById('emSpotsLabel').innerHTML = spots > 0
+                ? `<span style="color:#10b981;font-weight:600;">● Свободно: ${spots}</span>`
+                : `<span style="color:#ef4444;font-weight:600;">● Мест нет</span>`;
+            
+            // Disable join button if full
+            const joinBtn = document.getElementById('emJoinBtn');
+            if (spots <= 0) {
+                joinBtn.disabled = true;
+                joinBtn.innerHTML = 'Нет свободных мест';
+                joinBtn.style.opacity = '0.6';
+            } else {
+                joinBtn.disabled = false;
+                joinBtn.innerHTML = 'Вступить в поход';
+                joinBtn.style.opacity = '1';
+            }
+            
+            // Load participants
             document.getElementById('emParticipants').innerHTML = '<div class="spinner-border spinner-border-sm text-primary"></div>';
             document.getElementById('eventModal').classList.add('open');
             
@@ -504,10 +547,13 @@
                     const fullEv = await res.json();
                     if (fullEv.participants && fullEv.participants.length) {
                         document.getElementById('emParticipants').innerHTML = fullEv.participants.map(p => `
-                            <img src="${p.avatar || '/img/default-avatar.png'}" title="${p.name}" style="width:40px;height:40px;border-radius:50%;object-fit:cover;cursor:pointer;" onclick="window.location.href='/user.html?id=${p.id}'">
+                            <div style="display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;" onclick="window.location.href='/user.html?id=${p.id}'" title="${p.name}">
+                                <img src="${p.avatar || 'https://api.dicebear.com/7.x/avataaars/svg?seed=' + p.id}" style="width:44px;height:44px;border-radius:50%;object-fit:cover;border:2px solid #667eea;">
+                                <span style="font-size:0.68rem;color:var(--bs-body-color);max-width:50px;text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${p.name.split(' ')[0]}</span>
+                            </div>
                         `).join('');
                     } else {
-                        document.getElementById('emParticipants').innerHTML = '<span class="text-muted small">Пока нет участников</span>';
+                        document.getElementById('emParticipants').innerHTML = '<span class="text-muted small">Пока нет участников — будьте первым!</span>';
                     }
                 }
             } catch(e) {
