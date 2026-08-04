@@ -338,7 +338,7 @@ const start = async () => {
     try {
         // alter:true безопасно добавляет новые колонки из модели в уже существующую таблицу
         // Работает и для SQLite (dev), и для PostgreSQL (Render/prod)
-        await db.sequelize.sync({ alter: true });
+        await db.sequelize.sync();
         console.log('✅ База данных синхронизирована (все колонки обновлены)');
 
         await seedIfEmpty();

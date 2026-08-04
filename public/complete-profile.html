@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Завершение регистрации | Find&Go</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <link rel="icon" type="image/png" href="/img/logo.png">
+    <style>
+        .category-badge {
+            cursor: pointer;
+            padding: 8px 16px;
+            border-radius: 20px;
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            transition: all 0.2s;
+            user-select: none;
+        }
+        .category-badge:hover {
+            background: #e9ecef;
+        }
+        .category-badge.selected {
+            background: #0d6efd;
+            color: white;
+            border-color: #0d6efd;
+        }
+    </style>
+</head>
+<body class="bg-light">
+    <div class="container mt-5 mb-5">
+        <div class="row justify-content-center">
+            <div class="col-md-8 col-lg-6">
+                <div class="card shadow border-0" style="border-radius: 24px;">
+                    <div class="card-body p-4 p-md-5">
+                        <div class="text-center mb-4">
+                            <h2 class="fw-bold">Остался один шаг 🚀</h2>
+                            <p class="text-muted">Расскажите немного о себе, чтобы мы могли подобрать подходящую компанию.</p>
+                        </div>
+
+                        <form id="completeProfileForm">
+                            <div class="row mb-3">
+                                <label class="form-label fw-bold">Дата рождения</label>
+                                <div class="col-4">
+                                    <input type="number" class="form-control" id="day" placeholder="День" min="1" max="31" required>
+                                </div>
+                                <div class="col-4">
+                                    <select class="form-select" id="month" required>
+                                        <option value="" disabled selected>Месяц</option>
+                                        <option value="1">Январь</option>
+                                        <option value="2">Февраль</option>
+                                        <option value="3">Март</option>
+                                        <option value="4">Апрель</option>
+                                        <option value="5">Май</option>
+                                        <option value="6">Июнь</option>
+                                        <option value="7">Июль</option>
+                                        <option value="8">Август</option>
+                                        <option value="9">Сентябрь</option>
+                                        <option value="10">Октябрь</option>
+                                        <option value="11">Ноябрь</option>
+                                        <option value="12">Декабрь</option>
+                                    </select>
+                                </div>
+                                <div class="col-4">
+                                    <input type="number" class="form-control" id="year" placeholder="Год" min="1900" max="2020" required>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Пол</label>
+                                <select class="form-select" id="gender" required>
+                                    <option value="" disabled selected>Выберите пол</option>
+                                    <option value="male">Мужской</option>
+                                    <option value="female">Женский</option>
+                                </select>
+                            </div>
+
+                            <div class="mb-4">
+                                <label class="form-label fw-bold">Город</label>
+                                <input type="text" class="form-control" id="city" placeholder="Например: Бишкек" required>
+                            </div>
+
+                            <div class="mb-4">
+                                <label class="form-label fw-bold">Интересы (выберите минимум 5)</label>
+                                <p class="small text-muted mb-2">Это поможет в рекомендациях.</p>
+                                <div class="d-flex flex-wrap gap-2" id="categoriesContainer">
+                                    <span class="category-badge" data-category="Походы">🏔 Походы</span>
+                                    <span class="category-badge" data-category="Кофе">☕ Кофе</span>
+                                    <span class="category-badge" data-category="Игры">🎮 Игры</span>
+                                    <span class="category-badge" data-category="Спорт">⚽ Спорт</span>
+                                    <span class="category-badge" data-category="Языки">🇬🇧 Языки</span>
+                                    <span class="category-badge" data-category="IT">💻 IT</span>
+                                    <span class="category-badge" data-category="Кино">🎬 Кино</span>
+                                    <span class="category-badge" data-category="Книги">📚 Книги</span>
+                                    <span class="category-badge" data-category="Музыка">🎵 Музыка</span>
+                                    <span class="category-badge" data-category="Бизнес">💼 Бизнес</span>
+                                    <span class="category-badge" data-category="Искусство">🎨 Искусство</span>
+                                    <span class="category-badge" data-category="Путешествия">✈️ Путешествия</span>
+                                </div>
+                                <div id="interestsError" class="text-danger small mt-2" style="display: none;">Выберите минимум 5 интересов</div>
+                            </div>
+
+                            <div class="mb-4">
+                                <label class="form-label fw-bold">Короткое описание (необязательно)</label>
+                                <textarea class="form-control" id="bio" rows="2" placeholder="Пара слов о себе..."></textarea>
+                            </div>
+
+                            <button type="submit" class="btn btn-primary w-100 rounded-pill py-3 fw-bold" id="submitBtn">Завершить регистрацию</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Контейнер для тостов -->
+    <div class="toast-container position-fixed bottom-0 end-0 p-3" id="toastContainer" style="z-index: 1050;"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        const token = localStorage.getItem('token');
+        if (!token) {
+            window.location.href = '/login.html';
+        }
+
+        function showToast(message, type = 'danger') {
+            const toastContainer = document.getElementById('toastContainer');
+            const toastHtml = `
+                <div class="toast align-items-center text-bg-${type} border-0 mb-2" role="alert" aria-live="assertive" aria-atomic="true">
+                    <div class="d-flex">
+                        <div class="toast-body">
+                            ${message}
+                        </div>
+                        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                    </div>
+                </div>
+            `;
+            toastContainer.insertAdjacentHTML('beforeend', toastHtml);
+            const toastElement = toastContainer.lastElementChild;
+            const toast = new bootstrap.Toast(toastElement, { delay: 4000 });
+            toast.show();
+            toastElement.addEventListener('hidden.bs.toast', () => { toastElement.remove(); });
+        }
+
+        // Обработка кликов по интересам
+        const categoriesContainer = document.getElementById('categoriesContainer');
+        categoriesContainer.addEventListener('click', (e) => {
+            const badge = e.target.closest('.category-badge');
+            if (badge) {
+                badge.classList.toggle('selected');
+                document.getElementById('interestsError').style.display = 'none';
+            }
+        });
+
+        document.getElementById('completeProfileForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const selectedInterests = Array.from(document.querySelectorAll('.category-badge.selected'))
+                                           .map(badge => badge.getAttribute('data-category'));
+
+            if (selectedInterests.length < 5) {
+                document.getElementById('interestsError').style.display = 'block';
+                return;
+            }
+
+            const payload = {
+                day: parseInt(document.getElementById('day').value),
+                month: parseInt(document.getElementById('month').value),
+                year: parseInt(document.getElementById('year').value),
+                gender: document.getElementById('gender').value,
+                city: document.getElementById('city').value.trim(),
+                interests: selectedInterests,
+                bio: document.getElementById('bio').value.trim()
+            };
+
+            const submitBtn = document.getElementById('submitBtn');
+            const originalText = submitBtn.innerHTML;
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Сохранение...';
+
+            try {
+                const response = await fetch('/api/auth/complete-profile', {
+                    method: 'PUT',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify(payload)
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    localStorage.setItem('user', JSON.stringify(data));
+                    window.location.href = '/app.html';
+                } else {
+                    showToast(data.message || 'Ошибка сохранения данных');
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = originalText;
+                }
+            } catch (err) {
+                console.error(err);
+                showToast('Ошибка сети');
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalText;
+            }
+        });
+    </script>
+</body>
+</html>

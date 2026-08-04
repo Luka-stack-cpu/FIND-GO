@@ -22,7 +22,7 @@ const User = sequelize.define('User', {
   },
   password: {
     type: DataTypes.STRING,
-    allowNull: false
+    allowNull: true
   },
   avatar: {
     type: DataTypes.STRING,
@@ -93,11 +93,35 @@ const User = sequelize.define('User', {
     type: DataTypes.STRING,
     allowNull: true,
     defaultValue: null
+  },
+  provider: {
+    type: DataTypes.STRING,
+    defaultValue: 'local'
+  },
+  googleId: {
+    type: DataTypes.STRING,
+    unique: true,
+    allowNull: true
+  },
+  emailVerified: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false
+  },
+  lastLoginAt: {
+    type: DataTypes.DATE,
+    allowNull: true
   }
 }, {
   hooks: {
     beforeCreate: async (user) => {
-      user.password = await bcrypt.hash(user.password, 10);
+      if (user.password) {
+        user.password = await bcrypt.hash(user.password, 10);
+      }
+    },
+    beforeUpdate: async (user) => {
+      if (user.changed('password') && user.password) {
+        user.password = await bcrypt.hash(user.password, 10);
+      }
     }
   }
 });

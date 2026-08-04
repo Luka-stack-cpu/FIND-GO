@@ -2,6 +2,17 @@ const jwt = require('jsonwebtoken');
 const db = require('../models');
 const { User, Review } = require('../models');
 const { parseAndValidateBirthday, calculateAge, determineAgeGroup, getVerificationStatus } = require('../utils/ageUtils');
+const { OAuth2Client } = require('google-auth-library');
+
+const googleClient = new OAuth2Client(
+    process.env.GOOGLE_CLIENT_ID,
+    process.env.GOOGLE_CLIENT_SECRET,
+    // В продакшене лучше использовать абсолютный URL из ENV, например process.env.BASE_URL + '/api/auth/google/callback'
+    // Но по задаче сказано: http://localhost:3000/api/auth/google/callback
+    process.env.NODE_ENV === 'production' 
+        ? 'https://find-go.onrender.com/api/auth/google/callback' 
+        : 'http://localhost:3000/api/auth/google/callback'
+);
 
 // Email-адреса, которые всегда имеют роль moderator (дублируется из server.js для надёжности)
 const FORCED_MODERATOR_EMAILS = [
@@ -185,6 +196,162 @@ exports.login = async (req, res) => {
     }
 };
 
+// ============================================================
+// Вход через Google (OAuth 2.0) - Redirect
+// ============================================================
+exports.googleLogin = (req, res) => {
+    const authorizeUrl = googleClient.generateAuthUrl({
+        access_type: 'offline',
+        scope: ['https://www.googleapis.com/auth/userinfo.profile', 'https://www.googleapis.com/auth/userinfo.email'],
+        prompt: 'consent'
+    });
+    res.redirect(authorizeUrl);
+};
+
+// ============================================================
+// Callback для Google (OAuth 2.0)
+// ============================================================
+exports.googleCallback = async (req, res) => {
+    try {
+        const { code } = req.query;
+        if (!code) {
+            return res.redirect('/login.html?error=No+Code+Provided');
+        }
+
+        // Обмен кода на токены
+        const { tokens } = await googleClient.getToken(code);
+        googleClient.setCredentials(tokens);
+
+        // Получаем информацию о пользователе
+        const ticket = await googleClient.verifyIdToken({
+            idToken: tokens.id_token,
+            audience: process.env.GOOGLE_CLIENT_ID
+        });
+        const payload = ticket.getPayload();
+
+        if (!payload || !payload.email) {
+            return res.redirect('/login.html?error=Invalid+Google+Payload');
+        }
+
+        const email = payload.email.toLowerCase();
+        const googleId = payload.sub;
+        const name = `${payload.given_name || ''} ${payload.family_name || ''}`.trim() || payload.name;
+        const avatarUrl = payload.picture;
+        const emailVerified = payload.email_verified;
+
+        let user = await User.findOne({ where: { email } });
+        let requiresProfileCompletion = false;
+
+        if (user) {
+            if (!user.googleId) {
+                user.googleId = googleId;
+                user.provider = 'google';
+                if (avatarUrl && !user.avatar) user.avatar = avatarUrl;
+                user.emailVerified = emailVerified;
+            }
+            user.lastLoginAt = new Date();
+            await user.save();
+            
+            if (!user.birthday || !user.city || !user.interests || user.interests === '[]') {
+                requiresProfileCompletion = true;
+            }
+        } else {
+            user = await User.create({
+                name,
+                email,
+                password: '',
+                provider: 'google',
+                googleId,
+                avatar: avatarUrl,
+                emailVerified,
+                lastLoginAt: new Date(),
+                interests: '[]'
+            });
+            requiresProfileCompletion = true;
+        }
+
+        if (user.isBanned) {
+            if (user.banUntil && new Date() > new Date(user.banUntil)) {
+                user.isBanned = false;
+                user.banReason = null;
+                user.banUntil = null;
+                await user.save();
+            } else {
+                return res.redirect('/login.html?error=Account+Banned');
+            }
+        }
+
+        if (FORCED_MODERATOR_EMAILS.includes(user.email)) {
+            if (user.role === 'user' || !user.role) {
+                user.role = 'moderator';
+                await user.save();
+            }
+        }
+
+        const token = generateToken(user.id);
+        const userDataFormatted = formatUser(user, token);
+        
+        // Возвращаем HTML для сохранения в localStorage и редиректа
+        res.send(`
+            <!DOCTYPE html>
+            <html>
+            <head><title>Авторизация...</title></head>
+            <body>
+                <script>
+                    localStorage.setItem('token', '${token}');
+                    localStorage.setItem('user', JSON.stringify(${JSON.stringify(userDataFormatted)}));
+                    window.location.href = '${requiresProfileCompletion ? '/complete-profile.html' : '/app.html'}';
+                </script>
+            </body>
+            </html>
+        `);
+    } catch (error) {
+        console.error('❌ googleCallback:', error.message);
+        res.redirect('/login.html?error=Server+Error');
+    }
+};
+
+// ============================================================
+// Завершение регистрации (для новых пользователей Google)
+// ============================================================
+exports.completeProfile = async (req, res) => {
+    try {
+        const { day, month, year, city, interests, bio } = req.body;
+        
+        if (!day || !month || !year || !city || !interests || !Array.isArray(interests) || interests.length < 5) {
+            return res.status(400).json({ message: 'Заполните все обязательные поля (минимум 5 интересов)' });
+        }
+
+        const dateValidation = parseAndValidateBirthday(day, month, year);
+        if (!dateValidation.valid) {
+            return res.status(400).json({ message: dateValidation.error });
+        }
+
+        const age = calculateAge(dateValidation.birthday);
+        const ageGroupResult = determineAgeGroup(age);
+        if (!ageGroupResult.valid) {
+            return res.status(400).json({ message: ageGroupResult.error });
+        }
+
+        const cleanInterests = interests.filter(i => typeof i === 'string').map(sanitizeString).slice(0, 20);
+
+        const user = await User.findByPk(req.user.id);
+        if (!user) return res.status(404).json({ message: 'Пользователь не найден' });
+
+        await user.update({
+            birthday: dateValidation.dateString,
+            ageGroup: ageGroupResult.ageGroup,
+            city: sanitizeString(city),
+            interests: cleanInterests,
+            bio: sanitizeString(bio) || user.bio
+        });
+
+        res.json(formatUser(user, generateToken(user.id)));
+    } catch (error) {
+        console.error('❌ completeProfile:', error.message);
+        res.status(500).json({ message: 'Ошибка сервера при заполнении профиля' });
+    }
+};
 
 // ============================================================
 // Получить свой профиль
