@@ -219,7 +219,7 @@ router.get('/interests/:slug/events', async (req, res) => {
             include: [
                 { model: User, as: 'creator', attributes: ['id', 'name', 'avatar'] },
                 { model: require('../models/Place'), as: 'place', attributes: ['name', 'category'] },
-                { model: User, as: 'participants', attributes: ['id'], through: { attributes: [] } }
+                { model: User, as: 'participants', attributes: ['id', 'name', 'avatar'], through: { attributes: [] } }
             ],
             order: [['datetime', 'ASC']],
             limit: 20
@@ -232,6 +232,7 @@ router.get('/interests/:slug/events', async (req, res) => {
             datetime: e.datetime,
             maxParticipants: e.maxParticipants,
             participantsCount: e.participants ? e.participants.length : 0,
+            participants: e.participants ? e.participants.map(p => ({ id: p.id, name: p.name, avatar: p.avatar })) : [],
             description: e.description ? e.description.slice(0, 120) : '',
             creator: e.creator,
             place: e.place

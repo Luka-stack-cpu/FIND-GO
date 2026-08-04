@@ -230,16 +230,21 @@
                     </div>
                     <div class="mb-3">
                         <label class="form-label fw-semibold">Срок блокировки</label>
-                        <div class="d-flex gap-2">
-                            <button type="button" class="btn btn-outline-secondary rounded-pill ban-duration-btn active" data-days="0">Бессрочно</button>
-                            <button type="button" class="btn btn-outline-secondary rounded-pill ban-duration-btn" data-days="1">1 день</button>
-                            <button type="button" class="btn btn-outline-secondary rounded-pill ban-duration-btn" data-days="7">7 дней</button>
-                            <button type="button" class="btn btn-outline-secondary rounded-pill ban-duration-btn" data-days="30">30 дней</button>
+                        <div id="banRecommendedBlock" class="p-2 mb-2 rounded border border-warning" style="display:none; background: rgba(255,193,7,0.1); color: #ffc107;">
+                            <i class="bi bi-exclamation-triangle-fill me-1"></i> Рекомендация системы: <span id="banRecommendedText" class="fw-bold"></span>
+                            <br><small id="banRecommendedScore" class="text-secondary"></small>
                         </div>
-                    </div>
-                    <div class="mb-3" id="customDateBlock" style="display:none;">
-                        <label class="form-label fw-semibold">Конкретная дата окончания</label>
-                        <input type="datetime-local" id="banUntilDate" class="form-control bg-dark text-white border-secondary">
+                        <div class="d-flex gap-2">
+                            <input type="number" id="banDurationVal" class="form-control bg-dark text-white border-secondary" placeholder="Кол-во" min="1" value="1">
+                            <select id="banDurationUnit" class="form-select bg-dark text-white border-secondary">
+                                <option value="hours">Часов</option>
+                                <option value="days">Дней</option>
+                            </select>
+                        </div>
+                        <div class="form-check mt-2">
+                            <input class="form-check-input" type="checkbox" id="banPermanent">
+                            <label class="form-check-label text-secondary" for="banPermanent">Бессрочно</label>
+                        </div>
                     </div>
                 </div>
                 <div class="modal-footer border-0">
@@ -446,6 +451,10 @@
                 const events = data.events;
                 const reportsHistory = data.reportsHistory;
 
+                // Сохраняем глобально для модалки блокировки
+                window.currentUserRecommendedBan = user.recommendedBan;
+                window.currentUserTotalScore = user.totalScore;
+
                 const regDate = new Date(user.createdAt).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' });
                 
                 let eventsHtml = events.map(e => `
@@ -615,14 +624,7 @@
         let _banTargetUserId = null;
 
         // Переключение кнопок срока блокировки
-        document.querySelectorAll('.ban-duration-btn').forEach(btn => {
-            btn.addEventListener('click', () => {
-                document.querySelectorAll('.ban-duration-btn').forEach(b => b.classList.remove('active', 'btn-danger', 'text-white'));
-                btn.classList.add('active');
-                const days = parseInt(btn.dataset.days);
-                document.getElementById('customDateBlock').style.display = days === -1 ? 'block' : 'none';
-            });
-        });
+        // Убрали старые обработчики кнопок
 
         // Показ пользовательской причины
         document.getElementById('banReasonSelect').addEventListener('change', e => {
@@ -641,10 +643,21 @@
                 // Показываем форму для бана
                 document.getElementById('banReasonSelect').value = 'Подозрительное поведение';
                 document.getElementById('customReasonBlock').style.display = 'none';
-                document.getElementById('customDateBlock').style.display = 'none';
-                document.querySelectorAll('.ban-duration-btn').forEach((b, i) => {
-                    b.classList.toggle('active', i === 0);
-                });
+                document.getElementById('banPermanent').checked = false;
+                
+                // Если есть рекомендованный бан из загруженных деталей
+                if (window.currentUserRecommendedBan) {
+                    document.getElementById('banRecommendedBlock').style.display = 'block';
+                    document.getElementById('banRecommendedText').textContent = window.currentUserRecommendedBan.label;
+                    document.getElementById('banRecommendedScore').textContent = 'Сумма баллов безопасности: ' + window.currentUserTotalScore;
+                    document.getElementById('banDurationVal').value = window.currentUserRecommendedBan.value;
+                    document.getElementById('banDurationUnit').value = window.currentUserRecommendedBan.unit;
+                } else {
+                    document.getElementById('banRecommendedBlock').style.display = 'none';
+                    document.getElementById('banDurationVal').value = '1';
+                    document.getElementById('banDurationUnit').value = 'days';
+                }
+
                 bootstrap.Modal.getOrCreateInstance(document.getElementById('banFormModal')).show();
             }
         }
@@ -662,23 +675,19 @@
                 ? (document.getElementById('banReasonCustom').value.trim() || 'Другое')
                 : select.value;
 
-            const activeBtn = document.querySelector('.ban-duration-btn.active');
-            const days = activeBtn ? parseInt(activeBtn.dataset.days) : 0;
             let banUntil = null;
+            let banUnit = 'days';
 
-            if (days === -1) {
-                banUntil = document.getElementById('banUntilDate').value || null;
-            } else if (days > 0) {
-                const d = new Date();
-                d.setDate(d.getDate() + days);
-                banUntil = d.toISOString();
+            if (!document.getElementById('banPermanent').checked) {
+                banUntil = document.getElementById('banDurationVal').value;
+                banUnit = document.getElementById('banDurationUnit').value;
             }
 
             bootstrap.Modal.getInstance(document.getElementById('banFormModal'))?.hide();
-            await _executeBanRequest(_banTargetUserId, banReason, banUntil);
+            await _executeBanRequest(_banTargetUserId, banReason, banUntil, banUnit);
         });
 
-        async function _executeBanRequest(userId, banReason, banUntil) {
+        async function _executeBanRequest(userId, banReason, banUntil, banUnit) {
             const btnToggleBan = document.getElementById('btnToggleBan');
             if (btnToggleBan) {
                 btnToggleBan.disabled = true;
@@ -688,7 +697,7 @@
                 const res = await fetch(`/api/moderator/users/${userId}/ban`, {
                     method: 'POST',
                     headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ banReason, banUntil })
+                    body: JSON.stringify({ banReason, banUntil, banUnit })
                 });
                 const data = await res.json().catch(() => ({}));
                 if (res.ok) {

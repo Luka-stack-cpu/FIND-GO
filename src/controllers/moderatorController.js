@@ -23,6 +23,26 @@ const checkModerator = (req, res) => {
     return true;
 };
 
+// Система весов жалоб
+const getReportPoints = (reason) => {
+    const weights = {
+        'spam': 2,
+        'insult': 4,
+        'harassment': 6,
+        'fake': 5,
+        'danger': 8
+    };
+    return weights[reason] || 3; // По умолчанию 3 балла
+};
+
+// Расчет рекомендуемого бана
+const getRecommendedBan = (totalScore, totalReports) => {
+    if (totalReports < 3) return null;
+    if (totalScore < 5) return { value: 12, unit: 'hours', label: '12 часов' };
+    if (totalScore <= 10) return { value: 3, unit: 'days', label: '3 дня' };
+    return { value: 7, unit: 'days', label: '7 дней' };
+};
+
 // GET /api/moderator/reports - список всех новых (pending) жалоб
 // Каждая карточка должна содержать:
 // • фото пользователя, имя, возрастную группу, количество жалоб, причину, дату
@@ -53,10 +73,14 @@ exports.getNewReports = async (req, res) => {
             const reportedUser = report.reportedUser;
             if (!reportedUser) return null;
 
-            // Считаем количество всех жалоб на этого пользователя
-            const reportCount = await Report.count({
+            // Считаем все жалобы (и pending и resolved) для расчета баллов
+            const userReports = await Report.findAll({
                 where: { reportedUserId: report.reportedUserId }
             });
+
+            const reportCount = userReports.length;
+            const totalScore = userReports.reduce((sum, r) => sum + getReportPoints(r.reason), 0);
+            const recommendedBan = getRecommendedBan(totalScore, reportCount);
 
             return {
                 id: report.id,
@@ -76,7 +100,9 @@ exports.getNewReports = async (req, res) => {
                         : `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(reportedUser.name)}`,
                     ageGroup: reportedUser.ageGroup,
                     createdAt: reportedUser.createdAt,
-                    reportCount
+                    reportCount,
+                    totalScore,
+                    recommendedBan
                 }
             };
         }));
@@ -129,6 +155,11 @@ exports.getUserDetailsForMod = async (req, res) => {
         const avgRating = ratingResult ? parseFloat(ratingResult.getDataValue('avgRating') || 0).toFixed(1) : '0.0';
         const totalReviews = ratingResult ? ratingResult.getDataValue('totalReviews') : 0;
 
+        // 4. Очки безопасности и рекомендация бана
+        const reportCount = reportsHistory.length;
+        const totalScore = reportsHistory.reduce((sum, r) => sum + getReportPoints(r.reason), 0);
+        const recommendedBan = getRecommendedBan(totalScore, reportCount);
+
         res.json({
             user: {
                 id: user.id,
@@ -146,7 +177,9 @@ exports.getUserDetailsForMod = async (req, res) => {
                 isBanned: user.isBanned,
                 createdAt: user.createdAt,
                 avgRating,
-                totalReviews
+                totalReviews,
+                totalScore,
+                recommendedBan
             },
             events,
             reportsHistory
@@ -225,10 +258,22 @@ exports.banUser = async (req, res) => {
 
         if (willBan) {
             // Применяем бан с причиной и сроком
-            const { banReason, banUntil } = req.body;
+            const { banReason, banUntil, banUnit } = req.body;
             user.isBanned = true;
             user.banReason = banReason || 'Подозрительное поведение';
-            user.banUntil = banUntil ? new Date(banUntil) : null; // null = бессрочно
+            
+            if (banUntil) {
+                // Если передано количество часов/дней, высчитываем дату
+                const now = new Date();
+                if (banUnit === 'hours') {
+                    now.setHours(now.getHours() + parseInt(banUntil));
+                } else {
+                    now.setDate(now.getDate() + parseInt(banUntil));
+                }
+                user.banUntil = now;
+            } else {
+                user.banUntil = null; // бессрочно
+            }
         } else {
             // Снимаем бан — сбрасываем все поля
             user.isBanned = false;
