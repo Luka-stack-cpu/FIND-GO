@@ -561,16 +561,32 @@
     <div class="modal-dialog modal-dialog-centered modal-sm">
         <div class="modal-content border-0 shadow-lg" style="border-radius: 24px;">
             <div class="modal-header border-0 pb-0 pt-3 px-3 d-flex justify-content-between align-items-center">
-                <h5 class="modal-title fw-bold m-0">Настройки чата</h5>
+                <h5 class="modal-title fw-bold m-0">Настройки мероприятия</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body p-4">
                 <div class="mb-3">
-                    <label class="form-label small text-muted">Название чата</label>
+                    <label class="form-label small text-muted">Название</label>
                     <input type="text" id="chatTitleInput" class="form-control rounded-3" placeholder="Введите название...">
                 </div>
-                <button class="btn btn-primary w-100 rounded-pill py-2" onclick="saveChatTitle()">
-                    Сохранить
+                <div class="mb-3">
+                    <label class="form-label small text-muted">Место проведения</label>
+                    <select id="chatPlaceInput" class="form-select rounded-3">
+                        <option value="">Загрузка...</option>
+                    </select>
+                </div>
+                <div class="mb-4">
+                    <label class="form-label small text-muted">Дата и время</label>
+                    <input type="datetime-local" id="chatDateInput" class="form-control rounded-3">
+                </div>
+                
+                <button class="btn btn-primary w-100 rounded-pill py-2 mb-3" onclick="saveChatSettings()">
+                    Сохранить изменения
+                </button>
+                
+                <hr class="my-3 text-muted">
+                <button class="btn btn-outline-danger w-100 rounded-pill py-2" onclick="endEvent()">
+                    <i class="bi bi-x-circle me-1"></i> Завершить поход
                 </button>
             </div>
         </div>
@@ -733,12 +749,13 @@ document.getElementById('userProfileLink')?.addEventListener('click', () => {
                 const event = await response.json();
                 currentEvent = event;
                 
-                // Настройки доступны создателю или обоим участникам личной встречи
+                // Настройки доступны ТОЛЬКО создателю похода
                 const isCreator = event.creatorId === user.id;
-                const isParticipant = event.participants && event.participants.includes(user.id);
-                if (isCreator || (event.isPersonal && isParticipant)) {
+                if (isCreator) {
                     document.getElementById('chatSettingsBtn').style.display = 'block';
                     document.getElementById('chatTitleInput').value = event.title || '';
+                } else {
+                    document.getElementById('chatSettingsBtn').style.display = 'none';
                 }
 
                 if (event.isPersonal) {
@@ -757,14 +774,53 @@ document.getElementById('userProfileLink')?.addEventListener('click', () => {
         }
     }
 
-    window.openChatSettings = () => {
+    window.openChatSettings = async () => {
+        // Заполняем текущие значения
+        document.getElementById('chatTitleInput').value = currentEvent.title || '';
+        
+        // Форматируем дату для datetime-local
+        if (currentEvent.datetime) {
+            const dt = new Date(currentEvent.datetime);
+            // Смещение часового пояса
+            dt.setMinutes(dt.getMinutes() - dt.getTimezoneOffset());
+            document.getElementById('chatDateInput').value = dt.toISOString().slice(0,16);
+        }
+
+        const placeSelect = document.getElementById('chatPlaceInput');
+        placeSelect.innerHTML = '<option value="">Загрузка мест...</option>';
+
         const modal = new bootstrap.Modal(document.getElementById('chatSettingsModal'));
         modal.show();
+
+        try {
+            const res = await fetch('/api/places', { headers: { 'Authorization': `Bearer ${token}` } });
+            if (res.ok) {
+                const places = await res.json();
+                placeSelect.innerHTML = '<option value="">-- Выберите место --</option>';
+                places.forEach(p => {
+                    const option = document.createElement('option');
+                    option.value = p.id;
+                    option.textContent = p.name;
+                    if (currentEvent.placeId === p.id) option.selected = true;
+                    placeSelect.appendChild(option);
+                });
+            }
+        } catch (e) {
+            placeSelect.innerHTML = '<option value="">Ошибка загрузки</option>';
+        }
     };
 
-    window.saveChatTitle = async () => {
+    window.saveChatSettings = async () => {
         const newTitle = document.getElementById('chatTitleInput').value.trim();
-        if (!newTitle) return;
+        const newPlaceId = document.getElementById('chatPlaceInput').value;
+        const newDate = document.getElementById('chatDateInput').value;
+        
+        const payload = {};
+        if (newTitle) payload.title = newTitle;
+        if (newPlaceId) payload.placeId = parseInt(newPlaceId);
+        if (newDate) payload.datetime = new Date(newDate).toISOString();
+        
+        if (Object.keys(payload).length === 0) return;
         
         try {
             const response = await fetch(`/api/events/${eventId}`, {
@@ -773,20 +829,46 @@ document.getElementById('userProfileLink')?.addEventListener('click', () => {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${token}`
                 },
-                body: JSON.stringify({ title: newTitle })
+                body: JSON.stringify(payload)
             });
             if (response.ok) {
                 const modalEl = document.getElementById('chatSettingsModal');
                 const modal = bootstrap.Modal.getInstance(modalEl);
                 if (modal) modal.hide();
                 await loadEventInfo();
-                showToast('✅ Название чата успешно изменено!', 'success');
+                showToast('✅ Настройки успешно изменены!', 'success');
             } else {
                 const err = await response.json();
-                showToast(err.message || 'Ошибка обновления названия', 'danger');
+                showToast(err.message || 'Ошибка обновления', 'danger');
             }
         } catch (err) {
-            showToast('Ошибка сети при обновлении названия', 'danger');
+            showToast('Ошибка сети при обновлении', 'danger');
+        }
+    };
+
+    window.endEvent = async () => {
+        if (!confirm('Вы уверены, что хотите принудительно завершить мероприятие?')) return;
+        try {
+            const response = await fetch(`/api/events/${eventId}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ status: 'completed' })
+            });
+            if (response.ok) {
+                const modalEl = document.getElementById('chatSettingsModal');
+                const modal = bootstrap.Modal.getInstance(modalEl);
+                if (modal) modal.hide();
+                showToast('🛑 Мероприятие завершено.', 'success');
+                setTimeout(() => window.location.href = '/app.html', 1500);
+            } else {
+                const err = await response.json();
+                showToast(err.message || 'Ошибка завершения', 'danger');
+            }
+        } catch (err) {
+            showToast('Ошибка сети', 'danger');
         }
     };
     
@@ -915,10 +997,16 @@ function showUserProfile(userId) {
             container.innerHTML = '';
         }
         
+        const avatarUrl = msg.userAvatar
+            ? (msg.userAvatar.startsWith('/uploads/') || msg.userAvatar.startsWith('http'))
+                ? msg.userAvatar
+                : `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(msg.userName || msg.userId)}`
+            : `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(msg.userName || msg.userId)}`;
+            
         const messageHtml = `
             <div class="message ${msg.userId === user.id ? 'my-message' : ''}">
-                <div class="message-avatar" style="background:none; overflow:hidden;">
-                    <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(msg.userName || msg.userId)}" width="36" height="36" style="border-radius:50%; object-fit:cover;" alt="${msg.userName}">
+                <div class="message-avatar" style="background:none; overflow:hidden; cursor:pointer;" onclick="showUserProfile(${msg.userId})">
+                    <img src="${avatarUrl}" width="36" height="36" style="border-radius:50%; object-fit:cover;" alt="${msg.userName}" onerror="this.src='https://api.dicebear.com/7.x/avataaars/svg?seed=${msg.userId}'">
                 </div>
                 <div class="message-bubble">
                     <div class="message-text">${escapeHtml(msg.text)}</div>

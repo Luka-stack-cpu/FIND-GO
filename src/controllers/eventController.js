@@ -277,7 +277,7 @@ exports.updateEvent = async (req, res) => {
   try {
     const eventId = req.params.id;
     const userId = req.user.id;
-    const { datetime, maxParticipants, description, title, category, ageGroup } = req.body;
+    const { datetime, maxParticipants, description, title, category, ageGroup, placeId, status } = req.body;
     
     const event = await Event.findByPk(eventId);
     if (!event) return res.status(404).json({ message: 'Поход не найден' });
@@ -300,7 +300,7 @@ exports.updateEvent = async (req, res) => {
       }
     }
     
-    await event.update({ datetime, maxParticipants, description, title, category, ageGroup });
+    await event.update({ datetime, maxParticipants, description, title, category, ageGroup, placeId, status });
     res.json(event);
   } catch (error) {
     console.error(error);

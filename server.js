@@ -215,6 +215,7 @@ io.on('connection', (socket) => {
                 id: message.id,
                 userId: message.userId,
                 userName: message.userName,
+                userAvatar: user.avatar,
                 text: message.text,
                 time: message.createdAt
             });
