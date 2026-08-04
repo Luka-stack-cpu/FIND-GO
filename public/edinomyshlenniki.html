@@ -273,12 +273,10 @@
             { name:'Спорт',          slug:'sport',       icon:'⚽' },
             { name:'IT',             slug:'it',          icon:'💻' },
             { name:'Бизнес',         slug:'business',    icon:'🚀' },
-            { name:'Настольные игры',slug:'boardgames',  icon:'🎲' },
-            { name:'Кофе',           slug:'coffee',      icon:'☕' },
-            { name:'Книги',          slug:'books',       icon:'📚' },
-            { name:'Музыка',         slug:'music',       icon:'🎵' },
-            { name:'Творчество',     slug:'art',         icon:'🎨' },
             { name:'Языки',          slug:'languages',   icon:'🇬🇧' },
+            { name:'Проекты',        slug:'projects',    icon:'📊' },
+            { name:'Учеба',          slug:'study',       icon:'📖' },
+            { name:'Экзамены (IELTS, SAT, TOEFL и др.)', slug:'exams', icon:'📝' },
         ];
 
         function showView(id) {
@@ -460,19 +458,53 @@
                     return;
                 }
 
-                c.innerHTML = '<div class="events-list">' + events.map(e => {
+                c.innerHTML = '<div class="events-list" style="display:flex; flex-direction:column; gap:20px;">' + events.map(e => {
                     const spots = e.maxParticipants - e.participantsCount;
-                    return `<div class="event-card">
-                        <div class="event-title">${e.title}</div>
-                        <div class="event-meta">
-                            <span><i class="bi bi-calendar2"></i> ${formatDate(e.datetime)}</span>
-                            ${e.place ? '<span><i class="bi bi-geo-alt"></i> ' + e.place.name + '</span>' : ''}
-                            <span><i class="bi bi-people"></i> ${e.participantsCount}/${e.maxParticipants}</span>
+                    const timeStr = formatDate(e.datetime);
+                    const placeStr = e.place ? e.place.name : '';
+                    const isFull = spots <= 0;
+                    
+                    // We render a rich card similar to the modal design
+                    return `
+                    <div class="event-card" style="padding:0; border-radius:20px; overflow:hidden; border:1px solid var(--border);">
+                        <!-- Gradient Header -->
+                        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 20px 24px 16px; position: relative;">
+                            <div style="font-size: 0.8rem; color: rgba(255,255,255,0.75); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px;">${e.category ? e.category.toUpperCase() : 'ВСТРЕЧА'}</div>
+                            <h3 style="margin:0;color:#fff;font-size:1.3rem;font-weight:700;line-height:1.3;">${e.title}</h3>
                         </div>
-                        ${e.description ? '<p style="font-size:0.9rem;color:var(--bs-body-color);opacity:0.85;margin-bottom:12px;line-height:1.5;">' + e.description + '</p>' : ''}
-                        <div class="event-footer">
-                            <span class="event-spots">${spots > 0 ? 'Свободно: ' + spots + ' мест' : '🔴 Мест нет'}</span>
-                            <button onclick="openEventModal(${e.id})" class="btn-join-event" style="border:none;">Посмотреть</button>
+
+                        <!-- Body -->
+                        <div style="padding: 20px 24px;">
+                            <!-- Meta row -->
+                            <div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:16px;">
+                                <span style="display:flex;align-items:center;gap:5px;background:var(--bs-secondary-bg);padding:5px 10px;border-radius:20px;font-size:0.82rem;">
+                                    <i class="bi bi-calendar2" style="color:#667eea;"></i> ${timeStr}
+                                </span>
+                                ${placeStr ? `<span style="display:flex;align-items:center;gap:5px;background:var(--bs-secondary-bg);padding:5px 10px;border-radius:20px;font-size:0.82rem;">
+                                    <i class="bi bi-geo-alt" style="color:#764ba2;"></i> ${placeStr}
+                                </span>` : ''}
+                                ${e.ageGroup ? `<span style="display:flex;align-items:center;gap:5px;background:var(--bs-secondary-bg);padding:5px 10px;border-radius:20px;font-size:0.82rem;">
+                                    <i class="bi bi-person-badge" style="color:#10b981;"></i> ${e.ageGroup}
+                                </span>` : ''}
+                            </div>
+
+                            <!-- Description -->
+                            <p style="font-size:0.9rem;line-height:1.6;color:var(--bs-body-color);margin-bottom:20px;background:var(--bs-secondary-bg);padding:12px 14px;border-radius:10px;">${e.description || 'Описание не указано.'}</p>
+
+                            <!-- Participants header -->
+                            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+                                <span style="font-weight:600;font-size:0.95rem;">👥 Участники (${e.participantsCount || 0}/${e.maxParticipants})</span>
+                                ${spots > 0 
+                                    ? `<span style="font-size:0.8rem;color:#10b981;font-weight:600;">● Свободно: ${spots}</span>` 
+                                    : `<span style="font-size:0.8rem;color:#ef4444;font-weight:600;">● Мест нет</span>`
+                                }
+                            </div>
+                            
+                            <!-- Actions -->
+                            <div style="display:flex; gap:10px; margin-top:20px;">
+                                <button onclick="openEventModal(${e.id})" class="btn w-100 rounded-pill" style="padding:10px; font-weight:600; border:1px solid #667eea; color:#a78bfa; background:rgba(102,126,234,0.1);">Подробнее</button>
+                                <button onclick="selectedEventId=${e.id}; joinEvent()" class="btn btn-primary w-100 rounded-pill" style="padding:10px; font-weight:700; background:linear-gradient(135deg,#667eea,#764ba2); border:none; ${isFull ? 'opacity:0.6;' : ''}" ${isFull ? 'disabled' : ''}>${isFull ? 'Мест нет' : 'Вступить'}</button>
+                            </div>
                         </div>
                     </div>`;
                 }).join('') + '</div>';
