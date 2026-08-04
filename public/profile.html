@@ -62,7 +62,7 @@
             <li class="nav-item"><a class="nav-link" href="/faq.html"><i class="bi bi-question-circle"></i> Вопросы и ответы</a></li>
             <li class="nav-item"><a class="nav-link" href="/chats.html"><i class="bi bi-chat-dots"></i> Чаты походов</a></li>
             <li class="nav-item"><a class="nav-link" href="/dm.html"><i class="bi bi-person-heart"></i> Личные сообщения</a></li>
-            <li class="nav-item"><a class="nav-link" href="/icebreakers.html"><i class="bi bi-snow2"></i> Темы для общения</a></li>
+            <li class="nav-item"><a class="nav-link" href="/icebreakers.html"><i class="bi bi-snow2"></i> Ледоколы</a></li>
             <li class="nav-item"><a class="nav-link fw-semibold" href="/edinomyshlenniki.html" style="color: #8b5cf6;"><i class="bi bi-people-fill"></i> Единомышленники <span class="badge ms-1" style="background: linear-gradient(135deg,#667eea,#764ba2); font-size:0.65rem;">NEW</span></a></li>
             <li class="nav-item" id="modPanelNavItem" style="display: none;"><a class="nav-link text-danger fw-bold" href="/moderator.html"><i class="bi bi-shield-lock-fill"></i> Панель модератора</a></li>
         </ul>
@@ -122,7 +122,17 @@
         <img class="avatar-option" src="https://api.dicebear.com/7.x/avataaars/svg?seed=6" onclick="selectAvatar('https://api.dicebear.com/7.x/avataaars/svg?seed=6')">
     </div>
     
-    <h2 id="userFullName" class="mb-2"></h2>
+    <div class="d-flex align-items-center justify-content-center gap-2 mb-2">
+        <h2 id="userFullName" class="mb-0"></h2>
+        <button class="btn btn-sm btn-edit" onclick="editName()" title="Изменить имя"><i class="bi bi-pencil-fill"></i></button>
+    </div>
+    <div id="nameEditBlock" style="display:none;" class="mb-2">
+        <div class="input-group input-group-sm" style="max-width: 320px; margin: 0 auto;">
+            <input type="text" id="nameInput" class="form-control" placeholder="Новое имя" maxlength="50">
+            <button class="btn btn-success" onclick="confirmName()"><i class="bi bi-check-lg"></i></button>
+            <button class="btn btn-outline-secondary" onclick="cancelNameEdit()"><i class="bi bi-x-lg"></i></button>
+        </div>
+    </div>
     <p class="text-muted mb-2"><i class="bi bi-envelope"></i> <span id="userEmail"></span></p>
     <div id="ageGroupContainer" class="mt-2 mb-1">
         <span id="ageGroupBadge" class="badge rounded-pill bg-success px-3 py-2 fs-6">
@@ -144,6 +154,8 @@
                     <span class="category-badge" data-category="отель"><i class="bi bi-building"></i> Отели</span>
                 </div>
 
+                <hr class="my-4">
+
                 <h4><i class="bi bi-star-fill text-warning"></i> Интересы для общения</h4>
                 <p class="text-muted small">Что вам интересно обсудить или чем заняться?</p>
                 <div class="d-flex flex-wrap gap-2" id="categoriesContainer">
@@ -151,11 +163,9 @@
                     <span class="category-badge" data-category="sport"><i class="bi bi-dribbble"></i> Спорт</span>
                     <span class="category-badge" data-category="it"><i class="bi bi-laptop"></i> IT</span>
                     <span class="category-badge" data-category="business"><i class="bi bi-briefcase"></i> Бизнес</span>
-                    <span class="category-badge" data-category="boardgames"><i class="bi bi-dice-5"></i> Настолки</span>
-                    <span class="category-badge" data-category="coffee"><i class="bi bi-cup-hot"></i> Кофе</span>
-                    <span class="category-badge" data-category="books"><i class="bi bi-book"></i> Книги</span>
-                    <span class="category-badge" data-category="music"><i class="bi bi-music-note-beamed"></i> Музыка</span>
-                    <span class="category-badge" data-category="art"><i class="bi bi-palette"></i> Творчество</span>
+                    <span class="category-badge" data-category="projects"><i class="bi bi-kanban"></i> Проекты</span>
+                    <span class="category-badge" data-category="study"><i class="bi bi-book"></i> Учеба</span>
+                    <span class="category-badge" data-category="exams"><i class="bi bi-pencil-square"></i> Экзамены</span>
                     <span class="category-badge" data-category="languages"><i class="bi bi-globe"></i> Языки</span>
                 </div>
             </div>
@@ -358,6 +368,28 @@ document.getElementById('avatarUpload').addEventListener('change', async (e) => 
         if (newFact && newFact.trim()) document.getElementById(`fact${num}Text`).innerText = newFact.trim();
     }
 
+    function editName() {
+        const currentName = document.getElementById('userFullName').innerText.trim();
+        document.getElementById('nameInput').value = currentName;
+        document.getElementById('nameEditBlock').style.display = 'block';
+        document.getElementById('nameInput').focus();
+    }
+
+    function confirmName() {
+        const newName = document.getElementById('nameInput').value.trim();
+        if (newName.length < 2) {
+            showToast('⚠️ Имя должно содержать минимум 2 символа', 'danger');
+            return;
+        }
+        document.getElementById('userFullName').innerText = newName;
+        document.getElementById('nameEditBlock').style.display = 'none';
+        showToast('✏️ Имя изменено. Нажмите «Сохранить профиль» для подтверждения.', 'success');
+    }
+
+    function cancelNameEdit() {
+        document.getElementById('nameEditBlock').style.display = 'none';
+    }
+
     function initDarkMode() {
     const switchEl = document.getElementById('darkModeSwitch');
     const htmlEl = document.documentElement;
@@ -440,12 +472,21 @@ async function saveProfile(event) {
             body: JSON.stringify({ interests: categories })
         });
 
-        // 2. Сохраняем факты в поле bio как JSON
+        // 2. Сохраняем факты + имя в поле bio/name
+        const currentName = document.getElementById('userFullName').innerText.trim();
         const resBio = await fetch('/api/user/profile', {
             method: 'PUT',
             headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-            body: JSON.stringify({ bio: JSON.stringify({ fact1, fact2 }) })
+            body: JSON.stringify({ bio: JSON.stringify({ fact1, fact2 }), name: currentName })
         });
+
+        // Обновляем localStorage чтобы имя сохранялось при переходах
+        if (resBio.ok) {
+            const userData = JSON.parse(localStorage.getItem('user') || '{}');
+            userData.name = currentName;
+            localStorage.setItem('user', JSON.stringify(userData));
+            document.getElementById('userName').innerHTML = `<i class="bi bi-person-circle"></i> ${currentName}`;
+        }
 
         if (resInterests.ok) {
             showToast('✅ Профиль сохранён!', 'success');

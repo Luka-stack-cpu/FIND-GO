@@ -95,7 +95,7 @@ const { parseAndValidateBirthday, calculateAge, determineAgeGroup } = require('.
 // ============================================================
 exports.updateProfile = async (req, res) => {
     try {
-        const { bio } = req.body;
+        const { bio, name } = req.body;
         const updateData = {};
 
         // ЗАЩИТА: Пользователь НЕ может самостоятельно изменить дату рождения или ageGroup
@@ -103,6 +103,13 @@ exports.updateProfile = async (req, res) => {
         delete req.body.ageGroup;
         delete req.body.isAgeVerified;
         delete req.body.verificationStatus;
+
+        if (name !== undefined && name !== null) {
+            const nameStr = String(name).trim();
+            if (nameStr.length >= 2) {
+                updateData.name = nameStr.substring(0, 50);
+            }
+        }
 
         if (bio !== undefined && bio !== null) {
             // Если bio - объект (например JSON-строка с фактами), то преобразуем его безопасно
