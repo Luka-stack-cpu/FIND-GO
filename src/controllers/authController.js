@@ -4,14 +4,14 @@ const { User, Review } = require('../models');
 const { parseAndValidateBirthday, calculateAge, determineAgeGroup, getVerificationStatus } = require('../utils/ageUtils');
 const { OAuth2Client } = require('google-auth-library');
 
+const GOOGLE_REDIRECT_URI = process.env.NODE_ENV === 'production'
+    ? 'https://find-go.onrender.com/api/auth/google/callback'
+    : 'http://localhost:3000/api/auth/google/callback';
+
 const googleClient = new OAuth2Client(
     process.env.GOOGLE_CLIENT_ID,
     process.env.GOOGLE_CLIENT_SECRET,
-    // В продакшене лучше использовать абсолютный URL из ENV, например process.env.BASE_URL + '/api/auth/google/callback'
-    // Но по задаче сказано: http://localhost:3000/api/auth/google/callback
-    process.env.NODE_ENV === 'production' 
-        ? 'https://find-go.onrender.com/api/auth/google/callback' 
-        : 'http://localhost:3000/api/auth/google/callback'
+    GOOGLE_REDIRECT_URI
 );
 
 // Email-адреса, которые всегда имеют роль moderator (дублируется из server.js для надёжности)
@@ -203,7 +203,8 @@ exports.googleLogin = (req, res) => {
     const authorizeUrl = googleClient.generateAuthUrl({
         access_type: 'offline',
         scope: ['https://www.googleapis.com/auth/userinfo.profile', 'https://www.googleapis.com/auth/userinfo.email'],
-        prompt: 'consent'
+        prompt: 'consent',
+        redirect_uri: GOOGLE_REDIRECT_URI
     });
     res.redirect(authorizeUrl);
 };
@@ -218,8 +219,8 @@ exports.googleCallback = async (req, res) => {
             return res.redirect('/login.html?error=No+Code+Provided');
         }
 
-        // Обмен кода на токены
-        const { tokens } = await googleClient.getToken(code);
+        // Обмен кода на токены (redirect_uri должен точно совпадать с тем, что в Google Console)
+        const { tokens } = await googleClient.getToken({ code, redirect_uri: GOOGLE_REDIRECT_URI });
         googleClient.setCredentials(tokens);
 
         // Получаем информацию о пользователе
