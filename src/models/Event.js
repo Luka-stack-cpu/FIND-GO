@@ -57,6 +57,10 @@ const Event = sequelize.define('Event', {
   interestSlug: {
     type: DataTypes.STRING,
     allowNull: true
+  },
+  subcategory: {
+    type: DataTypes.STRING,
+    allowNull: true
   }
 });
 

@@ -27,7 +27,8 @@ exports.createEvent = async (req, res) => {
       maxParticipants: maxParticipants || 5,
       description,
       isClubEvent: req.body.isClubEvent || false,
-      interestSlug: req.body.interestSlug || null
+      interestSlug: req.body.interestSlug || null,
+      subcategory: req.body.subcategory || null
     });
 
     // ✅ Добавляем создателя в участники

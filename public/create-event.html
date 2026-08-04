@@ -89,18 +89,27 @@
                     <!-- Выбор интереса (для клубов/компаний) -->
                     <div class="mb-4">
                         <label class="form-label"><i class="bi bi-star-fill text-warning"></i> Тематика компании (опционально)</label>
-                        <select id="interestSlug" class="form-select">
+                        <select id="interestSlug" class="form-select" onchange="onInterestChange(this.value)">
                             <option value="">-- Обычный поход --</option>
                             <option value="outdoor">Активный отдых 🏔</option>
                             <option value="sport">Спорт ⚽</option>
                             <option value="it">IT 💻</option>
                             <option value="business">Бизнес 🚀</option>
-                            <option value="languages">Языки 🇬🇧</option>
                             <option value="projects">Проекты 📊</option>
                             <option value="study">Учеба 📖</option>
-                            <option value="exams">Экзамены (IELTS, SAT, TOEFL и др.) 📝</option>
+                            <option value="exams">Экзамены 📝</option>
+                            <option value="languages">Языки 🌍</option>
                         </select>
                         <div class="form-text text-muted small mt-1">Выберите, если создаете постоянную компанию</div>
+                    </div>
+
+                    <!-- Subcategory (shown for Exams and Languages) -->
+                    <div class="mb-4" id="subcategoryBlock" style="display:none;">
+                        <label class="form-label"><i class="bi bi-diagram-3-fill text-info"></i> Подкатегория</label>
+                        <select id="subcategory" class="form-select">
+                            <option value="">— Не указано —</option>
+                        </select>
+                        <div class="form-text text-muted small mt-1">Уточните направление мероприятия</div>
                     </div>
                         <!-- Категория -->
                         <div class="mb-4">
@@ -219,8 +228,41 @@
         }
     }
     initDarkMode();
-    
-    // ========== ТОСТЫ ==========
+
+    // ========== ПОДКАТЕГОРИИ ==========
+    const SUBCATEGORY_MAP = {
+        exams: [
+            { label: 'IELTS', value: 'ielts' },
+            { label: 'TOEFL', value: 'toefl' },
+            { label: 'SAT',   value: 'sat' },
+            { label: 'GMAT',  value: 'gmat' },
+            { label: 'GRE',   value: 'gre' },
+            { label: 'Другое', value: 'other_exam' },
+        ],
+        languages: [
+            { label: 'Английский',  value: 'english' },
+            { label: 'Кыргызский',  value: 'kyrgyz' },
+            { label: 'Немецкий',    value: 'german' },
+            { label: 'Испанский',   value: 'spanish' },
+            { label: 'Французский', value: 'french' },
+            { label: 'Китайский',   value: 'chinese' },
+            { label: 'Другой',      value: 'other_lang' },
+        ]
+    };
+
+    function onInterestChange(slug) {
+        const block = document.getElementById('subcategoryBlock');
+        const select = document.getElementById('subcategory');
+        const subs = SUBCATEGORY_MAP[slug];
+        if (subs) {
+            select.innerHTML = '<option value="">— Не указано —</option>' +
+                subs.map(s => `<option value="${s.value}">${s.label}</option>`).join('');
+            block.style.display = 'block';
+        } else {
+            block.style.display = 'none';
+            select.innerHTML = '<option value="">— Не указано —</option>';
+        }
+    }
     function showToast(message, type = 'success') {
         const container = document.getElementById('toastContainer');
         if (!container) {
@@ -370,7 +412,8 @@
                     maxParticipants: parseInt(maxParticipants),
                     description: description,
                     isClubEvent: isClub,
-                    interestSlug: finalInterestSlug
+                    interestSlug: finalInterestSlug,
+                    subcategory: document.getElementById('subcategory') ? document.getElementById('subcategory').value || null : null
                 })
             });
             

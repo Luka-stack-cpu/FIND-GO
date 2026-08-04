@@ -8,6 +8,7 @@
     <link rel="icon" type="image/png" href="/img/logo.png">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -269,15 +270,39 @@
         let selectedEventId = null;
 
         const CATALOG = [
-            { name:'Активный отдых', slug:'outdoor',    icon:'🏔' },
-            { name:'Спорт',          slug:'sport',       icon:'⚽' },
-            { name:'IT',             slug:'it',          icon:'💻' },
-            { name:'Бизнес',         slug:'business',    icon:'🚀' },
-            { name:'Языки',          slug:'languages',   icon:'🇬🇧' },
-            { name:'Проекты',        slug:'projects',    icon:'📊' },
-            { name:'Учеба',          slug:'study',       icon:'📖' },
-            { name:'Экзамены (IELTS, SAT, TOEFL и др.)', slug:'exams', icon:'📝' },
+            { name:'Активный отдых', slug:'outdoor',   icon:'🏔' },
+            { name:'Спорт',          slug:'sport',      icon:'⚽' },
+            { name:'IT',             slug:'it',         icon:'💻' },
+            { name:'Бизнес',         slug:'business',   icon:'🚀' },
+            { name:'Проекты',        slug:'projects',   icon:'📊' },
+            { name:'Учеба',          slug:'study',      icon:'📖' },
+            { name:'Экзамены',       slug:'exams',      icon:'📝',
+              subcategories: [
+                { name:'Все', slug:'all' },
+                { name:'IELTS',  slug:'ielts' },
+                { name:'TOEFL',  slug:'toefl' },
+                { name:'SAT',    slug:'sat' },
+                { name:'GMAT',   slug:'gmat' },
+                { name:'GRE',    slug:'gre' },
+                { name:'Другое', slug:'other_exam' },
+              ]
+            },
+            { name:'Языки',          slug:'languages',  icon:'🌍',
+              subcategories: [
+                { name:'Все', slug:'all' },
+                { name:'Английский',  slug:'english' },
+                { name:'Кыргызский',  slug:'kyrgyz' },
+                { name:'Немецкий',    slug:'german' },
+                { name:'Испанский',   slug:'spanish' },
+                { name:'Французский', slug:'french' },
+                { name:'Китайский',   slug:'chinese' },
+                { name:'Другой',      slug:'other_lang' },
+              ]
+            },
         ];
+        
+        // VALID slugs for the interest picker (filtering old data)
+        const VALID_SLUGS = CATALOG.map(c => c.slug);
 
         function showView(id) {
             document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
@@ -441,35 +466,61 @@
             }
         }
 
+        let currentSubcategory = 'all'; // Track active subcategory chip
+
         // EVENTS
-        async function loadEvents(slug) {
+        async function loadEvents(slug, sub) {
+            currentSubcategory = sub || 'all';
             const c = document.getElementById('tabContent');
             c.innerHTML = '<div class="loader-wrap"><div class="spinner-ring"></div></div>';
             try {
-                const res = await fetch('/api/interests/' + slug + '/events');
+                const url = '/api/interests/' + slug + '/events' + (currentSubcategory !== 'all' ? '?subcategory=' + currentSubcategory : '');
+                const res = await fetch(url, { headers: { 'Authorization': 'Bearer ' + token } });
                 if (!res.ok) throw new Error('HTTP ' + res.status);
-                currentEvents = await res.json();
-                const events = currentEvents;
+                const data = await res.json();
+                // Handle both old array response and new object response
+                let events, subcategories;
+                if (Array.isArray(data)) {
+                    events = data;
+                    subcategories = [];
+                } else {
+                    events = data.events || [];
+                    subcategories = data.subcategories || [];
+                }
+                currentEvents = events;
+
+                // Build subcategory chips if available
+                const hasSubs = subcategories.length > 0;
+                const chipsHtml = hasSubs ? `
+                    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px;">
+                        <button onclick="loadEvents('${slug}','all')" class="sub-chip ${currentSubcategory === 'all' ? 'active' : ''}" style="padding:6px 16px;border-radius:50px;border:1.5px solid ${currentSubcategory === 'all' ? '#667eea' : 'var(--border)'};background:${currentSubcategory === 'all' ? 'rgba(102,126,234,0.2)' : 'var(--surface2)'};color:${currentSubcategory === 'all' ? '#a78bfa' : 'var(--text-muted)'};font-size:0.82rem;font-weight:600;cursor:pointer;transition:all 0.2s;">Все</button>
+                        ${subcategories.filter(s => s.slug !== 'all').map(s => `
+                            <button onclick="loadEvents('${slug}','${s.slug}')" class="sub-chip ${currentSubcategory === s.slug ? 'active' : ''}" style="padding:6px 16px;border-radius:50px;border:1.5px solid ${currentSubcategory === s.slug ? '#667eea' : 'var(--border)'};background:${currentSubcategory === s.slug ? 'rgba(102,126,234,0.2)' : 'var(--surface2)'};color:${currentSubcategory === s.slug ? '#a78bfa' : 'var(--text-muted)'};font-size:0.82rem;font-weight:600;cursor:pointer;transition:all 0.2s;">${s.name}</button>
+                        `).join('')}
+                    </div>` : '';
 
                 if (!events.length) {
-                    c.innerHTML = `<div class="empty-state"><span class="empty-icon">📅</span><h4>Пока нет мероприятий</h4>
+                    c.innerHTML = chipsHtml + `<div class="empty-state"><span class="empty-icon">📅</span><h4>Пока нет мероприятий</h4>
                         <p>Станьте первым организатором!</p>
                         <a href="#" onclick="createEventWithCategory(); return false;" class="btn-cta"><i class="bi bi-plus-circle"></i> Создать мероприятие</a></div>`;
                     return;
                 }
 
-                c.innerHTML = '<div class="events-list" style="display:flex; flex-direction:column; gap:20px;">' + events.map(e => {
+                // Get current user id for participant check
+                const myId = storedUser && storedUser.id ? String(storedUser.id) : null;
+
+                c.innerHTML = chipsHtml + '<div class="events-list" style="display:flex; flex-direction:column; gap:20px;">' + events.map(e => {
                     const spots = e.maxParticipants - e.participantsCount;
                     const timeStr = formatDate(e.datetime);
                     const placeStr = e.place ? e.place.name : '';
                     const isFull = spots <= 0;
-                    
-                    // We render a rich card similar to the modal design
+                    const isParticipant = myId && (e.participants || []).some(p => String(p.id) === myId);
+
                     return `
                     <div class="event-card" style="padding:0; border-radius:20px; overflow:hidden; border:1px solid var(--border);">
                         <!-- Gradient Header -->
                         <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 20px 24px 16px; position: relative;">
-                            <div style="font-size: 0.8rem; color: rgba(255,255,255,0.75); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px;">${e.category ? e.category.toUpperCase() : 'ВСТРЕЧА'}</div>
+                            <div style="font-size: 0.8rem; color: rgba(255,255,255,0.75); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px;">${e.subcategory ? e.subcategory.toUpperCase() : (e.category ? e.category.toUpperCase() : 'ВСТРЕЧА')}</div>
                             <h3 style="margin:0;color:#fff;font-size:1.3rem;font-weight:700;line-height:1.3;">${e.title}</h3>
                         </div>
 
@@ -486,6 +537,7 @@
                                 ${e.ageGroup ? `<span style="display:flex;align-items:center;gap:5px;background:var(--surface2);padding:5px 10px;border-radius:20px;font-size:0.82rem;color:var(--text);">
                                     <i class="bi bi-person-badge" style="color:#10b981;"></i> ${e.ageGroup}
                                 </span>` : ''}
+                                ${isParticipant ? '<span style="display:flex;align-items:center;gap:5px;background:rgba(16,185,129,0.15);padding:5px 10px;border-radius:20px;font-size:0.82rem;color:#10b981;font-weight:600;"><i class="bi bi-check-circle-fill"></i> Вы участник</span>' : ''}
                             </div>
 
                             <!-- Description -->
@@ -493,27 +545,32 @@
 
                             <!-- Participants header -->
                             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-                                <span style="font-weight:600;font-size:0.95rem;color:var(--text);">👥 Участники (${e.participantsCount || 0}/${e.maxParticipants})</span>
-                                ${spots > 0 
-                                    ? `<span style="font-size:0.8rem;color:#10b981;font-weight:600;">● Свободно: ${spots}</span>` 
+                                <span style="font-weight:600;font-size:0.95rem;color:var(--text);">&#128101; Участники (${e.participantsCount || 0}/${e.maxParticipants})</span>
+                                ${spots > 0
+                                    ? `<span style="font-size:0.8rem;color:#10b981;font-weight:600;">● Свободно: ${spots}</span>`
                                     : `<span style="font-size:0.8rem;color:#ef4444;font-weight:600;">● Мест нет</span>`
                                 }
                             </div>
-                            
+
                             <!-- Participants List -->
                             <div style="display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap;">
                                 ${(e.participants || []).map(p => `
                                     <a href="/user.html?id=${p.id}" title="${p.name}" style="text-decoration:none;">
-                                        <img src="${p.avatar || 'https://api.dicebear.com/7.x/avataaars/svg?seed=' + p.id}" style="width:36px;height:36px;border-radius:50%;object-fit:cover;border:2px solid #667eea;">
+                                        <img src="${p.avatar || 'https://api.dicebear.com/7.x/avataaars/svg?seed=' + p.id}" style="width:36px;height:36px;border-radius:50%;object-fit:cover;border:2px solid ${isParticipant ? '#10b981' : '#667eea'};">
                                     </a>
                                 `).join('')}
                                 ${(e.participants || []).length === 0 ? '<span style="font-size:0.8rem;color:var(--text-muted);">Пока нет участников — будьте первым!</span>' : ''}
                             </div>
-                            
+
                             <!-- Actions -->
                             <div style="display:flex; gap:10px; margin-top:10px;">
-                                <button onclick="window.location.href='/chats.html'" class="btn w-100 rounded-pill" style="padding:10px; font-weight:600; border:1px solid #667eea; color:#a78bfa; background:rgba(102,126,234,0.1);"><i class="bi bi-chat-dots me-1"></i>Чат</button>
-                                <button id="btnJoin_${e.id}" onclick="joinEventDirect(${e.id})" class="btn btn-primary w-100 rounded-pill" style="padding:10px; font-weight:700; background:linear-gradient(135deg,#667eea,#764ba2); border:none; ${isFull ? 'opacity:0.6;' : ''}" ${isFull ? 'disabled' : ''}>${isFull ? 'Мест нет' : 'Вступить'}</button>
+                                ${isParticipant
+                                    ? `<a href="/chat.html?eventId=${e.id}" class="btn w-100 rounded-pill" style="padding:10px; font-weight:600; border:1px solid #10b981; color:#10b981; background:rgba(16,185,129,0.12); text-decoration:none; display:flex; align-items:center; justify-content:center; gap:6px;"><i class="bi bi-chat-dots"></i> Чат мероприятия</a>`
+                                    : (isFull
+                                        ? `<button disabled class="btn w-100 rounded-pill" style="padding:10px; font-weight:700; background:var(--surface2); border:none; opacity:0.5; color:var(--text-muted);">Мест нет</button>`
+                                        : `<button id="btnJoin_${e.id}" onclick="joinEventDirect(${e.id})" class="btn btn-primary w-100 rounded-pill" style="padding:10px; font-weight:700; background:linear-gradient(135deg,#667eea,#764ba2); border:none;">Вступить</button>`
+                                    )
+                                }
                             </div>
                         </div>
                     </div>`;
@@ -623,13 +680,24 @@
                     headers: { 'Authorization': 'Bearer ' + token }
                 });
                 if (res.ok) {
-                    btn.innerHTML = '<i class="bi bi-check-lg"></i> Вы вступили';
+                    btn.innerHTML = '<i class="bi bi-check-lg"></i> Вы вступили!';
                     btn.classList.replace('btn-primary', 'btn-success');
-                    // Reload after 1.5 seconds to let user read the state
+                    
+                    // 🎉 Confetti!
+                    if (typeof confetti === 'function') {
+                        confetti({
+                            particleCount: 120,
+                            spread: 80,
+                            origin: { y: 0.6 },
+                            colors: ['#667eea', '#764ba2', '#10b981', '#f59e0b', '#a78bfa']
+                        });
+                    }
+
+                    // Reload after 1.8 seconds to let user enjoy the confetti
                     setTimeout(() => { 
                         if(isFromModal) closeEventModal(null, true);
-                        loadEvents(currentSlug); 
-                    }, 1500);
+                        loadEvents(currentSlug, currentSubcategory); 
+                    }, 1800);
                 } else {
                     const data = await res.json();
                     alert(data.message || 'Ошибка');
@@ -675,7 +743,7 @@
             }
             if (!Array.isArray(userInterests)) userInterests = [];
             
-            selectedInterests = [...userInterests];
+            selectedInterests = [...userInterests].filter(s => VALID_SLUGS.includes(s));
             document.getElementById('interestsPicker').innerHTML = CATALOG.map(c => `
                 <button class="interest-pick-btn ${selectedInterests.includes(c.slug) ? 'selected' : ''}" id="pick_${c.slug}" onclick="toggleInterest('${c.slug}')">
                     <span class="pick-icon">${c.icon}</span><span>${c.name}</span>

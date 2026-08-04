@@ -13,12 +13,29 @@ const INTERESTS_CATALOG = [
     { name: 'Спорт',          slug: 'sport',       icon: '⚽', category_group: 'Спорт',          event_category: 'спорт' },
     { name: 'IT',             slug: 'it',          icon: '💻', category_group: 'Технологии',     event_category: 'it' },
     { name: 'Бизнес',         slug: 'business',    icon: '🚀', category_group: 'Бизнес',         event_category: 'бизнес' },
-    { name: 'Настольные игры',slug: 'boardgames',  icon: '🎲', category_group: 'Развлечения',    event_category: 'игры' },
-    { name: 'Кофе',           slug: 'coffee',      icon: '☕', category_group: 'Социальное',     event_category: 'кофе' },
-    { name: 'Книги',          slug: 'books',       icon: '📚', category_group: 'Культура',       event_category: 'книги' },
-    { name: 'Музыка',         slug: 'music',       icon: '🎵', category_group: 'Творчество',     event_category: 'музыка' },
-    { name: 'Творчество',     slug: 'art',         icon: '🎨', category_group: 'Творчество',     event_category: 'творчество' },
-    { name: 'Языки',          slug: 'languages',   icon: '🇬🇧', category_group: 'Образование',  event_category: 'языки' },
+    { name: 'Проекты',        slug: 'projects',    icon: '📊', category_group: 'Карьера',        event_category: 'проекты' },
+    { name: 'Учеба',          slug: 'study',       icon: '📖', category_group: 'Образование',    event_category: 'учеба' },
+    { name: 'Экзамены',       slug: 'exams',       icon: '📝', category_group: 'Образование',    event_category: 'экзамены',
+      subcategories: [
+        { name: 'IELTS',   slug: 'ielts' },
+        { name: 'TOEFL',   slug: 'toefl' },
+        { name: 'SAT',     slug: 'sat' },
+        { name: 'GMAT',    slug: 'gmat' },
+        { name: 'GRE',     slug: 'gre' },
+        { name: 'Другое',  slug: 'other_exam' },
+      ]
+    },
+    { name: 'Языки',          slug: 'languages',   icon: '🌍', category_group: 'Образование',    event_category: 'языки',
+      subcategories: [
+        { name: 'Английский',  slug: 'english' },
+        { name: 'Кыргызский',  slug: 'kyrgyz' },
+        { name: 'Немецкий',    slug: 'german' },
+        { name: 'Испанский',   slug: 'spanish' },
+        { name: 'Французский', slug: 'french' },
+        { name: 'Китайский',   slug: 'chinese' },
+        { name: 'Другой',      slug: 'other_lang' },
+      ]
+    },
 ];
 
 module.exports.INTERESTS_CATALOG = INTERESTS_CATALOG;
@@ -203,6 +220,7 @@ router.get('/interests/:slug/people', authMiddleware, async (req, res) => {
 router.get('/interests/:slug/events', async (req, res) => {
     try {
         const { slug } = req.params;
+        const { subcategory } = req.query; // Optional subcategory filter
         const interest = INTERESTS_CATALOG.find(i => i.slug === slug);
         if (!interest) return res.status(404).json({ message: 'Интерес не найден' });
 
@@ -213,6 +231,11 @@ router.get('/interests/:slug/events', async (req, res) => {
             isClubEvent: true,
             interestSlug: slug
         };
+
+        // If subcategory is passed, filter by it
+        if (subcategory && subcategory !== 'all') {
+            where.subcategory = subcategory;
+        }
 
         const events = await Event.findAll({
             where,
@@ -229,6 +252,7 @@ router.get('/interests/:slug/events', async (req, res) => {
             id: e.id,
             title: e.title,
             category: e.category,
+            subcategory: e.subcategory || null,
             datetime: e.datetime,
             maxParticipants: e.maxParticipants,
             participantsCount: e.participants ? e.participants.length : 0,
@@ -238,7 +262,8 @@ router.get('/interests/:slug/events', async (req, res) => {
             place: e.place
         }));
 
-        res.json(result);
+        // Also return the catalog entry's subcategories for frontend filter chips
+        res.json({ events: result, subcategories: interest.subcategories || [] });
     } catch (err) {
         console.error('❌ /api/interests/:slug/events error:', err.message);
         res.status(500).json({ message: 'Ошибка загрузки мероприятий' });
